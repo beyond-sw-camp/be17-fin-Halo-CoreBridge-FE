@@ -60,6 +60,18 @@ const router = createRouter({
       component: () => import('@/views/JobPosting/JobPostingDetail.vue'),
       props: true,
     },
+    {
+      path: '/resume',
+      name: 'resumelayout',
+      component: () => import('@/views/Layout/ResumeTopLayout.vue'),
+      children: [
+        {
+          path: '',
+          name: 'resume',
+          component: () => import('@/views/resume/ResumeView.vue'),
+        },
+      ],
+     },
   ],
 })
 
