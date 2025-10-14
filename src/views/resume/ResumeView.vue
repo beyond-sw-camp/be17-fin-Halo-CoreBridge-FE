@@ -195,7 +195,7 @@ const submitApplication = () => {
         </h2>
         <div class="space-y-4">
           <p class="text-sm text-gray-600 mb-4">
-            ⓘ 와우 친구들 빡빡이 아저씨야
+            ⓘ 지원사항을 사실에 기반하여 작성해 주시기 바랍니다.
           </p>
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -275,7 +275,7 @@ const submitApplication = () => {
         </h2>
         <div class="space-y-6">
           <p class="text-sm text-gray-600">
-            ⓘ 와우 친구들 빡빡이 아저씨야
+            ⓘ 기본사항을 사실에 기반하여 작성해 주시기 바랍니다.
           </p>
 
           <!-- Row 1: 성명(한글), 성명(영문) -->
@@ -536,7 +536,7 @@ const submitApplication = () => {
         </h2>
         <div class="space-y-4">
           <p class="text-sm text-gray-600">
-            ⓘ 와우 친구들 빡빡이 아저씨야
+            ⓘ 보훈사항을 사실에 기반하여 작성해 주시기 바랍니다.
           </p>
 
           <div>
