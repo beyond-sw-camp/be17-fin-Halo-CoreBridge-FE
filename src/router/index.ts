@@ -24,6 +24,11 @@ const router = createRouter({
           name: 'recruiter-dashboard',
           component: () => import('@/views/recruiter/RecruiterDashboadView.vue'),
         },
+        {
+          path: 'jobs',
+          name: 'recruiter-jobs',
+          component: () => import('@/views/JobPosting/JobPostingList.vue')
+        }
       ],
     },
     {
@@ -39,6 +44,17 @@ const router = createRouter({
       ],
     },
     {
+      path: '/job-postings/create',
+      name: 'jobPostingCreate',
+      component: () => import('@/views/JobPosting/JobPostingCreate.vue'),
+    },
+    {
+      path: '/job-postings/:id',
+      name: 'jobPostingDetail',
+      component: () => import('@/views/JobPosting/JobPostingDetail.vue'),
+      props: true,
+    },
+    {
       path: '/resume',
       name: 'resumelayout',
       component: () => import('@/views/Layout/ResumeTopLayout.vue'),
@@ -49,7 +65,7 @@ const router = createRouter({
           component: () => import('@/views/resume/ResumeView.vue'),
         },
       ],
-    },
+     },
   ],
 })
 
