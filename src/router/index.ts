@@ -38,6 +38,18 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: '/resume',
+      name: 'resumelayout',
+      component: () => import('@/views/Layout/ResumeTopLayout.vue'),
+      children: [
+        {
+          path: '',
+          name: 'resume',
+          component: () => import('@/views/resume/ResumeView.vue'),
+        },
+      ],
+    },
   ],
 })
 
