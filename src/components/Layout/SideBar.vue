@@ -32,6 +32,12 @@ const isActive = (to: string) => {
 
     console.log('route.path', route.path)
     return route.path === to
+
+      // 현재 경로에서 '/recruiter/' 이후의 첫 번째 세그먼트 추출
+  const currentSegment = route.path.split('/')[2] || ''   // ex) 'jobs', 'applicants', '', ...
+  const targetSegment = to.split('/')[2] || ''            // 메뉴 path 기준 세그먼트
+
+  return currentSegment === targetSegment
 }
 
 </script>

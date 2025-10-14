@@ -28,8 +28,13 @@ const router = createRouter({
           path: 'jobs',
           name: 'recruiter-jobs',
           component: () => import('@/views/recruiter/EmploymentView.vue'),
-          meta: {title: '채용 관리'},
-        }
+          meta: { title: '채용 관리' },
+        },
+        {
+          path: 'jobs/:jobId/pipeline',
+          name: 'recruiter-job-pipeline',
+          component: () => import('@/views/recruiter/EmploymentPipelineView.vue'),
+        },
       ],
     },
     {
