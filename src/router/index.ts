@@ -27,7 +27,8 @@ const router = createRouter({
         {
           path: 'jobs',
           name: 'recruiter-jobs',
-          component: () => import('@/views/JobPosting/JobPostingList.vue')
+          component: () => import('@/views/recruiter/EmploymentView.vue'),
+          meta: {title: '채용 관리'},
         }
       ],
     },
