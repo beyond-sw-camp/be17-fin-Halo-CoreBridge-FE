@@ -64,6 +64,16 @@
 
 ---
 
+# Back-end
+
+[백엔드 깃허브 바로가기](https://github.com/beyond-sw-camp/be17-fin-Halo-CoreBridge-BE)
+
+# 피그마
+
+[피그마 주소](https://www.figma.com/design/lj1DLU2vuv1w3ZXXiXvGIx/CoreBridge?node-id=0-1&t=7ucfKIqZA5ZeHXSk-1)
+
+---
+
 # 📑 목차 (Table of Contents)
 
 - [프로젝트 소개](#-프로젝트-소개)
