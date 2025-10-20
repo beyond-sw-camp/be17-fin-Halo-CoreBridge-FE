@@ -55,6 +55,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import DropdownMenuItem from '@/components/recruiter-dashboard/DropdownMenuItem.vue';
 
+
 interface MenuItem {
   id: string;
   icon: string;
