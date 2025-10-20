@@ -134,7 +134,7 @@ const handleSubmit = async () => {
                             <a class="text-slate-600 hover:text-slate-700 font-semibold">이메일 찾기</a>
                         </RouterLink>
                         |
-                        <RouterLink>
+                        <RouterLink :to="{ path: 'password-reset' }">
                             <a class="text-slate-600 hover:text-slate-700 font-semibold">비밀번호 찾기</a>
                         </RouterLink>
                     </p>

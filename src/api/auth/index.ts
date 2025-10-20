@@ -1,4 +1,6 @@
 import api from '@/plugins/AxiosInterceptor'
+import type { EmailForm } from '@/types/user/Email'
+import type { PasswordChange } from '@/types/user/UserUpdateForm'
 
 /**
  * 이메일 인증 코드 전송 api
@@ -55,7 +57,53 @@ const verifyEmailCode = async (req: { email: string; code: string }): Promise<Ap
   return data
 }
 
+const sendPasswordResetLink = async (req: EmailForm): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined,
+  }
+
+  const url: string = '/api/auth/find-password/link'
+
+  await api
+    .post(url, req)
+    .then((res) => {
+      data = res.data
+    })
+    .catch((error) => {
+      data = error.response.data as ApiResponse
+    })
+
+  return data
+}
+
+const resetPassword = async (req: PasswordChange): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined,
+  }
+
+  const url = '/api/auth/reset-password'
+
+  await api
+    .post(url, req)
+    .then((res) => {
+      data = res.data as ApiResponse
+    })
+    .catch((error) => {
+      data = error.response.data as ApiResponse
+    })
+
+  return data
+}
+
 export default {
   sendAuthCodeToEmail,
   verifyEmailCode,
+  sendPasswordResetLink,
+  resetPassword,
 }

@@ -20,6 +20,19 @@ const router = createRouter({
       component: () => import('@/views/auth/LoginView.vue'),
     },
     {
+      path: '/password-reset',
+      name: 'password-reset',
+      component: () => import('@/views/auth/PasswordFindView.vue'),
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: () => import('@/views/auth/PasswordResetView.vue'),
+      meta: {
+        requiresToken: true,
+      },
+    },
+    {
       path: '/recruiter',
       name: 'main',
       component: () => import('@/views/layout/DashboardLayout.vue'),
@@ -95,6 +108,20 @@ const router = createRouter({
       ],
     },
   ],
+})
+
+router.beforeEach((to, from, next) => {
+  const requiresToken = to.matched.some((record) => record.meta.requiresToken)
+
+  // 비밀번호 재설정 페이지에서는 토큰이 필요
+  if (requiresToken) {
+    const token = to.query.token
+    if (!token) {
+      next('/login')
+    }
+  }
+
+  next()
 })
 
 export default router
