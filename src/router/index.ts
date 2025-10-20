@@ -19,16 +19,48 @@ const router = createRouter({
       name: 'main',
       component: () => import('@/views/Layout/DashboardLayout.vue'),
       children: [
-        {
-          path: '',
-          name: 'recruiter-dashboard',
-          component: () => import('@/views/recruiter/RecruiterDashboadView.vue'),
-        },
+        // {
+        //   path: '',
+        //   name: 'recruiter-dashboard',
+        //   component: () => import('@/views/Dashboard/RecruiterDashboadView.vue'),
+        // },
+        // ✅ 채용공고 관련 하위 라우트
         {
           path: 'jobs',
-          name: 'recruiter-jobs',
-          component: () => import('@/views/JobPosting/JobPostingList.vue')
-        }
+          name: 'jobPostList',
+          component: () => import('@/views/recruiter/Job/JobPostListView.vue'),
+        },
+        {
+          path: 'jobs/:id/info',
+          name: 'jobInfo',
+          component: () => import('@/views/recruiter/Job/JobInfoView.vue'),
+          props: true,
+        },
+        {
+          path: 'jobs/:id',
+          name: 'jobDetail',
+          component: () => import('@/views/recruiter/Job/JobDetailView.vue'),
+          props: true,
+        },
+        {
+          path: 'jobs/:id/applicants',
+          name: 'jobApplicant',
+          component: () => import('@/views/recruiter/Job/JobApplicantView.vue'),
+          props: true,
+        },
+        {
+          path: 'jobs/:id/process',
+          name: 'jobProcess',
+          component: () => import('@/views/recruiter/Job/JobProcessView.vue'),
+          props: true,
+        },
+        {
+          path: 'jobs/:id/schedule',
+          name: 'jobSchedule',
+          component: () => import('@/views/recruiter/Job/JobScheduleView.vue'),
+          props: true,
+        },
+
       ],
     },
     {
@@ -43,17 +75,31 @@ const router = createRouter({
         },
       ],
     },
-    {
-      path: '/job-postings/create',
-      name: 'jobPostingCreate',
-      component: () => import('@/views/JobPosting/JobPostingCreate.vue'),
-    },
+    // {
+    //   path: '/job-postings/create',
+    //   name: 'jobPostingCreate',
+    //   component: () => import('@/views/recruiter/Job/JobPostingCreateView.vue'),
+    // },
+    // {
+    //   path: '/job-postings/detail',
+    //   name: 'jobPostingdetal',
+    //   component: () => import('@/views/recruiter/Job/JobDetailForApplicant.vue'),
+    // },
+    // 채용공고 지원자 관리 관려 라우터
     {
       path: '/job-postings/:id',
-      name: 'jobPostingDetail',
-      component: () => import('@/views/JobPosting/JobPostingDetail.vue'),
+      name: 'jobDetailApplicant',
+      component: () => import('@/views/recruiter/Job/JobDetailForApplicant.vue'),
       props: true,
     },
+    {
+      path: '/jobs/create',
+      name: 'jobPostingCreate',
+      component: () => import('@/views/recruiter/Job/JobPostingCreateView.vue'),
+    },
+
+
+
     {
       path: '/resume',
       name: 'resumelayout',
@@ -65,7 +111,7 @@ const router = createRouter({
           component: () => import('@/views/resume/ResumeView.vue'),
         },
       ],
-     },
+    },
   ],
 })
 
