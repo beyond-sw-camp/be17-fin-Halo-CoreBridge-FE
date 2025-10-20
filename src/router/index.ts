@@ -30,6 +30,11 @@ const router = createRouter({
           component: () => import('@/views/recruiter/dashboard/RecruiterDashboardView.vue'),
         },
         {
+          path: 'schedules',
+          name: 'recruiter-schedules',
+          component: () => import('@/views/schedules/recruitment/RecruitmentSchedule.vue'),
+        },
+        {
           path: 'jobs',
           name: 'recruiter-job-layout',
           component: () => import('@/views/layout/RecruiterJobLayout.vue'),
