@@ -74,7 +74,7 @@ const router = createRouter({
       component: () => import('@/views/ApplicantList/ApplicantListView.vue')
     },
     {
-      path: '/applicnatdetail',
+      path: '/applicantdetail',
       name: 'applicantdetail',
       component: () => import('@/views/applicantdetail/ApplicantDetailView.vue'),
       children: [
