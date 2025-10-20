@@ -1,4 +1,4 @@
-import api from '@/plugins/axiosInterceptor'
+import api from '@/plugins/AxiosInterceptor'
 import type { UserForm } from '@/types/user/UserForm'
 
 const requestSignup = async (req: UserForm): Promise<ApiResponse> => {

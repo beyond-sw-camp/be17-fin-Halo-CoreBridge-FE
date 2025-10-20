@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Search, Bell } from 'lucide-vue-next'
-import ProfileDropdown from '@/components/RecruiterDashboard/ProfileDropdown.vue'
+import ProfileDropdown from '@/components/recruiter-dashboard/ProfileDropdown.vue'
 import { computed, ref } from 'vue'
 
 import { useRoute } from 'vue-router'
