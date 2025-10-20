@@ -3,9 +3,7 @@
 </script>
 
 <template>
-    <div class="p-6">
-        Employment View
-    </div>
+    <h1>채용 공고 레이아웃</h1>
 </template>
 
 <style scoped></style>

@@ -53,7 +53,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue';
-import DropdownMenuItem from '@/components/RecruiterDashboard/DropdownMenuItem.vue';
+import DropdownMenuItem from '@/components/recruiter-dashboard/DropdownMenuItem.vue';
+
 
 interface MenuItem {
   id: string;
