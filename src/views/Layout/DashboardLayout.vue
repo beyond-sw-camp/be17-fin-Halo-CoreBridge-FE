@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import Sidebar from '@/components/Layout/SideBar.vue'
-import DashboardHeader from '@/components/Layout/DashboardHeader.vue'
+import Sidebar from '@/components/layout/SideBar.vue'
+import DashboardHeader from '@/components/layout/DashboardHeader.vue'
 import { RouterView } from 'vue-router'
 
 </script>
