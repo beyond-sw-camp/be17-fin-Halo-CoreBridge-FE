@@ -20,6 +20,11 @@ const router = createRouter({
       component: () => import('@/views/auth/LoginView.vue'),
     },
     {
+      path: '/password-reset',
+      name: 'password-reset',
+      component: () => import('@/views/auth/PasswordFindView.vue'),
+    },
+    {
       path: '/recruiter',
       name: 'main',
       component: () => import('@/views/layout/DashboardLayout.vue'),
