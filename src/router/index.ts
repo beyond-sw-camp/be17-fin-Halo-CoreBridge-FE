@@ -17,17 +17,17 @@ const router = createRouter({
     {
       path: '/recruiter',
       name: 'main',
-      component: () => import('@/views/Layout/DashboardLayout.vue'),
+      component: () => import('@/views/layout/DashboardLayout.vue'),
       children: [
         {
           path: '',
           name: 'recruiter-dashboard',
-          component: () => import('@/views/recruiter/RecruiterDashboardView.vue'),
+          component: () => import('@/views/recruiter/dashboard/RecruiterDashboardView.vue'),
         },
         {
           path: 'jobs',
           name: 'recruiter-job-layout',
-          component: () => import('@/views/recruiter/RecruiterJobLayout.vue'),
+          component: () => import('@/views/layout/RecruiterJobLayout.vue'),
           children: [],
         },
       ],
@@ -35,7 +35,7 @@ const router = createRouter({
     {
       path: '/admin',
       name: 'admin',
-      component: () => import('@/views/Layout/DashboardLayout.vue'),
+      component: () => import('@/views/layout/DashboardLayout.vue'),
       children: [
         {
           path: '',
@@ -47,18 +47,18 @@ const router = createRouter({
     {
       path: '/job-postings/create',
       name: 'jobPostingCreate',
-      component: () => import('@/views/JobPosting/JobPostingCreate.vue'),
+      component: () => import('@/views/job-posting/JobPostingCreate.vue'),
     },
     {
       path: '/job-postings/:id',
       name: 'jobPostingDetail',
-      component: () => import('@/views/JobPosting/JobPostingDetail.vue'),
+      component: () => import('@/views/job-posting/JobPostingDetail.vue'),
       props: true,
     },
     {
       path: '/resume',
       name: 'resumelayout',
-      component: () => import('@/views/Layout/ResumeTopLayout.vue'),
+      component: () => import('@/views/layout/ResumeTopLayout.vue'),
       children: [
         {
           path: '',
