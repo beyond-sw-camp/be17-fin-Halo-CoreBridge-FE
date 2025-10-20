@@ -31,7 +31,7 @@ const router = createRouter({
         },
         {
           path: 'schedules',
-          name: 'recruitment',
+          name: 'recruiter-schedules',
           component: () => import('@/views/schedules/recruitment/RecruitmentSchedule.vue'),
         },
         {
