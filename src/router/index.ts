@@ -66,6 +66,24 @@ const router = createRouter({
           component: () => import('@/views/resume/ResumeView.vue'),
         },
       ],
+
+     },
+    {
+      path: '/applicantlist',
+      name: 'applicantlist',
+      component: () => import('@/views/ApplicantList/ApplicantListView.vue')
+    },
+    {
+      path: '/applicnatdetail',
+      name: 'applicantdetail',
+      component: () => import('@/views/applicantdetail/ApplicantDetailView.vue'),
+      children: [
+        {
+          path: '',
+          name: 'applicantdetailside',
+          component: () => import('@/components/Applicant/ApplicantSidebar.vue'),
+        },
+      ]
     },
   ],
 })
