@@ -1,4 +1,4 @@
-import api from '@/plugins/axiosInterceptor'
+import api from '@/plugins/AxiosInterceptor'
 
 /**
  * 이메일 인증 코드 전송 api

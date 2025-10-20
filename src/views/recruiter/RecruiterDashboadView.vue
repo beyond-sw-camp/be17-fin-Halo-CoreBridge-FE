@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import StatCard from '@/components/RecruiterDashboard/StatCard.vue';
-import ApplicantCard from '@/components/RecruiterDashboard/ApplicantCard.vue';
-import InterviewCard from '@/components/RecruiterDashboard/InterviewCard.vue';
-import JobPostingRow from '@/components/RecruiterDashboard/JobPostingRow.vue';
+import StatCard from '@/components/recruiter-dashboard/StatCard.vue';
+import ApplicantCard from '@/components/recruiter-dashboard/ApplicantCard.vue';
+import InterviewCard from '@/components/recruiter-dashboard/InterviewCard.vue';
+import JobPostingRow from '@/components/recruiter-dashboard/JobPostingRow.vue';
 
 // Types
 interface Stat {
