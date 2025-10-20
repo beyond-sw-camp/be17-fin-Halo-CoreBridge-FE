@@ -260,7 +260,7 @@ onMounted(() => {
     />
 
     <!-- Center Content -->
-    <div class="flex-1 flex flex-col">
+    <div class="flex-1 flex flex-col min-w-0">
       <!-- Top Header -->
       <div class="bg-white border-b border-gray-200 px-6 py-3">
         <div class="flex items-center gap-2 text-sm">
@@ -271,10 +271,10 @@ onMounted(() => {
       </div>
 
       <!-- Content Area with Right Sidebar -->
-      <div class="flex flex-1 overflow-hidden">
+      <div class="flex flex-1 overflow-hidden min-w-0">
         <!-- Main Content -->
-        <div class="flex-1 overflow-y-auto p-6">
-          <div class="max-w-4xl">
+        <div class="flex-1 overflow-y-auto overflow-x-auto p-6 min-w-0">
+          <div class="max-w-4xl min-w-[600px]">
             <!-- Tabs -->
             <div class="mb-6 border-b border-gray-200">
               <div class="flex gap-8">
@@ -448,7 +448,7 @@ onMounted(() => {
         </div>
 
         <!-- Right Timeline -->
-        <div class="w-96 bg-white border-l border-gray-200 overflow-y-auto">
+        <div class="w-96 bg-white border-l border-gray-200 overflow-y-auto hidden lg:block flex-shrink-0">
           <div class="p-6">
             <div class="flex items-center justify-between mb-6">
               <h3 class="text-lg font-semibold text-slate-600">활동 내역</h3>
