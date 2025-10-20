@@ -22,13 +22,14 @@ const router = createRouter({
         {
           path: '',
           name: 'recruiter-dashboard',
-          component: () => import('@/views/recruiter/RecruiterDashboadView.vue'),
+          component: () => import('@/views/recruiter/RecruiterDashboardView.vue'),
         },
         {
           path: 'jobs',
-          name: 'recruiter-jobs',
-          component: () => import('@/views/JobPosting/JobPostingList.vue')
-        }
+          name: 'recruiter-job-layout',
+          component: () => import('@/views/recruiter/RecruiterJobLayout.vue'),
+          children: [],
+        },
       ],
     },
     {
@@ -65,7 +66,7 @@ const router = createRouter({
           component: () => import('@/views/resume/ResumeView.vue'),
         },
       ],
-     },
+    },
   ],
 })
 
