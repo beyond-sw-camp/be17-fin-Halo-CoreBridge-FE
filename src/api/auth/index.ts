@@ -1,6 +1,9 @@
 import api from '@/plugins/AxiosInterceptor'
 import type { EmailForm } from '@/types/user/Email'
 import type { PasswordChange } from '@/types/user/UserUpdateForm'
+import { useLoadingStore } from '@/store/useLoadingStore'
+
+const loadingStore = useLoadingStore()
 
 /**
  * 이메일 인증 코드 전송 api
@@ -8,6 +11,8 @@ import type { PasswordChange } from '@/types/user/UserUpdateForm'
  * @returns
  */
 const sendAuthCodeToEmail = async (req: { email: string }): Promise<ApiResponse> => {
+  loadingStore.startLoading()
+
   let data: ApiResponse = {
     success: false,
     code: 0,
@@ -28,6 +33,7 @@ const sendAuthCodeToEmail = async (req: { email: string }): Promise<ApiResponse>
       data = error.response.data as ApiResponse
     })
 
+  loadingStore.stopLoading()
   return data
 }
 
@@ -58,6 +64,8 @@ const verifyEmailCode = async (req: { email: string; code: string }): Promise<Ap
 }
 
 const sendPasswordResetLink = async (req: EmailForm): Promise<ApiResponse> => {
+  loadingStore.startLoading()
+
   let data: ApiResponse = {
     success: false,
     code: 0,
@@ -76,6 +84,7 @@ const sendPasswordResetLink = async (req: EmailForm): Promise<ApiResponse> => {
       data = error.response.data as ApiResponse
     })
 
+  loadingStore.stopLoading()
   return data
 }
 
