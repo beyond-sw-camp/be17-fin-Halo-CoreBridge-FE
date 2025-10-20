@@ -15,6 +15,11 @@ const router = createRouter({
       component: () => import('@/views/auth/SignupView.vue'),
     },
     {
+      path: '/login',
+      name: 'login',
+      component: () => import('@/views/auth/LoginView.vue'),
+    },
+    {
       path: '/recruiter',
       name: 'main',
       component: () => import('@/views/layout/DashboardLayout.vue'),
@@ -66,12 +71,11 @@ const router = createRouter({
           component: () => import('@/views/resume/ResumeView.vue'),
         },
       ],
-
-     },
+    },
     {
       path: '/applicantlist',
       name: 'applicantlist',
-      component: () => import('@/views/ApplicantList/ApplicantListView.vue')
+      component: () => import('@/views/ApplicantList/ApplicantListView.vue'),
     },
     {
       path: '/applicantdetail',
@@ -83,7 +87,7 @@ const router = createRouter({
           name: 'applicantdetailside',
           component: () => import('@/components/Applicant/ApplicantSidebar.vue'),
         },
-      ]
+      ],
     },
   ],
 })
