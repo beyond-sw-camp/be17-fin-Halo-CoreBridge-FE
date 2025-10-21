@@ -1,253 +1,6 @@
-<template>
-    <div class="bg-gray-50 min-h-screen">
-
-        <!-- Main Content -->
-        <main class=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Page Header -->
-            <div class="mb-8">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h2 class="text-3xl font-bold text-slate-600 mb-2">채용 공고</h2>
-                        <p class="text-gray-600">진행 중인 채용 공고를 관리하세요</p>
-                    </div>
-                    <button @click="openJobForm"
-                        class="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition font-medium hover:cursor-pointer">
-                        + 새 채용 공고
-                    </button>
-                </div>
-            </div>
-
-            <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-gray-600 text-sm font-medium">전체 공고</span>
-                        <span class="text-2xl">📋</span>
-                    </div>
-                    <div class="text-3xl font-bold text-slate-600">{{ stats.total }}</div>
-                </div>
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-gray-600 text-sm font-medium">모집 중</span>
-                        <span class="text-2xl">✅</span>
-                    </div>
-                    <div class="text-3xl font-bold text-green-600">{{ stats.active }}</div>
-                </div>
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-gray-600 text-sm font-medium">전체 지원자</span>
-                        <span class="text-2xl">👥</span>
-                    </div>
-                    <div class="text-3xl font-bold text-blue-600">{{ stats.totalApplicants }}</div>
-                </div>
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-gray-600 text-sm font-medium">최종 합격</span>
-                        <span class="text-2xl">🎉</span>
-                    </div>
-                    <div class="text-3xl font-bold text-purple-600">{{ stats.hired }}</div>
-                </div>
-            </div>
-
-            <!-- Job Listings Table -->
-            <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6 flex flex-row">
-                <!-- Search Bar -->
-                <div class="flex-1 mr-4">
-                    <div class="relative">
-                        <input v-model="searchQuery" type="text" placeholder="공고명, 포지션, 부서, 키워드로 검색..."
-                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                            @input="handleSearch">
-                        <Search class="w-5 h-5 text-gray-400 absolute left-3 top-4" />
-                    </div>
-                </div>
-
-                <!-- Filter Row -->
-                <div class="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
-                    <!-- Status Filter -->
-                    <div class="flex-1">
-                        <select v-model="selectedStatus" @change="handleFilterChange"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900">
-                            <option value="">전체 상태</option>
-                            <option value="recruiting">모집 중</option>
-                            <option value="paused">모집 중단</option>
-                            <option value="closed">모집 마감</option>
-                            <option value="draft">임시저장</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-6">
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-xl font-bold text-slate-600 mb-4">진행중인 채용 공고</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="border-b-2 border-gray-200">
-                                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">공고명</th>
-                                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">부서</th>
-                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">상태</th>
-                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">마감일</th>
-                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">지원자</th>
-                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">진행률</th>
-                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">단계별 현황</th>
-                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">액션</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="job in activeJobs" :key="job.id"
-                                    class="border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer"
-                                    @click="viewJobDetail(job.id)">
-                                    <!-- 공고명 -->
-                                    <td class="py-3 px-4">
-                                        <div class="flex items-center gap-2">
-                                            <Share2 v-if="job.sharedWith && job.sharedWith.length > 0"
-                                                class="w-4 h-4 text-blue-600 flex-shrink-0"
-                                                :title="`${job.sharedWith.length}명과 공유중`" />
-                                            <div class="min-w-0">
-                                                <p class="font-semibold text-gray-900 truncate">{{ job.title }}</p>
-                                                <p class="text-xs text-gray-500">{{ job.experience }} · {{ job.type }}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <!-- 부서 -->
-                                    <td class="py-3 px-4">
-                                        <div class="flex items-center gap-1 text-sm text-gray-600">
-                                            <Briefcase class="w-3 h-3" />
-                                            {{ job.department }}
-                                        </div>
-                                    </td>
-
-                                    <!-- 상태 -->
-                                    <td class="py-3 px-4 text-center">
-                                        <span :class="[
-                                            'inline-block px-2 py-1 text-xs font-semibold rounded',
-                                            getStatusClass(job.status)
-                                        ]">
-                                            {{ getStatusLabel(job.status) }}
-                                        </span>
-                                    </td>
-
-                                    <!-- 마감일 -->
-                                    <td class="py-3 px-4 text-center">
-                                        <div class="text-sm">
-                                            <p class="font-medium">{{ job.deadline }}</p>
-                                            <p
-                                                :class="['text-xs', job.daysLeft <= 3 ? 'text-red-600 font-bold' : 'text-gray-500']">
-                                                D-{{ job.daysLeft }}
-                                            </p>
-                                        </div>
-                                    </td>
-
-                                    <!-- 지원자 -->
-                                    <td class="py-3 px-4 text-center">
-                                        <div
-                                            class="flex items-center justify-center gap-1 text-sm font-medium text-gray-900">
-                                            <Users class="w-4 h-4 text-gray-500" />
-                                            {{ job.applicants }}명
-                                        </div>
-                                    </td>
-
-                                    <!-- 진행률 -->
-                                    <td class="py-3 px-4">
-                                        <div class="flex items-center gap-2">
-                                            <div class="flex-1 bg-gray-200 rounded-full h-2">
-                                                <div :class="['h-2 rounded-full', getProgressColor(job.progress)]"
-                                                    :style="{ width: job.progress + '%' }"></div>
-                                            </div>
-                                            <span class="text-xs font-semibold text-gray-600 w-10 text-right">{{
-                                                job.progress }}%</span>
-                                        </div>
-                                    </td>
-
-                                    <!-- 단계별 현황 -->
-                                    <td class="py-3 px-4">
-                                        <div class="flex items-center justify-center gap-2 text-xs">
-                                            <div class="text-center">
-                                                <p class="text-gray-500">서류</p>
-                                                <p class="font-bold text-gray-700">{{ job.screening }}</p>
-                                            </div>
-                                            <span class="text-gray-300">→</span>
-                                            <div class="text-center">
-                                                <p class="text-gray-500">1차</p>
-                                                <p class="font-bold text-gray-700">{{ job.interview1 }}</p>
-                                            </div>
-                                            <span class="text-gray-300">→</span>
-                                            <div class="text-center">
-                                                <p class="text-gray-500">2차</p>
-                                                <p class="font-bold text-gray-700">{{ job.interview2 }}</p>
-                                            </div>
-                                            <span class="text-gray-300">→</span>
-                                            <div class="text-center">
-                                                <p class="text-gray-500">최종</p>
-                                                <p class="font-bold text-gray-700">{{ job.final }}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <!-- 액션 -->
-                                    <td class="py-3 px-4">
-                                        <div class="flex items-center justify-center gap-1">
-                                            <button @click.stop="editJob(job.id)"
-                                                class="p-1.5 text-slate-600 hover:bg-slate-100 rounded transition"
-                                                title="수정">
-                                                <Edit class="w-4 h-4" />
-                                            </button>
-                                            <button @click.stop="shareJob(job.id)"
-                                                class="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition"
-                                                title="공유">
-                                                <Share2 class="w-4 h-4" />
-                                            </button>
-                                            <button @click.stop="viewApplicants(job.id)"
-                                                class="p-1.5 text-green-600 hover:bg-green-100 rounded transition"
-                                                title="지원자 보기">
-                                                <Users class="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pagination -->
-            <div class="mt-6 flex items-center justify-between">
-                <div class="text-sm text-gray-600">
-                    총 {{ totalJobs }}개 중 {{ paginationStart }}-{{ paginationEnd }}개 표시
-                </div>
-                <div class="flex gap-2">
-                    <button @click="previousPage" :disabled="currentPage === 1"
-                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                        이전
-                    </button>
-                    <button v-for="page in totalPages" :key="page" @click="goToPage(page)" :class="[
-                        'px-4 py-2 rounded-lg text-sm font-medium',
-                        currentPage === page
-                            ? 'bg-slate-600 text-white'
-                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                    ]">
-                        {{ page }}
-                    </button>
-                    <button @click="nextPage" :disabled="currentPage === totalPages"
-                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                        다음
-                    </button>
-                </div>
-            </div>
-
-
-        </main>
-    </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
-
+import { useRouter, useRoute } from 'vue-router'
 
 type JobStatus = 'recruiting' | 'screening' | 'interviewing' | 'closed' | 'paused'
 import {
@@ -283,6 +36,7 @@ interface Stats {
 }
 // Router
 const router = useRouter()
+const route = useRoute()
 
 // State
 const searchQuery = ref('')
@@ -585,7 +339,7 @@ const goToDetail = (jobId: number) => {
     console.log('Go to job detail:', jobId)
     // 실제로는 router.push를 사용
     // router.push(`/jobs/${jobId}`)
-    router.push({ name: 'recruiter-job-detail', params: { id: jobId } })
+    router.push({ name: 'recruiter-job-layout', params: { id: jobId } })
 }
 
 const openJobForm = () => {
@@ -648,7 +402,7 @@ const getProgressColor = (progress: number) => {
 
 
 const viewJobDetail = (jobId: number) => {
-    alert(`공고 ID ${jobId}의 상세 정보를 볼 수 있습니다.`)
+    router.push({ name: 'recruiter-job-detail', params: { id: jobId } })
 }
 
 const editJob = (jobId: number) => {
@@ -782,7 +536,251 @@ watch(quickFilters, (newFilters) => {
     emit('quick-filter', newFilters)
 }, { deep: true })
 </script>
+<template>
+    <div class="bg-gray-50 min-h-screen">
 
+        <!-- Main Content -->
+        <main class=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-600 mb-2">채용 공고</h2>
+                        <p class="text-gray-600">진행 중인 채용 공고를 관리하세요</p>
+                    </div>
+                    <button @click="openJobForm"
+                        class="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition font-medium hover:cursor-pointer">
+                        + 새 채용 공고
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-gray-600 text-sm font-medium">전체 공고</span>
+                        <span class="text-2xl">📋</span>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-600">{{ stats.total }}</div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-gray-600 text-sm font-medium">모집 중</span>
+                        <span class="text-2xl">✅</span>
+                    </div>
+                    <div class="text-3xl font-bold text-green-600">{{ stats.active }}</div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-gray-600 text-sm font-medium">전체 지원자</span>
+                        <span class="text-2xl">👥</span>
+                    </div>
+                    <div class="text-3xl font-bold text-blue-600">{{ stats.totalApplicants }}</div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-gray-600 text-sm font-medium">최종 합격</span>
+                        <span class="text-2xl">🎉</span>
+                    </div>
+                    <div class="text-3xl font-bold text-purple-600">{{ stats.hired }}</div>
+                </div>
+            </div>
+
+            <!-- Job Listings Table -->
+            <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6 flex flex-row">
+                <!-- Search Bar -->
+                <div class="flex-1 mr-4">
+                    <div class="relative">
+                        <input v-model="searchQuery" type="text" placeholder="공고명, 포지션, 부서, 키워드로 검색..."
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                            @input="handleSearch">
+                        <Search class="w-5 h-5 text-gray-400 absolute left-3 top-4" />
+                    </div>
+                </div>
+
+                <!-- Filter Row -->
+                <div class="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
+                    <!-- Status Filter -->
+                    <div class="flex-1">
+                        <select v-model="selectedStatus" @change="handleFilterChange"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900">
+                            <option value="">전체 상태</option>
+                            <option value="recruiting">모집 중</option>
+                            <option value="paused">모집 중단</option>
+                            <option value="closed">모집 마감</option>
+                            <option value="draft">임시저장</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-xl font-bold text-slate-600 mb-4">진행중인 채용 공고</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b-2 border-gray-200">
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">공고명</th>
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">부서</th>
+                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">상태</th>
+                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">마감일</th>
+                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">지원자</th>
+                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">진행률</th>
+                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">단계별 현황</th>
+                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">액션</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="job in activeJobs" :key="job.id"
+                                    class="border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer"
+                                    @click="viewJobDetail(job.id)">
+                                    <!-- 공고명 -->
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center gap-2">
+                                            <Share2 v-if="job.sharedWith && job.sharedWith.length > 0"
+                                                class="w-4 h-4 text-blue-600 flex-shrink-0"
+                                                :title="`${job.sharedWith.length}명과 공유중`" />
+                                            <div class="min-w-0">
+                                                <p class="font-semibold text-gray-900 truncate">{{ job.title }}</p>
+                                                <p class="text-xs text-gray-500">{{ job.experience }} · {{ job.type }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- 부서 -->
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center gap-1 text-sm text-gray-600">
+                                            <Briefcase class="w-3 h-3" />
+                                            {{ job.department }}
+                                        </div>
+                                    </td>
+
+                                    <!-- 상태 -->
+                                    <td class="py-3 px-4 text-center">
+                                        <span :class="[
+                                            'inline-block px-2 py-1 text-xs font-semibold rounded',
+                                            getStatusClass(job.status)
+                                        ]">
+                                            {{ getStatusLabel(job.status) }}
+                                        </span>
+                                    </td>
+
+                                    <!-- 마감일 -->
+                                    <td class="py-3 px-4 text-center">
+                                        <div class="text-sm">
+                                            <p class="font-medium">{{ job.deadline }}</p>
+                                            <p
+                                                :class="['text-xs', job.daysLeft <= 3 ? 'text-red-600 font-bold' : 'text-gray-500']">
+                                                D-{{ job.daysLeft }}
+                                            </p>
+                                        </div>
+                                    </td>
+
+                                    <!-- 지원자 -->
+                                    <td class="py-3 px-4 text-center">
+                                        <div
+                                            class="flex items-center justify-center gap-1 text-sm font-medium text-gray-900">
+                                            <Users class="w-4 h-4 text-gray-500" />
+                                            {{ job.applicants }}명
+                                        </div>
+                                    </td>
+
+                                    <!-- 진행률 -->
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                                <div :class="['h-2 rounded-full', getProgressColor(job.progress)]"
+                                                    :style="{ width: job.progress + '%' }"></div>
+                                            </div>
+                                            <span class="text-xs font-semibold text-gray-600 w-10 text-right">{{
+                                                job.progress }}%</span>
+                                        </div>
+                                    </td>
+
+                                    <!-- 단계별 현황 -->
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center justify-center gap-2 text-xs">
+                                            <div class="text-center">
+                                                <p class="text-gray-500">서류</p>
+                                                <p class="font-bold text-gray-700">{{ job.screening }}</p>
+                                            </div>
+                                            <span class="text-gray-300">→</span>
+                                            <div class="text-center">
+                                                <p class="text-gray-500">1차</p>
+                                                <p class="font-bold text-gray-700">{{ job.interview1 }}</p>
+                                            </div>
+                                            <span class="text-gray-300">→</span>
+                                            <div class="text-center">
+                                                <p class="text-gray-500">2차</p>
+                                                <p class="font-bold text-gray-700">{{ job.interview2 }}</p>
+                                            </div>
+                                            <span class="text-gray-300">→</span>
+                                            <div class="text-center">
+                                                <p class="text-gray-500">최종</p>
+                                                <p class="font-bold text-gray-700">{{ job.final }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- 액션 -->
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center justify-center gap-1">
+                                            <button @click.stop="editJob(job.id)"
+                                                class="p-1.5 text-slate-600 hover:bg-slate-100 rounded transition"
+                                                title="수정">
+                                                <Edit class="w-4 h-4" />
+                                            </button>
+                                            <button @click.stop="shareJob(job.id)"
+                                                class="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition"
+                                                title="공유">
+                                                <Share2 class="w-4 h-4" />
+                                            </button>
+                                            <button @click.stop="viewApplicants(job.id)"
+                                                class="p-1.5 text-green-600 hover:bg-green-100 rounded transition"
+                                                title="지원자 보기">
+                                                <Users class="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="mt-6 flex items-center justify-between">
+                <div class="text-sm text-gray-600">
+                    총 {{ totalJobs }}개 중 {{ paginationStart }}-{{ paginationEnd }}개 표시
+                </div>
+                <div class="flex gap-2">
+                    <button @click="previousPage" :disabled="currentPage === 1"
+                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        이전
+                    </button>
+                    <button v-for="page in totalPages" :key="page" @click="goToPage(page)" :class="[
+                        'px-4 py-2 rounded-lg text-sm font-medium',
+                        currentPage === page
+                            ? 'bg-slate-600 text-white'
+                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    ]">
+                        {{ page }}
+                    </button>
+                    <button @click="nextPage" :disabled="currentPage === totalPages"
+                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        다음
+                    </button>
+                </div>
+            </div>
+
+
+        </main>
+    </div>
+</template>
 <style scoped>
 /* Additional custom styles if needed */
 </style>

@@ -1,7 +1,7 @@
 <template>
     <div class="bg-gray-50 min-h-screen">
         <!-- Main Content -->
-        <main class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main>
 
             <!-- Kanban Board -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

@@ -1,7 +1,7 @@
 <template>
     <div class="bg-gray-50 min-h-screen">
         <!-- Main Content -->
-        <main class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main>
 
             <!-- Applicant List Content (when applicants-list tab is active) -->
             <div v-if="activeTab === 'applicants-list'" class="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -357,12 +357,12 @@ const addStep = () => {
 };
 
 const startEdit = (index: number) => {
-  const step = recruitmentProcess.value[index];
-  if (!step) return; // step이 undefined일 경우 그냥 함수 종료
+    const step = recruitmentProcess.value[index];
+    if (!step) return; // step이 undefined일 경우 그냥 함수 종료
 
-  editingIndex.value = index;
-  editingName.value = step.name;
-  editingColor.value = step.color;
+    editingIndex.value = index;
+    editingName.value = step.name;
+    editingColor.value = step.color;
 };
 
 const saveEdit = (index: number) => {
@@ -391,10 +391,10 @@ const removeStep = (index: number) => {
 };
 
 const moveStep = (fromIndex: number, toIndex: number) => {
-  const item = recruitmentProcess.value.splice(fromIndex, 1)[0];
-  if (!item) return; // ✅ 없으면 함수 종료 (undefined 방어)
+    const item = recruitmentProcess.value.splice(fromIndex, 1)[0];
+    if (!item) return; // ✅ 없으면 함수 종료 (undefined 방어)
 
-  recruitmentProcess.value.splice(toIndex, 0, item);
+    recruitmentProcess.value.splice(toIndex, 0, item);
 };
 
 const resetToDefault = () => {

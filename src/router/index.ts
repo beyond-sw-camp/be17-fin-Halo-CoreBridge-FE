@@ -25,40 +25,40 @@ const router = createRouter({
           component: () => import('@/views/recruiter/dashboard/RecruiterDashboardView.vue'),
         },
         {
-          path: 'all-job-posting',
-          name: 'recruiter-all-job-posting',
-          component: () => import('@/views/recruiter/Job/AllJobPostingListView.vue')
+          path: 'jobs',
+          name: 'recruiter-jobs',
+          component: () => import('@/views/recruiter/job/AllJobPostingListView.vue'),
         },
         {
-          path: 'jobs',
-          name: 'recruiter-job-layout',
+          path: 'jobs/:id',
+          name: 'recrutier-job-layout',
           component: () => import('@/views/layout/RecruiterJobLayout.vue'),
           children: [
             {
-              path: 'info',
-              name: 'recruiter-job-info',
-              component: () => import('@/views/recruiter/Job/JobInfoView.vue')
+              path: '',
+              name: 'recruiter-job-detail',
+              component: () => import('@/views/recruiter/job/JobInfoView.vue'),
             },
             {
-              path: 'job-applicant-kanban',
-              name: 'recruiter-job-kanban',
-              component: () => import('@/views/recruiter/Job/JobApplicantKanban.vue')
+              path: 'manage',
+              name: 'recruiter-job-manage',
+              component: () => import('@/views/recruiter/job/JobApplicantManageView.vue'),
             },
             {
-              path: 'job-applicant-list',
+              path: 'applicants',
               name: 'recruiter-job-list',
-              component: () => import('@/views/recruiter/Job/JobApplicantListView.vue')
+              component: () => import('@/views/recruiter/job/JobApplicantListView.vue'),
             },
             {
-              path: 'job-schedule',
+              path: 'schedule',
               name: 'recruiter-job-schedule',
-              component: () => import('@/views/recruiter/Job/JobScheduleView.vue')
+              component: () => import('@/views/recruiter/job/JobScheduleView.vue'),
             },
             {
-              path: 'job-process-edit',
+              path: 'process',
               name: 'recruiter-job-processEdit',
-              component: () => import('@/views/recruiter/Job/JobProcessEditView.vue')
-            }
+              component: () => import('@/views/recruiter/job/JobProcessEditView.vue'),
+            },
           ],
         },
       ],
@@ -74,15 +74,13 @@ const router = createRouter({
     {
       path: '/job-posting/detail-list',
       name: 'jobPostingDetailList',
-      component: () => import('@/views/job-posting/JobDetailForApplicant.vue')
+      component: () => import('@/views/job-posting/JobDetailForApplicant.vue'),
     },
     {
       path: '/job-posting/qwer',
       name: 'aaa',
-      component: () => import('@/views/recruiter/Job/JobScheduleView.vue')
+      component: () => import('@/views/recruiter/job/JobScheduleView.vue'),
     },
-
-
     {
       path: '/admin',
       name: 'admin',
@@ -95,7 +93,6 @@ const router = createRouter({
         },
       ],
     },
-
     {
       path: '/resume',
       name: 'resumelayout',
@@ -107,12 +104,11 @@ const router = createRouter({
           component: () => import('@/views/resume/ResumeView.vue'),
         },
       ],
-
     },
     {
       path: '/applicantlist',
       name: 'applicantlist',
-      component: () => import('@/views/ApplicantList/ApplicantListView.vue')
+      component: () => import('@/views/ApplicantList/ApplicantListView.vue'),
     },
     {
       path: '/applicnatdetail',
@@ -124,7 +120,7 @@ const router = createRouter({
           name: 'applicantdetailside',
           component: () => import('@/components/Applicant/ApplicantSidebar.vue'),
         },
-      ]
+      ],
     },
   ],
 })
