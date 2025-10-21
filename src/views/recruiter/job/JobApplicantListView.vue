@@ -1,7 +1,7 @@
 <template>
     <div class="bg-gray-50 min-h-screen">
         <!-- Main Content -->
-        <main class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main>
             <!-- Applicant List Content (when applicants-list tab is active) -->
             <div>
                 <!-- Stats Cards -->

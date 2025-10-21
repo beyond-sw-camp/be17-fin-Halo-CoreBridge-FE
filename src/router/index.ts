@@ -15,6 +15,29 @@ const router = createRouter({
       component: () => import('@/views/auth/SignupView.vue'),
     },
     {
+      path: '/login',
+      name: 'login',
+      component: () => import('@/views/auth/LoginView.vue'),
+    },
+    {
+      path: '/password-reset',
+      name: 'password-reset',
+      component: () => import('@/views/auth/PasswordFindView.vue'),
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: () => import('@/views/auth/PasswordResetView.vue'),
+      meta: {
+        requiresToken: true,
+      },
+    },
+    {
+      path: '/email-find',
+      name: 'email-find',
+      component: () => import('@/views/auth/EmailFindView.vue'),
+    },
+    {
       path: '/recruiter',
       name: 'main',
       component: () => import('@/views/layout/DashboardLayout.vue'),
@@ -25,40 +48,45 @@ const router = createRouter({
           component: () => import('@/views/recruiter/dashboard/RecruiterDashboardView.vue'),
         },
         {
-          path: 'all-job-posting',
-          name: 'recruiter-all-job-posting',
-          component: () => import('@/views/recruiter/Job/AllJobPostingListView.vue')
+          path: 'schedules',
+          name: 'recruiter-schedules',
+          component: () => import('@/views/schedules/recruitment/RecruitmentSchedule.vue'),
         },
         {
           path: 'jobs',
-          name: 'recruiter-job-layout',
+          name: 'recruiter-jobs',
+          component: () => import('@/views/recruiter/job/AllJobPostingListView.vue'),
+        },
+        {
+          path: 'jobs/:id',
+          name: 'recrutier-job-layout',
           component: () => import('@/views/layout/RecruiterJobLayout.vue'),
           children: [
             {
-              path: 'info',
-              name: 'recruiter-job-info',
-              component: () => import('@/views/recruiter/Job/JobInfoView.vue')
+              path: '',
+              name: 'recruiter-job-detail',
+              component: () => import('@/views/recruiter/job/JobInfoView.vue'),
             },
             {
-              path: 'job-applicant-kanban',
-              name: 'recruiter-job-kanban',
-              component: () => import('@/views/recruiter/Job/JobApplicantKanban.vue')
+              path: 'manage',
+              name: 'recruiter-job-manage',
+              component: () => import('@/views/recruiter/job/JobApplicantManageView.vue'),
             },
             {
-              path: 'job-applicant-list',
+              path: 'applicants',
               name: 'recruiter-job-list',
-              component: () => import('@/views/recruiter/Job/JobApplicantListView.vue')
+              component: () => import('@/views/recruiter/job/JobApplicantListView.vue'),
             },
             {
-              path: 'job-schedule',
+              path: 'schedule',
               name: 'recruiter-job-schedule',
-              component: () => import('@/views/recruiter/Job/JobScheduleView.vue')
+              component: () => import('@/views/recruiter/job/JobScheduleView.vue'),
             },
             {
-              path: 'job-process-edit',
+              path: 'process',
               name: 'recruiter-job-processEdit',
-              component: () => import('@/views/recruiter/Job/JobProcessEditView.vue')
-            }
+              component: () => import('@/views/recruiter/job/JobProcessEditView.vue'),
+            },
           ],
         },
       ],
@@ -74,15 +102,13 @@ const router = createRouter({
     {
       path: '/job-posting/detail-list',
       name: 'jobPostingDetailList',
-      component: () => import('@/views/job-posting/JobDetailForApplicant.vue')
+      component: () => import('@/views/job-posting/JobDetailForApplicant.vue'),
     },
     {
       path: '/job-posting/qwer',
       name: 'aaa',
-      component: () => import('@/views/recruiter/Job/JobScheduleView.vue')
+      component: () => import('@/views/recruiter/job/JobScheduleView.vue'),
     },
-
-
     {
       path: '/admin',
       name: 'admin',
@@ -95,7 +121,6 @@ const router = createRouter({
         },
       ],
     },
-
     {
       path: '/resume',
       name: 'resumelayout',
@@ -107,15 +132,14 @@ const router = createRouter({
           component: () => import('@/views/resume/ResumeView.vue'),
         },
       ],
-
     },
     {
       path: '/applicantlist',
       name: 'applicantlist',
-      component: () => import('@/views/ApplicantList/ApplicantListView.vue')
+      component: () => import('@/views/ApplicantList/ApplicantListView.vue'),
     },
     {
-      path: '/applicnatdetail',
+      path: '/applicantdetail',
       name: 'applicantdetail',
       component: () => import('@/views/applicantdetail/ApplicantDetailView.vue'),
       children: [
@@ -124,9 +148,23 @@ const router = createRouter({
           name: 'applicantdetailside',
           component: () => import('@/components/Applicant/ApplicantSidebar.vue'),
         },
-      ]
+      ],
     },
   ],
+})
+
+router.beforeEach((to, from, next) => {
+  const requiresToken = to.matched.some((record) => record.meta.requiresToken)
+
+  // 비밀번호 재설정 페이지에서는 토큰이 필요
+  if (requiresToken) {
+    const token = to.query.token
+    if (!token) {
+      next('/login')
+    }
+  }
+
+  next()
 })
 
 export default router

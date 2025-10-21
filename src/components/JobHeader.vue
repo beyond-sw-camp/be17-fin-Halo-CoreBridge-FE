@@ -84,51 +84,54 @@
         <!-- 탭 네비게이션 -->
         <div class="border-b border-gray-200">
             <nav class="flex gap-8">
-                <button
-                    v-for="tab in tabs"
-                    :key="tab.id"
-                    @click="$emit('update:activeTab', tab.id)"
-                    :class="[
-                        'pb-4 px-1 border-b-2 font-medium transition-colors',
-                        activeTab === tab.id
-                            ? 'border-slate-600 text-slate-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    ]"
-                >
+                <RouterLink :to="tab.path" v-for="tab in tabs" :key="tab.id" :class="['pb-4 px-1 border-b-2 font-medium transition-colors',
+                    isActive(tab) ? 'border-slate-600 text-slate-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ]">
                     {{ tab.name }}
-                </button>
+                </RouterLink>
             </nav>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
+import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { Building2, MapPin, Briefcase, DollarSign } from 'lucide-vue-next'
 
-interface TabItem {
-  id: string
-  name: string
-}
+const route = useRoute()
 
 interface JobPosting {
-  title: string
-  status: string
-  department: string
-  employmentType: string
-  location: string
-  experience: string
-  position: string
-  techStack: string[]
-  salary: string
-  salaryNegotiable: string
+    title: string
+    status: string
+    department: string
+    employmentType: string
+    location: string
+    experience: string
+    position: string
+    techStack: string[]
+    salary: string
+    salaryNegotiable: string
 }
 
-const props = defineProps<{
-  jobPosting: JobPosting
-  tabs: TabItem[]
-  activeTab: string
-}>()
+const jobPosting = ref({
+    title: '시니어 프론트엔드 개발자',
+    status: '채용중',
+    department: '개발팀',
+    employmentType: '정규직',
+    location: '서울시 강남구 테헤란로 123',
+    experience: '5년 이상',
+    position: '대리',
+    techStack: ['Vue.js', 'TypeScript', 'TailwindCSS', 'Pinia'],
+    salary: '6,000만~8,000만',
+    salaryNegotiable: '면접 후 결정',
+})
+
+// const props = defineProps<{
+//     jobPosting: JobPosting
+//     // tabs: TabItem[]
+//     activeTab: string
+// }>()
 
 const emit = defineEmits(['edit', 'pause', 'delete', 'update:activeTab'])
 
@@ -137,8 +140,38 @@ const handlePauseClick = () => emit('pause')
 const handleDeleteClick = () => emit('delete')
 
 const getStatusClass = (status: string) => {
-  if (status === '채용중') return 'bg-green-100 text-green-700'
-  if (status === '마감') return 'bg-gray-200 text-gray-600'
-  return 'bg-gray-100 text-gray-700'
+    if (status === '채용중') return 'bg-green-100 text-green-700'
+    if (status === '마감') return 'bg-gray-200 text-gray-600'
+    return 'bg-gray-100 text-gray-700'
 }
+
+interface tab {
+    id: number
+    path: string
+    name: string
+}
+
+const url = '/recruiter/jobs/'
+
+// ✅ 탭 리스트 (라우터 경로와 정확히 일치시켜야 함)
+const tabs = ref([
+    { id: 1, path: url + route.params.id, name: '공고 정보' },
+    { id: 2, path: url + route.params.id + '/manage', name: '지원자 관리' },
+    { id: 3, path: url + route.params.id + '/applicants', name: '지원자 목록' },
+    { id: 4, path: url + route.params.id + '/schedule', name: '공고 일정' },
+    { id: 5, path: url + route.params.id + '/process', name: '프로세스 설정' },
+])
+
+// const curTab: tab = ref(
+// )
+
+const isActive = (tab: tab) => {
+
+    if (route.path == tab.path) {
+        return true
+    }
+
+    return false
+}
+
 </script>

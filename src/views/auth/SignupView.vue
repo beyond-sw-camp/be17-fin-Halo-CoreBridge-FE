@@ -365,7 +365,9 @@ const handleSubmit = async () => {
                 <div class="mt-6 text-center">
                     <p class="text-sm text-gray-600">
                         이미 계정이 있으신가요?
-                        <a href="#" class="text-slate-600 hover:text-slate-700 font-semibold">로그인</a>
+                        <RouterLink :to="{ path: '/login' }">
+                            <a href="#" class="text-slate-600 hover:text-slate-700 font-semibold">로그인</a>
+                        </RouterLink>
                     </p>
                 </div>
             </div>

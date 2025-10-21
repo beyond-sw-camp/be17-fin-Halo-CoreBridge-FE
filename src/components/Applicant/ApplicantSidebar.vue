@@ -67,10 +67,10 @@ const handleAddNote = () => {
 
         <!-- Name & Status -->
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-19 mb-2">
+          <div class="flex items-center gap-19 mb-2 flex-nowrap">
             <h2 class="text-xl font-bold text-slate-600">{{ applicant.name }}</h2>
             <span :class="getStatusColorClass(applicant.statusColor)"
-                  class="px-2 py-1 rounded text-xs font-medium">
+                  class="px-2 py-1 rounded text-xs font-mediu whitespace-nowrap flex-shrink-0">
               {{ applicant.status }}
             </span>
           </div>

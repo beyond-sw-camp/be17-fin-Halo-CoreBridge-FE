@@ -1,18 +1,20 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { adminNavs, recruiterNavs } from '@/constants/SidebarNavs'
 import { useRoute, useRouter } from 'vue-router'
+import { useSidebarStore } from '@/store/useSidebarStore'
 
 const sidebarOpen = ref(true)
-const currentPath = ref('/admin/dashboard')
+const currentPath = ref('')
 
 const roleTitle = computed(() => (route.path.startsWith('/admin') ? 'Admin' : 'Recruiter'))
 const roleSubtitle = computed(() => (route.path.startsWith('/admin') ? '시스템 관리' : '채용 관리'))
 const roleInitial = computed(() => (route.path.startsWith('/admin') ? 'A' : 'R'))
 
-
 const route = useRoute()
 const router = useRouter()
+
+const sidebar = useSidebarStore()
 
 // URL 기준으로 메뉴 자동 선택
 const currentNavs = computed(() => {
@@ -23,19 +25,23 @@ const currentNavs = computed(() => {
 
 const clickTap = (path: string) => {
     currentPath.value = path
-
+    sidebar.setPath(path)
     router.push(path)
 }
 
 // 활성화 확인
-const isActive = (to: string) => {
-
-    console.log('route.path', route.path)
-    return route.path === to
+const isActive = (navPath: string) => {
+    return navPath === sidebar.currentPath
 }
 
-</script>
+onMounted(() => {
+    if (route.path === '/recruiter') {
+        sidebar.setPath(route.path)
+    }
+})
 
+
+</script>
 <template>
     <aside
         :class="['transition-all h-screen duration-300 ease-in-out bg-white border-slate-200 flex flex-col', sidebarOpen ? 'w-52' : 'w-20']">

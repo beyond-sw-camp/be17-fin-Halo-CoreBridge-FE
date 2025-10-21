@@ -1,8 +1,8 @@
 <template>
     <div class="bg-gray-50 min-h-screen">
         <!-- Main Content -->
-        <main class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
-           
+        <main>
+
             <!-- 필터 및 검색 -->
             <div class="bg-white rounded-xl shadow-lg mb-6 p-6 border border-gray-100">
                 <div class="flex items-center justify-between mb-4">
@@ -454,7 +454,7 @@
                                     <div class="flex items-center gap-2 mb-1">
                                         <Briefcase class="w-3 h-3 text-gray-500 flex-shrink-0" />
                                         <span class="text-xs font-semibold text-gray-500 uppercase">{{ job.department
-                                        }}</span>
+                                            }}</span>
                                         <span v-if="job.sharedWith && job.sharedWith.length > 0"
                                             class="text-xs text-blue-600">
                                             ({{ job.sharedWith.length }}명 공유중)
