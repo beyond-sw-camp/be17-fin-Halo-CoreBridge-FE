@@ -72,8 +72,8 @@ const handleSubmit = async () => {
             flag.findSuccess = true
             findEmail.value = response.results.findEmail
         } else {
-            flag.findSuccess = false
-            errors.global = '사용자를 찾을 수 없습니다.'
+            flag.findSuccess = true
+            errors.global = response.message
         }
     }
 }
@@ -124,18 +124,25 @@ const handleSubmit = async () => {
                         </div>
 
                         <!-- 요청 버튼 -->
-                        <button type="submit" @click="handleSubmit"
+                        <button type="submit"
                             class="w-full bg-slate-600 text-white py-3 rounded-lg font-semibold hover:bg-slate-700 transform hover:scale-[1.02] transition shadow-lg hover:cursor-pointer">
                             요청
                         </button>
                     </div>
-                    <div v-else class="text-center flex flex-col gap-5 mb-5">
-                        <p class="font-bold">
-                            요청하신 정보의 이메일은 다음과 같습니다.
-                        </p>
-                        <p class="text-2xl">
-                            {{ findEmail }}
-                        </p>
+                    <div v-else>
+                        <div class="text-center flex flex-col gap-5 mb-5" v-if="!errors.global">
+                            <p class="font-bold">
+                                요청하신 정보의 이메일은 다음과 같습니다.
+                            </p>
+                            <p class="text-2xl">
+                                {{ findEmail }}
+                            </p>
+                        </div>
+                        <div v-else>
+                            <p class="font-bold text-red-500 text-center">
+                                {{ errors.global }}
+                            </p>
+                        </div>
                     </div>
 
                     <!-- 취소 버튼 -->
