@@ -10,8 +10,11 @@ export interface Schedule {
   candidateName?: string
   title?: string
   position: string
-  date: string
-  time: string
+  startDate: string;
+  endDate: string; 
+  time?: string;
+  startTime: string
+  endTime?: string
   location: string
   priority: Priority
   status: ScheduleStatus
@@ -46,23 +49,31 @@ export interface Filters {
 }
 
 export interface NewSchedule {
+  id?: number
   type: string
   candidateId: number | null
   candidateName: string
-  title: string
+  title?: string
   position: string
-  startDate: string | undefined
-  endDate: string | undefined
+  startDate: string
+  endDate: string
   startTime: string
   endTime: string
   location: string
   priority: string
-  interviewer: string
-  stage: string
-  notes: string
+  interviewer?: string
+  stage?: string
+  notes?: string
   isRecurring: boolean
+
+  // ✅ 반복 설정 추가
+  frequency?: 'DAILY' | 'WEEKLY' | 'MONTHLY'
+  interval?: number
+  endRecurringDate?: string
+
   createdBy: number | null
 }
+
 
 export interface ShareSettings {
   startDate: string | undefined;

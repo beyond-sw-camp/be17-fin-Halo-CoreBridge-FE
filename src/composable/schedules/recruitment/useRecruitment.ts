@@ -1,6 +1,27 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import type { Schedule, CalendarDate, Filters, NewSchedule, ShareSettings, TeamMember } from '../../../types/schedules/recruitment/recruitment'
+import type {
+  Schedule,
+  CalendarDate,
+  Filters,
+  NewSchedule,
+  ShareSettings,
+  TeamMember,
+} from '../../../types/schedules/recruitment/recruitment'
 import { POSITION_MAP, checkScheduleConflict } from '../../../constants/schedules/recruitment/recruitment'
+import { createSchedule, setRecurringRule } from '../../../api/schedules/recruitment/recruitment'
+
+/** 유틸: 문자열(yyyy-MM-dd) → Date */
+const toDate = (d?: string | null) => (d ? new Date(d) : undefined)
+/** 유틸: 범위 포함 여부 */
+const inRange = (cur: Date, start?: Date, end?: Date) => {
+  if (!start && !end) return false
+  const s = start ?? end!
+  const e = end ?? start!
+  const cs = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate())
+  const ss = new Date(s.getFullYear(), s.getMonth(), s.getDate())
+  const ee = new Date(e.getFullYear(), e.getMonth(), e.getDate())
+  return cs >= ss && cs <= ee
+}
 
 export const useCalendar = (schedules: any, filters: any, searchQuery: any) => {
   const currentDate = ref(new Date())
@@ -22,8 +43,13 @@ export const useCalendar = (schedules: any, filters: any, searchQuery: any) => {
     if (filterValues.sharedWith === 'my') filtered = filtered.filter(s => !s.sharedWith || s.sharedWith.length === 0)
     else if (filterValues.sharedWith === 'shared') filtered = filtered.filter(s => s.sharedWith && s.sharedWith.length > 0)
     if (query) {
-      const lowerQuery = query.toLowerCase()
-      filtered = filtered.filter(s => (s.candidateName && s.candidateName.toLowerCase().includes(lowerQuery)) || (s.position && s.position.toLowerCase().includes(lowerQuery)) || (s.title && s.title.toLowerCase().includes(lowerQuery)))
+      const lower = query.toLowerCase()
+      filtered = filtered.filter(
+        s =>
+          (s.candidateName && s.candidateName.toLowerCase().includes(lower)) ||
+          (s.position && s.position.toLowerCase().includes(lower)) ||
+          (s.title && s.title.toLowerCase().includes(lower)),
+      )
     }
     return filtered
   }
@@ -37,20 +63,29 @@ export const useCalendar = (schedules: any, filters: any, searchQuery: any) => {
     const daysInMonth = lastDay.getDate()
     const dates: CalendarDate[] = []
     const today = new Date()
-    
-    for (let i = 0; i < firstDayOfWeek; i++) dates.push({ date: null, isToday: false, hasSchedules: false, schedules: [] })
-    
+
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      dates.push({ date: null, isToday: false, hasSchedules: false, schedules: [] })
+    }
+
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-      let daySchedules = schedules.value.filter((s: Schedule) => s.date === currentDateStr)
+      const current = new Date(currentDateStr)
+
+      // ✅ 기간 일정 포함 비교
+      let daySchedules = schedules.value.filter((s: Schedule) =>
+        inRange(current, toDate(s.startDate), toDate(s.endDate)),
+      )
+
       daySchedules = applyFilters(daySchedules, filters.value, searchQuery.value)
-      
+
       dates.push({
         date: day,
         dateString: currentDateStr,
-        isToday: today.getDate() === day && today.getMonth() === month && today.getFullYear() === year,
+        isToday:
+          today.getDate() === day && today.getMonth() === month && today.getFullYear() === year,
         hasSchedules: daySchedules.length > 0,
-        schedules: daySchedules
+        schedules: daySchedules,
       })
     }
     return dates
@@ -71,7 +106,11 @@ export const useCalendar = (schedules: any, filters: any, searchQuery: any) => {
 
   const selectedDateSchedules = computed(() => {
     const dateStr = `${selectedDate.value.getFullYear()}-${String(selectedDate.value.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.value.getDate()).padStart(2, '0')}`
-    return schedules.value.filter((s: Schedule) => s.date === dateStr)
+    const current = new Date(dateStr)
+    // ✅ 기간 일정 포함
+    return schedules.value.filter((s: Schedule) =>
+      inRange(current, toDate(s.startDate), toDate(s.endDate)),
+    )
   })
 
   const getYearViewDates = (month: number) => {
@@ -82,29 +121,61 @@ export const useCalendar = (schedules: any, filters: any, searchQuery: any) => {
     const daysInMonth = lastDay.getDate()
     const dates: Array<{ date: number | null; isToday: boolean; hasSchedules: boolean }> = []
     const today = new Date()
-    
-    for (let i = 0; i < firstDayOfWeek; i++) dates.push({ date: null, isToday: false, hasSchedules: false })
-    
+
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      dates.push({ date: null, isToday: false, hasSchedules: false })
+    }
+
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-      let daySchedules = schedules.value.filter((s: Schedule) => s.date === currentDateStr)
-      daySchedules = applyFilters(daySchedules, filters.value, searchQuery.value)
-      
+      const current = new Date(currentDateStr)
+
+      // ✅ 기간 일정 포함
+      const dayHasSchedules = schedules.value.some((s: Schedule) =>
+        inRange(current, toDate(s.startDate), toDate(s.endDate)),
+      )
+
       dates.push({
         date: day,
-        isToday: today.getDate() === day && today.getMonth() === month - 1 && today.getFullYear() === year,
-        hasSchedules: daySchedules.length > 0
+        isToday:
+          today.getDate() === day && today.getMonth() === month - 1 && today.getFullYear() === year,
+        hasSchedules: dayHasSchedules,
       })
     }
     return dates
   }
 
   return {
-    currentDate, selectedDate, viewMode, currentYearMonth, currentYear, calendarDates, selectedDateLabel, selectedDateSchedules, getYearViewDates,
-    previousMonth: () => currentDate.value = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() - 1, 1),
-    nextMonth: () => currentDate.value = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() + 1, 1),
-    goToToday: () => { currentDate.value = new Date(); selectedDate.value = new Date() },
-    jumpToDate: (year: number, month: number, day: number) => { currentDate.value = new Date(year, month - 1, day); selectedDate.value = new Date(year, month - 1, day); viewMode.value = 'month' }
+    currentDate,
+    selectedDate,
+    viewMode,
+    currentYearMonth,
+    currentYear,
+    calendarDates,
+    selectedDateLabel,
+    selectedDateSchedules,
+    getYearViewDates,
+    previousMonth: () =>
+      (currentDate.value = new Date(
+        currentDate.value.getFullYear(),
+        currentDate.value.getMonth() - 1,
+        1,
+      )),
+    nextMonth: () =>
+      (currentDate.value = new Date(
+        currentDate.value.getFullYear(),
+        currentDate.value.getMonth() + 1,
+        1,
+      )),
+    goToToday: () => {
+      currentDate.value = new Date()
+      selectedDate.value = new Date()
+    },
+    jumpToDate: (year: number, month: number, day: number) => {
+      currentDate.value = new Date(year, month - 1, day)
+      selectedDate.value = new Date(year, month - 1, day)
+      viewMode.value = 'month'
+    },
   }
 }
 
@@ -112,7 +183,10 @@ export const useDragSelect = (calendarDates: any) => {
   const isDragging = ref(false)
   const dragStartIndex = ref<number | null>(null)
   const dragEndIndex = ref<number | null>(null)
-  const selectedDateRange = ref<{ start: string | null; end: string | null }>({ start: null, end: null })
+  const selectedDateRange = ref<{ start: string | null; end: string | null }>({
+    start: null,
+    end: null,
+  })
 
   const startDrag = (index: number, date: CalendarDate) => {
     if (!date.date) return
@@ -142,7 +216,11 @@ export const useDragSelect = (calendarDates: any) => {
     isDragging.value = false
     if (wasDragging && selectedDateRange.value.start && selectedDateRange.value.end) {
       setTimeout(() => {
-        if (confirm(`선택한 기간: ${selectedDateRange.value.start} ~ ${selectedDateRange.value.end}\n\n이 기간으로 채용 일정을 등록하시겠습니까?`)) {
+        if (
+          confirm(
+            `선택한 기간: ${selectedDateRange.value.start} ~ ${selectedDateRange.value.end}\n\n이 기간으로 채용 일정을 등록하시겠습니까?`,
+          )
+        ) {
           onConfirm?.()
         } else {
           selectedDateRange.value = { start: null, end: null }
@@ -153,13 +231,19 @@ export const useDragSelect = (calendarDates: any) => {
     dragEndIndex.value = null
   }
 
-  const handleGlobalMouseUp = () => { if (isDragging.value) endDrag() }
+  const handleGlobalMouseUp = () => {
+    if (isDragging.value) endDrag()
+  }
 
   const isDateInDragRange = (index: number) => {
     if (!isDragging.value || dragStartIndex.value === null || dragEndIndex.value === null) return false
     const minIndex = Math.min(dragStartIndex.value, dragEndIndex.value)
     const maxIndex = Math.max(dragStartIndex.value, dragEndIndex.value)
-    return index >= minIndex && index <= maxIndex && calendarDates.value[index].date !== null
+    return (
+      index >= minIndex &&
+      index <= maxIndex &&
+      calendarDates.value[index].date !== null
+    )
   }
 
   onMounted(() => document.addEventListener('mouseup', handleGlobalMouseUp))
@@ -171,86 +255,209 @@ export const useDragSelect = (calendarDates: any) => {
 export const useSchedule = (schedules: any) => {
   const showAddModal = ref(false)
   const editingScheduleId = ref<number | null>(null)
+
   const newSchedule = ref<NewSchedule>({
-    type: '', candidateName: '', candidateId: null, title: '', position: '',
-    startDate: new Date().toISOString().split('T')[0], endDate: new Date().toISOString().split('T')[0],
-    startTime: '10:00', endTime: '11:00', location: '', priority: 'medium',
-    interviewer: '', stage: 'scheduled', notes: '', isRecurring: false, createdBy: null
+    type: '',
+    candidateName: '',
+    candidateId: null,
+    title: '',
+    position: '',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+    startTime: '10:00',
+    endTime: '11:00',
+    location: '',
+    priority: 'medium',
+    interviewer: '',
+    stage: 'scheduled',
+    notes: '',
+    isRecurring: false,
+    // 반복 옵션 기본값 유지
+    frequency: 'DAILY',
+    interval: 1,
+    endRecurringDate: null,
+    createdBy: null,
   })
 
   const resetNewSchedule = () => {
     newSchedule.value = {
-      type: '', candidateName: '', candidateId: null, title: '', position: '',
-      startDate: new Date().toISOString().split('T')[0], endDate: new Date().toISOString().split('T')[0],
-      startTime: '10:00', endTime: '11:00', location: '', priority: 'medium',
-      interviewer: '', stage: 'scheduled', notes: '', isRecurring: false, createdBy: null
+      type: '',
+      candidateName: '',
+      candidateId: null,
+      title: '',
+      position: '',
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
+      startTime: '10:00',
+      endTime: '11:00',
+      location: '',
+      priority: 'medium',
+      interviewer: '',
+      stage: 'scheduled',
+      notes: '',
+      isRecurring: false,
+      frequency: 'DAILY',
+      interval: 1,
+      endRecurringDate: null,
+      createdBy: null,
     }
   }
 
-  const openAddModal = () => { editingScheduleId.value = null; resetNewSchedule(); showAddModal.value = true }
-  const openAddModalWithDateRange = (startDate: string, endDate: string) => {
-    editingScheduleId.value = null; resetNewSchedule()
-    newSchedule.value.startDate = startDate; newSchedule.value.endDate = endDate
+  const openAddModal = () => {
+    editingScheduleId.value = null
+    resetNewSchedule()
     showAddModal.value = true
   }
-  const closeAddModal = () => { showAddModal.value = false; editingScheduleId.value = null }
+  const openAddModalWithDateRange = (startDate: string, endDate: string) => {
+    editingScheduleId.value = null
+    resetNewSchedule()
+    newSchedule.value.startDate = startDate
+    newSchedule.value.endDate = endDate
+    showAddModal.value = true
+  }
+  const closeAddModal = () => {
+    showAddModal.value = false
+    editingScheduleId.value = null
+  }
 
-  const saveSchedule = () => {
-    if (checkScheduleConflict(schedules.value, newSchedule.value.startDate ?? "", newSchedule.value.endDate ?? "")) {
+  const saveSchedule = async () => {
+    // ✅ 중복 체크: 기간 기준
+    if (
+      checkScheduleConflict(
+        schedules.value,
+        newSchedule.value.startDate ?? '',
+        newSchedule.value.endDate ?? '',
+      )
+    ) {
       alert('선택한 기간에 이미 등록된 일정이 있습니다.\n일정을 등록할 수 없습니다.')
       return
     }
-    
-    const newId = Math.max(...schedules.value.map((s: Schedule) => s.id), 0) + 1
-    
-    if (newSchedule.value.isRecurring && newSchedule.value.startDate !== newSchedule.value.endDate) {
-      const start = new Date(newSchedule.value.startDate ?? "")
-      const end = new Date(newSchedule.value.endDate ?? "")
-      let currentId = newId
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0]
-        schedules.value.push({
-          id: currentId++, type: newSchedule.value.type, candidateId: newSchedule.value.candidateId,
-          candidateName: newSchedule.value.candidateName, title: newSchedule.value.title || `${newSchedule.value.candidateName} ${newSchedule.value.type}`,
-          position: newSchedule.value.position || '기타', date: dateStr, time: `${newSchedule.value.startTime} - ${newSchedule.value.endTime}`,
-          location: newSchedule.value.location, priority: newSchedule.value.priority, status: newSchedule.value.stage,
-          interviewer: newSchedule.value.interviewer, stage: newSchedule.value.stage, notes: newSchedule.value.notes
-        })
+
+    try {
+      const createdSchedules: any[] = []
+
+      // ✅ 1) 반복 일정: startDate ~ endDate 사이 매일 생성
+      if (
+        newSchedule.value.isRecurring &&
+        newSchedule.value.startDate !== newSchedule.value.endDate
+      ) {
+        const start = new Date(newSchedule.value.startDate!)
+        const end = new Date(newSchedule.value.endDate!)
+
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString().split('T')[0]
+          const response = await createSchedule({
+            ...newSchedule.value,
+            startDate: dateStr,
+            endDate: dateStr,
+          })
+          createdSchedules.push(response.results)
+        }
+
+        // ✅ 반복 규칙 저장 (첫 일정 기준)
+        if (createdSchedules.length > 0) {
+          await setRecurringRule(
+            createdSchedules[0].id,
+            newSchedule.value.frequency ?? 'DAILY',
+            newSchedule.value.interval ?? 1,
+            newSchedule.value.endRecurringDate ?? null,
+          )
+        }
+      } else {
+        // ✅ 2) 단일 일정 생성
+        const response = await createSchedule(newSchedule.value)
+        createdSchedules.push(response.results)
       }
-    } else {
-      schedules.value.push({
-        id: newId, type: newSchedule.value.type, candidateId: newSchedule.value.candidateId,
-        candidateName: newSchedule.value.candidateName, title: newSchedule.value.title || `${newSchedule.value.candidateName} ${newSchedule.value.type}`,
-        position: newSchedule.value.position || '기타', date: newSchedule.value.startDate, time: `${newSchedule.value.startTime} - ${newSchedule.value.endTime}`,
-        location: newSchedule.value.location, priority: newSchedule.value.priority, status: newSchedule.value.stage,
-        interviewer: newSchedule.value.interviewer, stage: newSchedule.value.stage, notes: newSchedule.value.notes
+
+      // ✅ UI 반영 (startDate/endDate로 통일)
+      createdSchedules.forEach(saved => {
+        schedules.value.push({
+          id: saved.id,
+          type: saved.type,
+          candidateId: saved.candidateId,
+          candidateName: saved.candidateName,
+          title: saved.title,
+          position: saved.position,
+          startDate: saved.startDate ?? newSchedule.value.startDate,
+          endDate: saved.endDate ?? newSchedule.value.endDate,
+          startTime: saved.startTime,
+          endTime: saved.endTime,
+          time: `${saved.startTime} - ${saved.endTime}`,
+          location: saved.location,
+          priority: saved.priority,
+          status: saved.status,
+          interviewer: saved.interviewer,
+          stage: saved.stage,
+          notes: saved.notes,
+          sharedWith: saved.shared?.map((m: any) => m.memberId) ?? [],
+        } as Schedule)
       })
+
+      alert('✅ 일정이 저장되었습니다.')
+      closeAddModal()
+    } catch (error) {
+      console.error(error)
+      alert('❌ 일정 저장 중 오류가 발생했습니다.')
     }
-    closeAddModal()
   }
 
   const editSchedule = (scheduleId: number) => {
     const schedule = schedules.value.find((s: Schedule) => s.id === scheduleId)
     if (!schedule) return
     editingScheduleId.value = scheduleId
-    const [startTime, endTime] = schedule.time.split(' - ')
+
+    const fallbackTime = `${schedule.startTime ?? '10:00'} - ${schedule.endTime ?? '11:00'}`
+    const [startTime, endTime] = (schedule.time || fallbackTime).split(' - ')
+
     newSchedule.value = {
-      type: schedule.type, candidateName: schedule.candidateName || '', candidateId: schedule.candidateId || null,
-      title: schedule.title || '', position: schedule.position, startDate: schedule.date, endDate: schedule.date,
-      startTime: startTime || '10:00', endTime: endTime || '11:00', location: schedule.location,
-      priority: schedule.priority, interviewer: schedule.interviewer || '', stage: schedule.stage || 'scheduled',
-      notes: schedule.notes || '', isRecurring: false, createdBy: null
+      type: schedule.type,
+      candidateName: schedule.candidateName || '',
+      candidateId: schedule.candidateId || null,
+      title: schedule.title || '',
+      position: schedule.position,
+      startDate: schedule.startDate,
+      endDate: schedule.endDate ?? schedule.startDate,
+      startTime: startTime || '10:00',
+      endTime: endTime || '11:00',
+      location: schedule.location,
+      priority: schedule.priority,
+      interviewer: schedule.interviewer || '',
+      stage: schedule.stage || 'scheduled',
+      notes: schedule.notes || '',
+      isRecurring: false,
+      frequency: 'DAILY',
+      interval: 1,
+      endRecurringDate: null,
+      createdBy: null,
     }
+
+    console.log(newSchedule.value)
     showAddModal.value = true
   }
 
   const viewScheduleDetail = (scheduleId: number) => {
     const schedule = schedules.value.find((s: Schedule) => s.id === scheduleId)
     if (!schedule) return
-    alert(`일정 상세 정보\n\n제목: ${schedule.candidateName || schedule.title}\n포지션: ${schedule.position}\n날짜: ${schedule.date}\n시간: ${schedule.time}\n장소: ${schedule.location}`)
+    const range =
+      schedule.endDate && schedule.endDate !== schedule.startDate
+        ? `${schedule.startDate} ~ ${schedule.endDate}`
+        : schedule.startDate
+    alert(
+      `일정 상세 정보\n\n제목: ${schedule.candidateName || schedule.title}\n포지션: ${schedule.position}\n기간: ${range}\n시간: ${schedule.time}\n장소: ${schedule.location}`,
+    )
   }
 
-  return { showAddModal, editingScheduleId, newSchedule, openAddModal, openAddModalWithDateRange, closeAddModal, saveSchedule, editSchedule, viewScheduleDetail }
+  return {
+    showAddModal,
+    editingScheduleId,
+    newSchedule,
+    openAddModal,
+    openAddModalWithDateRange,
+    closeAddModal,
+    saveSchedule,
+    editSchedule,
+    viewScheduleDetail,
+  }
 }
 
 export const useShare = (schedules: any, teamMembers: any) => {
@@ -260,18 +467,28 @@ export const useShare = (schedules: any, teamMembers: any) => {
   const shareSettings = ref<ShareSettings>({
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    permission: 'view', sendNotification: true, message: ''
+    permission: 'view',
+    sendNotification: true,
+    message: '',
   })
 
   const availableSchedules = computed(() => schedules.value)
 
-  const openShareModal = () => { showShareModal.value = true; selectedMembers.value = []; selectedSchedules.value = [] }
+  const openShareModal = () => {
+    showShareModal.value = true
+    selectedMembers.value = []
+    selectedSchedules.value = []
+  }
   const closeShareModal = () => {
-    showShareModal.value = false; selectedMembers.value = []; selectedSchedules.value = []
+    showShareModal.value = false
+    selectedMembers.value = []
+    selectedSchedules.value = []
     shareSettings.value = {
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      permission: 'view', sendNotification: true, message: ''
+      permission: 'view',
+      sendNotification: true,
+      message: '',
     }
   }
 
@@ -288,8 +505,9 @@ export const useShare = (schedules: any, teamMembers: any) => {
     else selectedMembers.value.push(memberId)
   }
 
-  const selectAllMembers = () => { selectedMembers.value = teamMembers.value.map((m: TeamMember) => m.id) }
-  const clearAllMembers = () => { selectedMembers.value = [] }
+  const selectAllMembers = () =>
+    (selectedMembers.value = teamMembers.value.map((m: TeamMember) => m.id))
+  const clearAllMembers = () => (selectedMembers.value = [])
 
   const toggleSchedule = (scheduleId: number) => {
     const index = selectedSchedules.value.indexOf(scheduleId)
@@ -297,16 +515,26 @@ export const useShare = (schedules: any, teamMembers: any) => {
     else selectedSchedules.value.push(scheduleId)
   }
 
-  const selectAllSchedules = () => { selectedSchedules.value = availableSchedules.value.map((s: Schedule) => s.id) }
-  const clearAllSchedules = () => { selectedSchedules.value = [] }
+  const selectAllSchedules = () =>
+    (selectedSchedules.value = availableSchedules.value.map((s: Schedule) => s.id))
+  const clearAllSchedules = () => (selectedSchedules.value = [])
 
   const selectSchedulesByDateRange = () => {
-    const start = new Date(shareSettings.value.startDate ?? "")
-    const end = new Date(shareSettings.value.endDate ?? "")
-    selectedSchedules.value = availableSchedules.value.filter((s: Schedule) => {
-      const scheduleDate = new Date(s.date)
-      return scheduleDate >= start && scheduleDate <= end
-    }).map((s: Schedule) => s.id)
+    const start = toDate(shareSettings.value.startDate ?? '')
+    const end = toDate(shareSettings.value.endDate ?? '')
+    if (!start || !end) {
+      selectedSchedules.value = []
+      return
+    }
+    selectedSchedules.value = availableSchedules.value
+      .filter((s: Schedule) =>
+        // ✅ 공유 기간과 일정 기간이 겹치면 포함 (교집합)
+        inRange(toDate(s.startDate)!, start, end) ||
+        inRange(toDate(s.endDate ?? s.startDate)!, start, end) ||
+        inRange(start, toDate(s.startDate), toDate(s.endDate)) ||
+        inRange(end, toDate(s.startDate), toDate(s.endDate))
+      )
+      .map((s: Schedule) => s.id)
   }
 
   const getTeamMemberName = (memberId: number) => {
@@ -326,14 +554,32 @@ export const useShare = (schedules: any, teamMembers: any) => {
       if (schedule) schedule.sharedWith = [...selectedMembers.value]
     })
     const memberNames = selectedMembers.value.map(id => getTeamMemberName(id)).join(', ')
-    alert(`${selectedSchedules.value.length}건의 일정이 ${memberNames}에게 공유되었습니다.\n\n권한: ${shareSettings.value.permission === 'view' ? '보기 전용' : '편집 가능'}`)
+    alert(
+      `${selectedSchedules.value.length}건의 일정이 ${memberNames}에게 공유되었습니다.\n\n권한: ${
+        shareSettings.value.permission === 'view' ? '보기 전용' : '편집 가능'
+      }`,
+    )
     closeShareModal()
   }
 
   return {
-    showShareModal, selectedMembers, selectedSchedules, shareSettings, availableSchedules,
-    openShareModal, closeShareModal, shareSchedule, toggleMember, selectAllMembers, clearAllMembers,
-    toggleSchedule, selectAllSchedules, clearAllSchedules, selectSchedulesByDateRange,
-    getTeamMemberName, getScheduleTitle, confirmShare
+    showShareModal,
+    selectedMembers,
+    selectedSchedules,
+    shareSettings,
+    availableSchedules,
+    openShareModal,
+    closeShareModal,
+    shareSchedule,
+    toggleMember,
+    selectAllMembers,
+    clearAllMembers,
+    toggleSchedule,
+    selectAllSchedules,
+    clearAllSchedules,
+    selectSchedulesByDateRange,
+    getTeamMemberName,
+    getScheduleTitle,
+    confirmShare,
   }
 }

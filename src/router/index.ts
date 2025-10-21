@@ -50,7 +50,7 @@ const router = createRouter({
         {
           path: 'schedules',
           name: 'recruiter-schedules',
-          component: () => import('@/views/schedules/recruitment/RecruitmentSchedule.vue'),
+          component: () => import('@/views/recruiter/schedule/RecruitmentSchedule.vue'),
         },
         {
           path: 'jobs',
@@ -80,7 +80,7 @@ const router = createRouter({
             {
               path: 'schedule',
               name: 'recruiter-job-schedule',
-              component: () => import('@/views/recruiter/job/JobScheduleView.vue'),
+              component: () => import('@/views/recruiter/job/JobPostingSchedule.vue'),
             },
             {
               path: 'process',
@@ -103,11 +103,6 @@ const router = createRouter({
       path: '/job-posting/detail-list',
       name: 'jobPostingDetailList',
       component: () => import('@/views/job-posting/JobDetailForApplicant.vue'),
-    },
-    {
-      path: '/job-posting/qwer',
-      name: 'aaa',
-      component: () => import('@/views/recruiter/job/JobScheduleView.vue'),
     },
     {
       path: '/admin',
