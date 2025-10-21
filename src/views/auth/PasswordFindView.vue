@@ -93,9 +93,9 @@ const validateForm = () => {
                         </p>
                     </div>
 
-                    <!-- 가입 버튼 -->
+                    <!-- 버튼 -->
                     <div class="flex gap-2 flex-col">
-                        <button type="button" @click="sendPasswordResetLink"
+                        <button type="submit" @click="sendPasswordResetLink"
                             :disabled="!emailForm.email || verificationSent"
                             class="w-full bg-slate-600 text-white py-3 rounded-lg font-semibold hover:bg-slate-700 transform hover:scale-[1.02] transition shadow-lg hover:cursor-pointer"
                             v-if="!isSendEmail">
@@ -110,9 +110,9 @@ const validateForm = () => {
                             </button>
                         </div>
 
-                        <!-- 가입 버튼 -->
+                        <!-- 취소 버튼 -->
                         <RouterLink :to="{ path: '/login' }">
-                            <button type="submit"
+                            <button type="button"
                                 class="w-full border-slate-600 py-3 rounded-lg font-semibold border transform hover:scale-[1.02] transition shadow-md hover:cursor-pointer">
                                 돌아가기
                             </button>
