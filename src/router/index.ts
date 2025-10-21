@@ -54,11 +54,60 @@ const router = createRouter({
         },
         {
           path: 'jobs',
-          name: 'recruiter-job-layout',
+          name: 'recruiter-jobs',
+          component: () => import('@/views/recruiter/job/AllJobPostingListView.vue'),
+        },
+        {
+          path: 'jobs/:id',
+          name: 'recrutier-job-layout',
           component: () => import('@/views/layout/RecruiterJobLayout.vue'),
-          children: [],
+          children: [
+            {
+              path: '',
+              name: 'recruiter-job-detail',
+              component: () => import('@/views/recruiter/job/JobInfoView.vue'),
+            },
+            {
+              path: 'manage',
+              name: 'recruiter-job-manage',
+              component: () => import('@/views/recruiter/job/JobApplicantManageView.vue'),
+            },
+            {
+              path: 'applicants',
+              name: 'recruiter-job-list',
+              component: () => import('@/views/recruiter/job/JobApplicantListView.vue'),
+            },
+            {
+              path: 'schedule',
+              name: 'recruiter-job-schedule',
+              component: () => import('@/views/recruiter/job/JobScheduleView.vue'),
+            },
+            {
+              path: 'process',
+              name: 'recruiter-job-processEdit',
+              component: () => import('@/views/recruiter/job/JobProcessEditView.vue'),
+            },
+          ],
         },
       ],
+    },
+
+    // 채용생성 및 지원 리스트
+
+    {
+      path: '/job-posting/create',
+      name: 'jobPostingCreate',
+      component: () => import('@/views/job-posting/JobPostingCreateView.vue'),
+    },
+    {
+      path: '/job-posting/detail-list',
+      name: 'jobPostingDetailList',
+      component: () => import('@/views/job-posting/JobDetailForApplicant.vue'),
+    },
+    {
+      path: '/job-posting/qwer',
+      name: 'aaa',
+      component: () => import('@/views/recruiter/job/JobScheduleView.vue'),
     },
     {
       path: '/admin',
@@ -71,17 +120,6 @@ const router = createRouter({
           component: () => import('@/views/admin/AdminMainView.vue'),
         },
       ],
-    },
-    {
-      path: '/job-postings/create',
-      name: 'jobPostingCreate',
-      component: () => import('@/views/job-posting/JobPostingCreate.vue'),
-    },
-    {
-      path: '/job-postings/:id',
-      name: 'jobPostingDetail',
-      component: () => import('@/views/job-posting/JobPostingDetail.vue'),
-      props: true,
     },
     {
       path: '/resume',
