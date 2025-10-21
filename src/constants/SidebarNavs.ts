@@ -6,7 +6,7 @@ export const recruiterNavs: SidebarNavItem[] = [
   { path: '/recruiter/jobs', label: '채용 관리', icon: UserRoundSearch },
   // { path: '/recruiter/applicants', label: '지원자 관리', icon: Users },
   { path: '/recruiter/interviews', label: '면접 관리', icon: MessagesSquare },
-  { path: '/recruiter/calendar', label: '일정 관리', icon: Calendar },
+  { path: '/recruiter/schedules', label: '일정 관리', icon: Calendar },
 ]
 
 export const adminNavs: SidebarNavItem[] = [

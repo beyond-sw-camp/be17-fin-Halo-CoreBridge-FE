@@ -83,13 +83,32 @@
 
         <!-- 탭 네비게이션 -->
         <div class="border-b border-gray-200">
-            <nav class="flex gap-8">
-                <RouterLink :to="tab.path" v-for="tab in tabs" :key="tab.id" :class="['pb-4 px-1 border-b-2 font-medium transition-colors',
-                    isActive(tab) ? 'border-slate-600 text-slate-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                ]">
+            <div class="flex items-center justify-between w-full h-10">
+                <!-- 왼쪽: 탭 -->
+                <nav class="flex gap-8">
+                <RouterLink
+                    :to="tab.path"
+                    v-for="tab in tabs"
+                    :key="tab.id"
+                    :class="[
+                    'pb-4 px-1 border-b-2 font-medium transition-colors',
+                    isActive(tab)
+                        ? 'border-slate-600 text-slate-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ]"
+                >
                     {{ tab.name }}
                 </RouterLink>
-            </nav>
+                </nav>
+                <button
+                v-if="route.path.includes('/schedule')"
+                @click="openShareModal"
+                class="mb-3 flex-shrink-0 px-6 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-sm hover:cursor-pointer"
+                >
+                    <Share2 class="w-5 h-5" />
+                    공고 공유
+                </button>
+            </div>
         </div>
     </div>
 </template>
@@ -97,7 +116,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { Building2, MapPin, Briefcase, DollarSign } from 'lucide-vue-next'
+import { Building2, MapPin, Briefcase, DollarSign, Share2 } from 'lucide-vue-next'
 
 const route = useRoute()
 

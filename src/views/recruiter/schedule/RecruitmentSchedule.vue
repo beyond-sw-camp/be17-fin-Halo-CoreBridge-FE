@@ -110,16 +110,47 @@
           <!-- 월별 보기 -->
           <div v-if="viewMode === 'month'" class="grid grid-cols-7 gap-2 select-none">
             <div v-for="day in weekDays" :key="day" class="text-center py-3 text-sm font-semibold text-gray-600">{{ day }}</div>
-            <div v-for="(date, index) in calendarDates" :key="index" :class="getDateCellClass(date, index)" @mousedown="date.date && startDrag(index, date)" @mouseenter="date.date && updateDrag(index)" @mouseup="date.date && endDrag()" @click="date.date && handleCellClick(date)">
+
+            <div
+              v-for="(date, index) in calendarDates"
+              :key="index"
+              :class="getDateCellClass(date, index)"
+              @mousedown="date.date && startDrag(index, date)"
+              @mouseenter="date.date && updateDrag(index)"
+              @mouseup="date.date && endDrag()"
+              @click="date.date && handleCellClick(date)"
+            >
               <template v-if="date.date">
-                <div :class="getDateNumberClass(date, index)">{{ date.date }}</div>
-                <div v-if="date.isToday" class="text-xs text-slate-600 font-semibold pointer-events-none">오늘</div>
+                <div class="flex items-center justify-between">
+                  <div :class="getDateNumberClass(date, index)">{{ date.date }}</div>
+                  <div v-if="date.isToday" class="text-xs text-slate-600 font-semibold pointer-events-none">오늘</div>
+                </div>
+
+                <!-- ✅ 기간 일정 바 스타일 -->
                 <div v-if="date.schedules.length > 0" class="space-y-1 mt-1">
-                  <div v-for="schedule in date.schedules.slice(0, 2)" :key="schedule.id" :class="['text-xs px-1 py-0.5 rounded truncate flex items-center gap-1 cursor-pointer hover:opacity-80', getScheduleColorClass(schedule)]" @click.stop="handleScheduleClick(date, schedule)">
-                    <UserCheck v-if="schedule.sharedWith && schedule.sharedWith.length > 0" class="w-2.5 h-2.5 flex-shrink-0" />
-                    {{ schedule.candidateName || schedule.title }}
+                  <div
+                    v-for="schedule in date.schedules.slice(0, 3)"
+                    :key="schedule.id + '-' + date.dateString"
+                    class="relative w-full h-5 flex items-center cursor-pointer group"
+                    @click.stop="handleScheduleClick(date, schedule)"
+                  >
+                    <div
+                      class="h-2 w-full"
+                      :class="getBarClass(schedule, date.dateString)"
+                      :title="getBarTitle(schedule)"
+                    ></div>
+                    <!-- 텍스트(첫 칸/마지막 칸/단일일정에만) -->
+                    <div
+                      v-if="isRangeEdge(schedule, date.dateString)"
+                      class="absolute left-1 right-1 top-[-2px] text-[10px] leading-3 truncate pointer-events-none text-slate-800"
+                    >
+                      {{ schedule.candidateName || schedule.title }}
+                    </div>
                   </div>
-                  <div v-if="date.schedules.length > 2" class="text-xs text-gray-500 font-semibold pointer-events-none">+{{ date.schedules.length - 2 }}건</div>
+
+                  <div v-if="date.schedules.length > 3" class="text-xs text-gray-500 font-semibold pointer-events-none">
+                    +{{ date.schedules.length - 3 }}건
+                  </div>
                 </div>
               </template>
             </div>
@@ -131,7 +162,20 @@
               <h4 class="text-center font-semibold text-gray-700 mb-2 text-sm">{{ month }}월</h4>
               <div class="grid grid-cols-7 gap-1">
                 <div v-for="day in ['일', '월', '화', '수', '목', '금', '토']" :key="day" class="text-center text-xs text-gray-500 font-medium">{{ day }}</div>
-                <div v-for="(date, index) in getYearViewDates(month)" :key="index" :class="['text-center text-xs py-1 rounded cursor-pointer', date.isToday ? 'bg-slate-600 text-white font-bold' : '', date.hasSchedules && !date.isToday ? 'bg-blue-200 text-blue-900 font-semibold' : 'text-gray-600', !date.date && 'invisible', date.date && 'hover:bg-blue-100']" @click="date.date && jumpToDate(currentYear, month, date.date)">{{ date.date || '' }}</div>
+                <div
+                  v-for="(date, index) in getYearViewDates(month)"
+                  :key="index"
+                  :class="[
+                    'text-center text-xs py-1 rounded cursor-pointer',
+                    date.isToday ? 'bg-slate-600 text-white font-bold' : '',
+                    date.hasSchedules && !date.isToday ? 'bg-blue-200 text-blue-900 font-semibold' : 'text-gray-600',
+                    !date.date && 'invisible',
+                    date.date && 'hover:bg-blue-100'
+                  ]"
+                  @click="date.date && jumpToDate(currentYear, month, date.date)"
+                >
+                  {{ date.date || '' }}
+                </div>
               </div>
             </div>
           </div>
@@ -155,7 +199,12 @@
           <div class="bg-white rounded-lg shadow p-5">
             <h3 class="text-lg font-bold text-slate-600 mb-4">{{ selectedDateLabel }}</h3>
             <div v-if="selectedDateSchedules.length > 0" class="space-y-3 max-h-96 overflow-y-auto">
-              <div v-for="schedule in selectedDateSchedules" :key="schedule.id" :class="['border-l-4 p-3 rounded transition-all cursor-pointer hover:shadow-md', getScheduleBorderClass(schedule)]" @click="viewScheduleDetail(schedule.id)">
+              <div
+                v-for="schedule in selectedDateSchedules"
+                :key="schedule.id"
+                :class="['border-l-4 p-3 rounded transition-all cursor-pointer hover:shadow-md', getScheduleBorderClass(schedule)]"
+                @click="viewScheduleDetail(schedule.id)"
+              >
                 <div class="flex items-start justify-between mb-2">
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1">
@@ -291,6 +340,29 @@
             <textarea v-model="newSchedule.notes" rows="3" placeholder="추가 메모사항을 입력하세요..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600 text-sm"></textarea>
           </div>
 
+          <div>
+            <label class="flex items-center gap-3">
+              <input v-model="newSchedule.isRecurring" type="checkbox" class="w-4 h-4 text-slate-600 rounded" />
+              <span class="font-medium text-gray-900">반복 일정 설정</span>
+            </label>
+
+            <div v-if="newSchedule.isRecurring" class="mt-3 pl-6 space-y-3">
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">반복 주기</label>
+                <select v-model="newSchedule.frequency" class="w-full px-3 py-2 border rounded-lg">
+                  <option value="DAILY">매일</option>
+                  <option value="WEEKLY">매주</option>
+                  <option value="MONTHLY">매달</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">반복 종료일</label>
+                <input v-model="newSchedule.endRecurringDate" type="date" class="w-full px-3 py-2 border rounded-lg" />
+              </div>
+            </div>
+          </div>
+
           <div class="flex gap-3 pt-4">
             <button type="button" @click="closeAddModal" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">취소</button>
             <button type="submit" class="flex-1 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition">{{ editingScheduleId ? '수정하기' : '추가하기' }}</button>
@@ -310,9 +382,16 @@
         <div class="mb-6">
           <label class="block text-sm font-semibold text-gray-700 mb-3">공유 대상 선택</label>
           <div class="grid grid-cols-2 gap-3 mb-4">
-            <div v-for="member in teamMembers" :key="member.id" :class="['border-2 rounded-lg p-3 cursor-pointer transition-all', selectedMembers.includes(member.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300']" @click="toggleMember(member.id)">
+            <div
+              v-for="member in teamMembers"
+              :key="member.id"
+              :class="['border-2 rounded-lg p-3 cursor-pointer transition-all', selectedMembers.includes(member.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300']"
+              @click="toggleMember(member.id)"
+            >
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">{{ member.name.charAt(0) }}</div>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
+                  {{ member.name.charAt(0) }}
+                </div>
                 <div class="flex-1 min-w-0">
                   <p class="font-semibold text-gray-900 truncate">{{ member.name }}</p>
                   <p class="text-xs text-gray-500 truncate">{{ member.role }}</p>
@@ -330,7 +409,14 @@
         <div class="mb-6">
           <label class="block text-sm font-semibold text-gray-700 mb-3">공유할 일정 선택</label>
           <div class="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3 bg-gray-50">
-            <label v-for="schedule in availableSchedules" :key="schedule.id" :class="['flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all', selectedSchedules.includes(schedule.id) ? 'bg-blue-100 border-2 border-blue-500' : 'bg-white border-2 border-gray-200 hover:border-gray-300']">
+            <label
+              v-for="schedule in availableSchedules"
+              :key="schedule.id"
+              :class="[
+                'flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all',
+                selectedSchedules.includes(schedule.id) ? 'bg-blue-100 border-2 border-blue-500' : 'bg-white border-2 border-gray-200 hover:border-gray-300'
+              ]"
+            >
               <input v-model="selectedSchedules" :value="schedule.id" type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded" />
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
@@ -340,7 +426,11 @@
                 </div>
                 <p class="font-semibold text-sm text-gray-900 truncate">{{ schedule.candidateName || schedule.title }}</p>
                 <div class="flex items-center gap-3 mt-1 text-xs text-gray-600">
-                  <span class="flex items-center gap-1"><Calendar class="w-3 h-3" />{{ schedule.date }}</span>
+                  <span class="flex items-center gap-1">
+                    <Calendar class="w-3 h-3" />
+                    {{ schedule.startDate }}
+                    <template v-if="schedule.endDate && schedule.endDate !== schedule.startDate"> ~ {{ schedule.endDate }}</template>
+                  </span>
                   <span class="flex items-center gap-1"><Clock class="w-3 h-3" />{{ schedule.time }}</span>
                 </div>
               </div>
@@ -389,7 +479,11 @@
 
         <div class="flex gap-3">
           <button @click="closeShareModal" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">취소</button>
-          <button @click="confirmShare" :disabled="selectedMembers.length === 0 || selectedSchedules.length === 0" :class="['flex-1 px-4 py-2 rounded-lg text-white transition flex items-center justify-center gap-2', selectedMembers.length === 0 || selectedSchedules.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700']">
+          <button
+            @click="confirmShare"
+            :disabled="selectedMembers.length === 0 || selectedSchedules.length === 0"
+            :class="['flex-1 px-4 py-2 rounded-lg text-white transition flex items-center justify-center gap-2', selectedMembers.length === 0 || selectedSchedules.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700']"
+          >
             <Share2 class="w-4 h-4" />{{ selectedSchedules.length }}건 일정을 {{ selectedMembers.length }}명에게 공유
           </button>
         </div>
@@ -405,15 +499,45 @@ import type { Schedule, Filters, Statistic, PipelineStage, TeamMember } from '..
 import { WEEK_DAYS, getScheduleColorClass, getScheduleBorderClass, getScheduleIcon, getScheduleTypeLabel, getIconBgClass, getIconColorClass, getValueColorClass, calculateDaysDifference } from '../../../constants/schedules/recruitment/recruitment'
 import { useCalendar, useDragSelect, useSchedule, useShare } from '../../../composable/schedules/recruitment/useRecruitment'
 
+import { onMounted } from 'vue'
+import { getSchedules } from '../../../api/schedules/recruitment/recruitment'
+
 const weekDays = WEEK_DAYS
 const searchQuery = ref('')
 const filters = ref<Filters>({ type: '', position: '', status: '', date: '', sharedWith: '' })
 
-const schedules = ref<Schedule[]>([
-  { id: 1, type: 'document_review', candidateId: 1001, candidateName: '김지원', position: '프론트엔드 개발자', date: '2025-10-18', time: '10:00 - 12:00', location: '온라인 검토', priority: 'medium', status: 'scheduled', interviewer: '인사팀', stage: '서류 전형', notes: '5년차 경력, React 전문가', sharedWith: [1, 2, 5] },
-  { id: 2, type: 'interview_1', candidateId: 1003, candidateName: '이민호', position: '백엔드 개발자', date: '2025-10-16', time: '10:00 - 11:00', location: 'Zoom', priority: 'medium', status: 'scheduled', interviewer: '개발팀 리드', stage: '1차 기술 면접', notes: 'Node.js, AWS 경험 보유', sharedWith: [1, 2] },
-  { id: 3, type: 'interview_1', candidateId: 1004, candidateName: '정수아', position: '프론트엔드 개발자', date: '2025-10-16', time: '14:00 - 15:00', location: '3층 회의실 A', priority: 'high', status: 'scheduled', interviewer: 'CTO, 개발팀 리드', stage: '1차 기술 면접', notes: '대기업 출신, Vue.js 전문', sharedWith: [1, 2, 3] }
-])
+const schedules = ref<Schedule[]>([])
+
+onMounted(async () => {
+  try {
+    const data = await getSchedules()
+    console.log("✅ 서버에서 불러온 일정:", data)
+
+    schedules.value = data.results.map((s: any) => ({
+      id: s.id,
+      type: s.type,
+      candidateId: s.candidateId,
+      candidateName: s.candidateName,
+      position: s.position,
+      startDate: s.startDate,
+      endDate: s.endDate,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      time: s.endDate && s.endDate !== s.startDate
+        ? `${s.startDate} ~ ${s.endDate} ${s.startTime}-${s.endTime}`
+        : `${s.startTime} - ${s.endTime}`,
+      location: s.location,
+      priority: s.priority,
+      status: s.status,
+      interviewer: s.interviewer,
+      stage: s.stage,
+      notes: s.notes,
+      sharedWith: (s.shared || []).map((m: any) => m.memberId)
+    }))
+  } catch (error) {
+    console.error("❌ 일정 불러오기 실패:", error)
+  }
+})
 
 const teamMembers = ref<TeamMember[]>([
   { id: 1, name: '김현수', role: 'CTO', department: '개발팀', email: 'kim@company.com' },
@@ -448,6 +572,39 @@ const { isDragging, dragStartIndex, dragEndIndex, selectedDateRange, startDrag, 
 const { showAddModal, editingScheduleId, newSchedule, openAddModal, openAddModalWithDateRange, closeAddModal, saveSchedule, editSchedule, viewScheduleDetail } = useSchedule(schedules)
 const { showShareModal, selectedMembers, selectedSchedules, shareSettings, availableSchedules, openShareModal, closeShareModal, shareSchedule, toggleMember, selectAllMembers, clearAllMembers, toggleSchedule, selectAllSchedules, clearAllSchedules, selectSchedulesByDateRange, confirmShare } = useShare(schedules, teamMembers)
 
+/** 기간 바 스타일 도우미 */
+const isSameDay = (a?: string, b?: string) => !!a && !!b && a === b
+const isCurrentStart = (s: Schedule, cur: string) => isSameDay(s.startDate, cur)
+const isCurrentEnd = (s: Schedule, cur: string) => isSameDay(s.endDate ?? s.startDate, cur)
+const isSingleDay = (s: Schedule) => isSameDay(s.startDate, s.endDate ?? s.startDate)
+
+const barColorClass = (s: Schedule) => {
+  // 간단 타입 매핑(기존 색 계열 유지)
+  if (s.type?.startsWith('interview')) return 'bg-blue-100'
+  if (s.type === 'document_review') return 'bg-orange-100'
+  if (s.type?.startsWith('onboarding')) return 'bg-green-100'
+  if (s.type === 'meeting') return 'bg-gray-100'
+  if (s.type === 'event') return 'bg-purple-100'
+  if (s.type === 'negotiation') return 'bg-pink-100'
+  if (s.type === 'follow_up') return 'bg-indigo-100'
+  return 'bg-slate-100'
+}
+
+const getBarClass = (s: Schedule, cur: string) => {
+  const start = isCurrentStart(s, cur)
+  const end = isCurrentEnd(s, cur)
+  const single = isSingleDay(s)
+  return [
+    barColorClass(s),
+    'rounded',
+    'opacity-90',
+    'group-hover:opacity-100',
+    single ? 'rounded-full' : (start ? 'rounded-l-full' : (end ? 'rounded-r-full' : 'rounded-none'))
+  ]
+}
+
+const isRangeEdge = (s: Schedule, cur: string) => isCurrentStart(s, cur) || isCurrentEnd(s, cur) || isSingleDay(s)
+
 const handleEndDrag = () => {
   endDrag(() => {
     if (selectedDateRange.value.start && selectedDateRange.value.end) {
@@ -455,6 +612,20 @@ const handleEndDrag = () => {
     }
   })
 }
+
+// ✅ 기간 일정 확인
+const isRangeSchedule = (schedule: Schedule) => {
+  return schedule.startDate !== schedule.endDate
+}
+
+// ✅ 바 Tooltip 제목 생성
+const getBarTitle = (schedule: Schedule) => {
+  if (isRangeSchedule(schedule)) {
+    return `${schedule.startDate} ~ ${schedule.endDate} | ${schedule.candidateName || schedule.title}`
+  }
+  return `${schedule.startDate} | ${schedule.candidateName || schedule.title}`
+}
+
 
 // temp
 function handleClick(message: string) {
@@ -474,7 +645,7 @@ const handleScheduleClick = (date: any, schedule: any) => {
 
 const getDateCellClass = (date: any, index: number) => {
   return [
-    'aspect-square border rounded-lg p-2 cursor-pointer transition-all',
+    'aspect-square border rounded-lg p-2 cursor-pointer transition-all relative',
     date.isToday ? 'border-2 border-slate-600 bg-slate-50' : date.hasSchedules ? 'border-gray-200 bg-blue-50' : 'border-gray-200',
     !date.date && 'border-0 cursor-default',
     date.date && !isDragging.value && 'hover:bg-blue-50 hover:border-blue-300',
@@ -488,6 +659,7 @@ const getDateNumberClass = (date: any, index: number) => {
   return ['text-sm mb-1 pointer-events-none', date.isToday ? 'font-bold text-slate-600' : 'text-gray-600', isDateInDragRange(index) && 'text-blue-900 font-bold']
 }
 
+// ✅ 날짜 차이 계산
 const getDaysDifference = () => {
   if (!newSchedule.value.startDate || !newSchedule.value.endDate) return 1
   return calculateDaysDifference(newSchedule.value.startDate, newSchedule.value.endDate)
