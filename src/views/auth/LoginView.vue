@@ -130,7 +130,7 @@ const handleSubmit = async () => {
                             <a class="text-slate-600 hover:text-slate-700 font-semibold">회원가입</a>
                         </RouterLink>
                         |
-                        <RouterLink>
+                        <RouterLink :to="{ path: 'email-find' }">
                             <a class="text-slate-600 hover:text-slate-700 font-semibold">이메일 찾기</a>
                         </RouterLink>
                         |

@@ -1,5 +1,5 @@
 import api from '@/plugins/AxiosInterceptor'
-import type { EmailForm } from '@/types/user/Email'
+import type { EmailFindForm, EmailFindResponse, EmailForm } from '@/types/user/Email'
 import type { PasswordChange } from '@/types/user/UserUpdateForm'
 import { useLoadingStore } from '@/store/useLoadingStore'
 
@@ -110,9 +110,34 @@ const resetPassword = async (req: PasswordChange): Promise<ApiResponse> => {
   return data
 }
 
+const findEmail = async (req: EmailFindForm): Promise<ApiResponse<EmailFindResponse>> => {
+  let data: ApiResponse<EmailFindResponse> = {
+    success: false,
+    code: 0,
+    message: '',
+    results: {
+      findEmail: '',
+    },
+  }
+
+  const url = '/api/auth/find-email'
+
+  await api
+    .post(url, req)
+    .then((res) => {
+      data = res.data as ApiResponse<EmailFindResponse>
+    })
+    .catch((error) => {
+      data = error.response.data as ApiResponse<EmailFindResponse>
+    })
+
+  return data
+}
+
 export default {
   sendAuthCodeToEmail,
   verifyEmailCode,
   sendPasswordResetLink,
   resetPassword,
+  findEmail,
 }

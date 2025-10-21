@@ -33,6 +33,11 @@ const router = createRouter({
       },
     },
     {
+      path: '/email-find',
+      name: 'email-find',
+      component: () => import('@/views/auth/EmailFindView.vue'),
+    },
+    {
       path: '/recruiter',
       name: 'main',
       component: () => import('@/views/layout/DashboardLayout.vue'),
