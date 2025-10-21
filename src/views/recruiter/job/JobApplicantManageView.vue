@@ -94,7 +94,7 @@ const toggleFilter = () => {}
 
 <template>
   <div class="bg-gray-50 min-h-screen">
-    <main class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main >
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <!-- Search & Filter -->
         <div class="flex gap-4 mb-6">
