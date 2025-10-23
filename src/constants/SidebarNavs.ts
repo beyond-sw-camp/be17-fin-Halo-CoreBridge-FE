@@ -28,7 +28,12 @@ export const recruiterNavs: SidebarNavItem[] = [
         path: '/recruiter/interviews',
         label: '면접 목록',
         icon: LayoutList
-      }
+      },
+      {
+        path: '/recruiter/interviews/interviewers',
+        label: '면접관 관리',
+        icon: Users
+      },
     ]
   },
   {

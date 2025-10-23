@@ -98,7 +98,12 @@ const router = createRouter({
               path: '',
               name: 'recruiter-interviews',
               component: () =>  import('@/views/recruiter/interview/InterviewsView.vue')
-            }
+            },
+            {
+              path: 'interviewers',
+              name: 'recruiter-interview-interviewers',
+              component: () => import('@/views/recruiter/interview/InterviewerManagementView.vue')
+            },
           ]
         }
       ],
