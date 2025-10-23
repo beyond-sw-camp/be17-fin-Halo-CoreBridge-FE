@@ -6,6 +6,7 @@ import {
   MessagesSquare,
   UserRoundSearch,
   LayoutList,
+  Building2
 } from 'lucide-vue-next'
 
 export const recruiterNavs: SidebarNavItem[] = [
@@ -34,6 +35,11 @@ export const recruiterNavs: SidebarNavItem[] = [
         label: '면접관 관리',
         icon: Users
       },
+      {
+        path: '/recruiter/interviews/rooms',
+        label: '면접실 관리',
+        icon: Building2
+      }
     ]
   },
   {
