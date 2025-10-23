@@ -2,6 +2,7 @@
 import Sidebar from '@/components/layout/SideBar.vue'
 import DashboardHeader from '@/components/layout/DashboardHeader.vue'
 import { RouterView } from 'vue-router'
+import NotificationPanel from '@/components/notification/AlarmPanel.vue'
 
 </script>
 
@@ -17,6 +18,9 @@ import { RouterView } from 'vue-router'
                 <RouterView />
             </div>
         </main>
+
+        <!-- 알림 전역 배치 -->
+        <NotificationPanel />
     </div>
 </template>
 <style scoped></style>

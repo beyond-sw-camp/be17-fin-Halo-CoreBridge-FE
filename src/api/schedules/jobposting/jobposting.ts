@@ -1,26 +1,80 @@
-import type { Job } from '../../../types/schedules/jobposting/jobposting'
+// src/api/jobposting.ts
+import api from '../../../plugins/AxiosInterceptor'
+import type { Job, JobPostingSchedule } from '../../../types/schedules/jobposting/jobposting'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
-
-async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  })
-  if (!response.ok) throw new Error(`API Error: ${response.statusText}`)
-  return response.json()
+// ---- 공고 CRUD --------------------------------------------------------------
+export const getJobs = async (params?: Record<string, any>): Promise<Job[]> => {
+  const res = await api.get<ApiResponse<Job[]>>('/jobs', { params })
+  return res.data.results
 }
 
-export const getJobs = (params?: any): Promise<Job[]> => {
-  const queryParams = new URLSearchParams()
-  if (params) Object.entries(params).forEach(([key, value]) => { if (value) queryParams.append(key, String(value)) })
-  const query = queryParams.toString()
-  return fetchAPI<Job[]>(`/jobs${query ? `?${query}` : ''}`)
+export const getJobById = async (id: number): Promise<Job> => {
+  const res = await api.get<ApiResponse<Job>>(`/jobs/${id}`)
+  return res.data.results
 }
 
-export const getJobById = (id: number): Promise<Job> => fetchAPI<Job>(`/jobs/${id}`)
-export const createJob = (job: Partial<Job>): Promise<Job> => fetchAPI<Job>('/jobs', { method: 'POST', body: JSON.stringify(job) })
-export const updateJob = (id: number, job: Partial<Job>): Promise<Job> => fetchAPI<Job>(`/jobs/${id}`, { method: 'PUT', body: JSON.stringify(job) })
-export const deleteJob = (id: number): Promise<void> => fetchAPI<void>(`/jobs/${id}`, { method: 'DELETE' })
-export const shareJob = (jobId: number, memberIds: number[], permission: 'view' | 'edit'): Promise<void> => fetchAPI<void>(`/jobs/${jobId}/share`, { method: 'POST', body: JSON.stringify({ memberIds, permission }) })
-export const shareMultipleJobs = (jobIds: number[], memberIds: number[], permission: 'view' | 'edit', message?: string): Promise<void> => fetchAPI<void>('/jobs/share/bulk', { method: 'POST', body: JSON.stringify({ jobIds, memberIds, permission, message }) })
+export const createJob = async (job: Partial<Job>): Promise<Job> => {
+  const res = await api.post<ApiResponse<Job>>('/jobs', job)
+  return res.data.results
+}
+
+export const updateJob = async (id: number, job: Partial<Job>): Promise<Job> => {
+  const res = await api.put<ApiResponse<Job>>(`/jobs/${id}`, job)
+  return res.data.results
+}
+
+export const deleteJob = async (id: number): Promise<void> => {
+  await api.delete(`/jobs/${id}`)
+}
+
+// ---- 공유(share) 기능 (UI 유지, API 비활성) ---------------------------------
+export const SHARE_API_ENABLED = false
+/*
+// (백엔드 준비되면 주석 해제)
+export const shareJob = async (
+  jobId: number,
+  memberIds: number[],
+  permission: 'view' | 'edit'
+): Promise<void> => {
+  const res = await api.post<ApiResponse<void>>(`/jobs/${jobId}/share`, { memberIds, permission })
+  return res.data.results
+}
+*/
+
+// ---- 공고 일정 (JobPostingSchedule) ----------------------------------------
+
+// 전체 일정 조회 ( /recruiter/schedules 달력 화면에서 사용 )
+export const getAllSchedules = async (): Promise<JobPostingSchedule[]> => {
+  const res = await api.get<ApiResponse<JobPostingSchedule[]>>('/api/schedule/jobposting')
+  return res.data.results
+}
+
+// 공고별 일정 조회 ( /recruiter/jobs/:id/schedule 화면에서 사용 )
+export const getSchedulesByJobPosting = async (jobPostingId: number): Promise<JobPostingSchedule[]> => {
+  const res = await api.get<ApiResponse<JobPostingSchedule[]>>(
+    `/schedule/jobposting/job-postings/${jobPostingId}`
+  )
+  return res.data.results
+}
+
+// 일정 등록
+export const createJobPostingSchedule = async (
+  payload: Partial<JobPostingSchedule> & { jobPostingId: number; startDate: string; endDate?: string }
+): Promise<JobPostingSchedule> => {
+  const res = await api.post<ApiResponse<JobPostingSchedule>>('/api/schedule/jobposting', payload)
+  return res.data.results
+}
+
+// 일정 수정
+export const updateJobPostingSchedule = async (
+  scheduleId: number,
+  payload: Partial<JobPostingSchedule>
+): Promise<JobPostingSchedule> => {
+  const res = await api.put<ApiResponse<JobPostingSchedule>>(`/schedule/jobposting/${scheduleId}`, payload)
+  return res.data.results
+}
+
+// 일정 삭제
+export const deleteJobPostingSchedule = async (scheduleId: number): Promise<void> => {
+  await api.delete(`/schedule/jobposting/${scheduleId}`)
+}

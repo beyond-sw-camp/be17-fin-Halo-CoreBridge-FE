@@ -50,7 +50,7 @@ const router = createRouter({
         {
           path: 'schedules',
           name: 'recruiter-schedules',
-          component: () => import('@/views/recruiter/schedule/RecruitmentSchedule.vue'),
+          component: () => import('@/views/recruiter/schedule/JobPostingSchedule.vue'),
         },
         {
           path: 'jobs',
@@ -80,7 +80,7 @@ const router = createRouter({
             {
               path: 'schedule',
               name: 'recruiter-job-schedule',
-              component: () => import('@/views/recruiter/job/JobPostingSchedule.vue'),
+              component: () => import('@/views/recruiter/job/JobProcessSchedule.vue'),
             },
             {
               path: 'process',
