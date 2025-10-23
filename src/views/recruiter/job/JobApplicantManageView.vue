@@ -1,130 +1,213 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import draggable from 'vuedraggable'
 import { Calendar, Search, Filter } from 'lucide-vue-next'
+import managementApi from '@/api/management/index'
 
+// -------------------------
+// Types
+// -------------------------
 interface Applicant {
-  id: string
+  id: number
   name: string
-  email: string
   experience: number
-  stageId: string
-  appliedDate: string
-  interviewDate?: string
   statusText: string
-  skills: string[]
 }
 
 interface Stage {
   id: string
   name: string
+  code: string
   bgClass: string
   textClass: string
   headerClass: string
   dotClass: string
+  applicants: Applicant[]
 }
 
+interface StageColors {
+  bg: string
+  text: string
+  header: string
+  dot: string
+}
+
+// -------------------------
+// Constants
+// -------------------------
+const STAGE_COLORS: Record<string, StageColors> = {
+  applied: { bg: 'bg-gray-50', text: 'text-slate-600', header: 'bg-gray-100', dot: 'bg-gray-500' },
+  screening: { bg: 'bg-blue-50', text: 'text-blue-600', header: 'bg-blue-100', dot: 'bg-blue-500' },
+  interview1: { bg: 'bg-purple-50', text: 'text-purple-600', header: 'bg-purple-100', dot: 'bg-purple-500' },
+  interview2: { bg: 'bg-orange-50', text: 'text-orange-600', header: 'bg-orange-100', dot: 'bg-orange-500' },
+  final: { bg: 'bg-green-50', text: 'text-green-600', header: 'bg-green-100', dot: 'bg-green-500' }
+}
+
+const DEFAULT_STAGE = 'applied'
+const SEARCH_FIELDS = ['name'] as const
+
+// -------------------------
+// Composables
+// -------------------------
 const router = useRouter()
+const route = useRoute()
+
+// -------------------------
+// State
+// -------------------------
 const searchQuery = ref('')
+const stages = ref<Stage[]>([])
+const stageLists = ref<Record<string, Applicant[]>>({})
 
-const stages = ref<Stage[]>([
-  { id: 'applied',    name: '지원 완료',  bgClass: 'bg-gray-50',   textClass: 'text-slate-600',  headerClass: 'bg-gray-100',  dotClass: 'bg-gray-500' },
-  { id: 'screening',  name: '서류 검토',  bgClass: 'bg-blue-50',   textClass: 'text-blue-600',   headerClass: 'bg-blue-100',  dotClass: 'bg-blue-500' },
-  { id: 'interview1', name: '1차 면접',  bgClass: 'bg-purple-50', textClass: 'text-purple-600', headerClass: 'bg-purple-100',dotClass: 'bg-purple-500' },
-  { id: 'interview2', name: '2차 면접',  bgClass: 'bg-orange-50', textClass: 'text-orange-600', headerClass: 'bg-orange-100',dotClass: 'bg-orange-500' },
-  { id: 'final',      name: '최종 합격',  bgClass: 'bg-green-50',  textClass: 'text-green-600',  headerClass: 'bg-green-100', dotClass: 'bg-green-500' }
-])
 
-// 원본 데이터
-const applicants = ref<Applicant[]>([
-  { id: '1', name: '김민수', email: 'minsu.kim@email.com',  experience: 5, stageId: 'final',    appliedDate: '2025-10-10', statusText: '1일전', skills: ['Java', 'Spring', 'AWS'] },
-  { id: '2', name: '이지은', email: 'jieun.lee@email.com',  experience: 3, stageId: 'applied',    appliedDate: '2025-10-11', statusText: '1일전', skills: ['Node.js', 'Python', 'Docker'] },
-  { id: '3', name: '박서준', email: 'seojun.park@email.com', experience: 7, stageId: 'applied',    appliedDate: '2025-10-12', statusText: '1일전', skills: ['Go', 'Kubernetes'] },
-  { id: '4', name: '최유진', email: 'yujin.choi@email.com',  experience: 4, stageId: 'screening',  appliedDate: '2025-10-13', statusText: '1일전', skills: ['C++', 'Redis'] },
-  { id: '5', name: '정현우', email: 'hyunwoo.jung@email.com', experience: 6, stageId: 'interview1', appliedDate: '2025-10-10', statusText: '1일전', skills: ['Scala', 'Kafka'] }
-])
+// -------------------------
+// Computed
+// -------------------------
+const jobPostingId = computed(() => {
+  const qp = route.query.jobPostingId || route.params.jobPostingId
+  const value = Array.isArray(qp) ? qp[0] : qp
+  return value ? Number(value) : 1
+})
 
-// 컬럼별 '실제 배열' (여기에 드랍됨)
-const stageLists = ref<Record<string, Applicant[]>>(
-  stages.value.reduce((acc, s) => { acc[s.id] = []; return acc }, {} as Record<string, Applicant[]>)
-)
-
-// 초기 분배(같은 객체 참조를 컬럼 배열에 삽입)
-for (const a of applicants.value) {
-  stageLists.value[a.stageId].push(a)
+// -------------------------
+// Helper Functions
+// -------------------------
+const getStageColors = (code: string): StageColors => {
+  return STAGE_COLORS[code] || STAGE_COLORS[DEFAULT_STAGE]
 }
 
-// 드래그 종료: 라이브러리가 stageLists를 이동시켰으니, 객체의 stageId만 동기화
-const onMove = (event: any) => {
-  const movedApplicant = event.item.__draggable_context?.element as Applicant // 마우스로 집었을 때(드래그)의 어떤 지원자 객체인지 저장하기 위해서
-  const stageContainer = event.to.closest('[data-stage-id]') // 드랍을 했을 때 떨어진 컬럼(목표 영역)을 DOM에서 찾는 역할
-  const newStageId = stageContainer?.getAttribute('data-stage-id') || '' // 해당 DOM 요소에 달려 있는 data-stage-id 속성 값을 문자열로 꺼내온다
-  if (newStageId && movedApplicant.stageId !== newStageId) {
-    movedApplicant.stageId = newStageId
-    console.log(`✅ ${movedApplicant.name} → ${newStageId}`)
-  }
-}
-
-// 검색: 리스트는 고정, 카드만 보이기/숨김
-const searchFields = ['name'] as const //applicants에 선언된 key 값 중에서 찾고자 하는 값 넣으면 됨
-
-const matchesSearch = (a: Applicant) => {
+const matchesSearch = (applicant: Applicant): boolean => {
   const query = searchQuery.value.trim().toLowerCase()
   if (!query) return true
 
-  return searchFields.some(field =>
-    String(a[field]).toLowerCase().includes(query)
+  return SEARCH_FIELDS.some(field =>
+    String(applicant[field]).toLowerCase().includes(query)
   )
 }
 
-// 헤더 카운트: “현재 보이는 카드 수(검색 반영)”
-const filteredCountByStage = (stageId: string) =>
-  stageLists.value[stageId].filter(matchesSearch).length
+const filteredCountByStage = (stageId: string): number => {
+  return (stageLists.value[stageId] || []).filter(matchesSearch).length
+}
 
-// 라우팅
-const viewApplicant = (applicantId: string) => {
+// -------------------------
+// Data Loading
+// -------------------------
+const loadData = async (): Promise<void> => {
+  try {
+    const response = await managementApi.getManagementBoard(jobPostingId.value)
+
+    if (response.success) {
+      stages.value = response.results.stages.map((stage) => {
+        const colors = getStageColors(stage.code)
+        return {
+          id: String(stage.id),
+          code: stage.code,
+          name: stage.name,
+          bgClass: colors.bg,
+          textClass: colors.text,
+          headerClass: colors.header,
+          dotClass: colors.dot,
+          applicants: stage.applicants.map((a) => ({
+            id: a.id, 
+            name: a.name,
+            experience: a.experience,
+            stageId: stage.code,
+            statusText: `${a.daysSinceApplied}일 전 접수`,
+          })),
+        }
+      })
+
+      // vuedraggable용 데이터 매핑
+      const map: Record<string, Applicant[]> = {}
+      stages.value.forEach((stage) => {
+        map[stage.id] = stage.applicants
+      })
+      stageLists.value = map
+    }
+  } catch (error) {
+    console.error('데이터 로딩 실패:', error)
+    alert('데이터를 불러오는 중 오류가 발생했습니다.')
+  }
+}
+
+// -------------------------
+// Event Handlers
+// -------------------------
+const onMove = async (event: any): Promise<void> => {
+  const ctx = event.item?.__draggable_context
+  if (!ctx) return
+
+  const movedApplicant = ctx.element as Applicant
+  const stageContainer = event.to.closest('[data-stage-id]')
+  if (!stageContainer) return
+
+  const newStageId = stageContainer.getAttribute('data-stage-id')
+
+  try {
+    // ✅ 인자 순서: jobPostingId → applicantId → stageCode
+    const response = await managementApi.updateApplicantStage(
+      jobPostingId.value,
+      Number(movedApplicant.id),
+      Number(newStageId)
+    )
+
+    if (response.success) {
+      console.log(` ${movedApplicant.name} → ${newStageId} (서버 반영 완료)`)
+    } else {
+      throw new Error(response.message)
+    }
+  } catch (error) {
+    console.error('단계 변경 실패:', error)
+    alert('단계 변경 중 오류가 발생했습니다.')
+  }
+}
+
+
+const viewApplicant = (applicantId: string): void => {
   router.push(`/recruiter/applicants/${applicantId}`)
 }
 
-// (옵션) 필터 버튼 더미
-const toggleFilter = () => {}
-</script>
+const toggleFilter = (): void => {
+  // TODO: 필터 기능 구현
+}
 
+const getAvatarColor = (stageCode: string): string => {
+  return stageCode === 'final' ? 'bg-green-600' : 'bg-slate-600'
+}
+
+const getStatusColor = (stageCode: string): string => {
+  return stageCode === 'final' ? 'text-green-600' : 'text-gray-600'
+}
+
+// -------------------------
+// Lifecycle
+// -------------------------
+onMounted(loadData)
+</script>
 
 <template>
   <div class="bg-gray-50 min-h-screen">
-    <main >
+    <main>
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <!-- Search & Filter -->
         <div class="flex gap-4 mb-6">
           <div class="flex-1 relative">
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="지원자 이름, 이메일 검색..."
-              class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600 focus:border-transparent"
-            />
+            <input v-model="searchQuery" type="text" placeholder="지원자 이름..."
+              class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600 focus:border-transparent" />
             <Search class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
           </div>
-          <button
-            @click="toggleFilter"
-            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-          >
+          <button @click="toggleFilter"
+            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
             <Filter class="w-5 h-5" />
             필터
           </button>
         </div>
 
-        <!-- Kanban Columns -->
-        <div class="flex gap-4 overflow-x-auto">
-          <div
-            v-for="stage in stages"
-            :key="stage.id"
-            :data-stage-id="stage.id"
-            class="flex-shrink-0 w-80"
-          >
-            <!-- Column Header -->
+        <!-- Management Board -->
+        <div class="flex gap-4 overflow-x-auto pb-4">
+          <div v-for="stage in stages" :key="stage.id" :data-stage-id="stage.id" class="flex-shrink-0 w-80">
+            <!-- Stage Header -->
             <div :class="['rounded-lg p-4 mb-4 shadow-md', stage.headerClass]">
               <div class="flex items-center justify-between mb-2">
                 <h3 class="font-bold text-slate-600 flex items-center gap-2">
@@ -137,30 +220,18 @@ const toggleFilter = () => {}
               </div>
             </div>
 
-            <!-- Cards (bind to real per-column list) -->
-            <draggable
-              :list="stageLists[stage.id]"
-              :group="{ name: 'applicants', pull: true, put: true }"
-              item-key="id"
-              @end="onMove"
-              animation="200"
-              ghost-class="opacity-50"
-              class="space-y-3 min-h-[500px]"
-            >
+            <!-- Applicant Cards -->
+            <draggable :list="stageLists[stage.id]" :group="{ name: 'applicants', pull: true, put: true }" item-key="id"
+              @end="onMove" animation="200" ghost-class="opacity-50" class="space-y-3 min-h-[500px]">
               <template #item="{ element }">
-                <div
-                  v-show="matchesSearch(element)"
-                  @click="viewApplicant(element.id)"
-                  class="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all duration-200 shadow-sm"
-                >
+                <div v-show="matchesSearch(element)" @click="viewApplicant(element.id)"
+                  class="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all duration-200 shadow-sm">
                   <div class="flex items-start justify-between mb-3">
                     <div class="flex items-center gap-3">
-                      <div
-                        :class="[
-                          'w-10 h-10 rounded-full flex items-center justify-center text-white font-medium',
-                          element.stageId === 'final' ? 'bg-green-600' : 'bg-slate-600'
-                        ]"
-                      >
+                      <div :class="[
+                        'w-10 h-10 rounded-full flex items-center justify-center text-white font-medium',
+                        getAvatarColor(element.stageId)
+                      ]">
                         {{ element.name.charAt(0) }}
                       </div>
                       <div>
@@ -168,12 +239,7 @@ const toggleFilter = () => {}
                         <div class="text-xs text-gray-500">{{ element.experience }}년 경력</div>
                       </div>
                     </div>
-                    <div
-                      :class="[
-                        'flex items-center gap-2',
-                        element.stageId === 'final' ? 'text-green-600' : 'text-gray-600'
-                      ]"
-                    >
+                    <div :class="['flex items-center gap-2', getStatusColor(element.stageId)]">
                       <Calendar class="w-4 h-4" />
                       {{ element.statusText }}
                     </div>
@@ -188,4 +254,4 @@ const toggleFilter = () => {}
   </div>
 </template>
 
-<style></style>
+<style scoped></style>
