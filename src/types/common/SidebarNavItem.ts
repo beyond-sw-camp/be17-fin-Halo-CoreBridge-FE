@@ -1,5 +1,8 @@
+import type { Component } from 'vue'
+
 export interface SidebarNavItem {
-  label: string
   path: string
-  icon: unknown
+  label: string
+  icon: Component
+  children?: SidebarNavItem[]
 }
