@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { Search, Plus, MoreVertical, RefreshCcw, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import CreateInterviewModal from '@/components/recruiter-dashboard/interview/create-modal/CreateInterviewModal.vue'
+import InterviewDetailModal from '@/components/recruiter-dashboard/interview/detail-modal/InterviewDetailModal.vue'
 
 interface Interview {
   id: number
@@ -119,7 +120,6 @@ const interviews = ref<Interview[]>([
   }
 ])
 
-
 const getStatusColor = (status: string) => {
   const colors = {
     ongoing: 'bg-green-500 text-white',
@@ -148,8 +148,21 @@ const openCreateModal = () => {
 const closeModal = () => {
   isOpenModal.value = false
 }
+
+const isDetailModalOpen = ref(false)
+const interviewId = ref(0)
+const openDetailModal = (id: number) => {
+  interviewId.value = id
+  isDetailModalOpen.value = true
+}
+
+const closeDetailModal = () => {
+  isDetailModalOpen.value = false
+}
+
 </script>
 <template>
+  <InterviewDetailModal @close="closeDetailModal" :open-modal="isDetailModalOpen" :interviewId="interviewId" />
   <CreateInterviewModal @close="closeModal" :open-modal="isOpenModal" />
   <div class="min-h-screen ">
     <!-- Header -->
@@ -217,7 +230,7 @@ const closeModal = () => {
           v-for="interview in interviews" :key="interview.id"
           class="bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-all hover:cursor-pointer overflow-hidden"
           :class="{ 'opacity-75': interview.status === 'completed' || interview.status === 'cancelled', 'opacity-60': interview.status === 'cancelled' }">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between" @click="openDetailModal(interview.id)">
             <div class="flex items-center space-x-6 flex-1">
               <!-- Date & Time -->
               <div class="text-center min-w-[80px]">
