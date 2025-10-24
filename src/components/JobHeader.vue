@@ -103,10 +103,10 @@
                 <button
                 v-if="route.path.includes('/schedule')"
                 @click="openShareModal"
-                class="mb-3 flex-shrink-0 px-6 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-sm hover:cursor-pointer"
+                class="mb-5 flex-shrink-0 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-sm hover:cursor-pointer"
                 >
                     <Share2 class="w-5 h-5" />
-                    공고 공유
+                    일정 공유
                 </button>
             </div>
         </div>
@@ -172,12 +172,12 @@ interface tab {
 
 const url = '/recruiter/jobs/'
 
-// ✅ 탭 리스트 (라우터 경로와 정확히 일치시켜야 함)
+// 탭 리스트 (라우터 경로와 정확히 일치시켜야 함)
 const tabs = ref([
     { id: 1, path: url + route.params.id, name: '공고 정보' },
     { id: 2, path: url + route.params.id + '/manage', name: '지원자 관리' },
     { id: 3, path: url + route.params.id + '/applicants', name: '지원자 목록' },
-    { id: 4, path: url + route.params.id + '/schedule', name: '공고 일정' },
+    { id: 4, path: url + route.params.id + '/schedule', name: '채용 일정' },
     { id: 5, path: url + route.params.id + '/process', name: '프로세스 설정' },
 ])
 

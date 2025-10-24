@@ -22,6 +22,7 @@ export const useJobCalendar = (jobs: any, filters: any, searchQuery: any) => {
       )
     }
 
+    if (filters.value.position) result = result.filter((job: Job) => job.position === filters.value.position)
     if (filters.value.status) result = result.filter((job: Job) => job.status === filters.value.status)
     if (filters.value.department) result = result.filter((job: Job) => job.department === filters.value.department)
     if (filters.value.experience) result = result.filter((job: Job) => job.experience === filters.value.experience)

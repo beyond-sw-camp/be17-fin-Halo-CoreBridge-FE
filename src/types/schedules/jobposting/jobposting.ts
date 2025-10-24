@@ -16,9 +16,21 @@ export interface Job {
   screening: number
   interview1: number
   interview2: number
+  position: String
   final: number
   isUrgent?: boolean
   sharedWith?: number[]
+}
+
+export interface JobPostingSchedule {
+  id: number
+  jobPostingId: number
+  title: string
+  description: string
+  date: string // yyyy-MM-dd
+  allDay: boolean
+  color?: string
+  recurringGroupId?: string
 }
 
 export interface CalendarDate {
@@ -29,6 +41,7 @@ export interface CalendarDate {
 }
 
 export interface Filters {
+  position: string
   status: string
   department: string
   experience: string

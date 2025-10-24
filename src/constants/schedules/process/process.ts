@@ -1,4 +1,4 @@
-import type { ScheduleType } from '../../../types/schedules/recruitment/recruitment'
+import type { ScheduleType } from '../../../types/schedules/process/process'
 import { FileCheck, Briefcase, UserCheck, Handshake, FileText, GraduationCap, Heart, UsersRound, PartyPopper } from 'lucide-vue-next'
 
 export const SCHEDULE_TYPE_LABELS: Record<ScheduleType, string> = {

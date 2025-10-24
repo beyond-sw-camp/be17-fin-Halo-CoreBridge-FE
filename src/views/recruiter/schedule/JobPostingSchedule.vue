@@ -1,5 +1,60 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen p-6 bg-gray-50">
+    <!-- 헤더 -->
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-600 mb-2">채용 공고 관리</h1>
+        <p class="text-gray-600">공고별 채용 프로세스를 체계적으로 관리하세요</p>
+      </div>
+      <div class="flex gap-3">
+        <button
+          @click="openShareModal"
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-sm"
+        >
+          <Share2 class="w-5 h-5" />
+          공고 공유
+        </button>
+        <button
+          @click="openAddJobModal"
+          class="px-6 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition flex items-center gap-2 shadow-sm"
+        >
+          <Plus class="w-5 h-5" />
+          공고 등록
+        </button>
+      </div>
+    </div>
+
+    <!-- 통계 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div v-for="stat in statistics" :key="stat.label" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
+        <p class="text-sm text-gray-600 mb-2">{{ stat.label }}</p>
+        <div class="flex items-center gap-3">
+          <div :class="['w-10 h-10 rounded-lg flex items-center justify-center', getIconBgClass(stat.color)]">
+            <Calendar v-if="stat.icon === 'calendar'" :class="['w-5 h-5', getIconColorClass(stat.color)]" />
+            <Clock v-else-if="stat.icon === 'clock'" :class="['w-5 h-5', getIconColorClass(stat.color)]" />
+            <AlertCircle v-else-if="stat.icon === 'alert'" :class="['w-5 h-5', getIconColorClass(stat.color)]" />
+            <Users v-else-if="stat.icon === 'users'" :class="['w-5 h-5', getIconColorClass(stat.color)]" />
+            <Check v-else-if="stat.icon === 'check'" :class="['w-5 h-5', getIconColorClass(stat.color)]" />
+          </div>
+          <p :class="['text-2xl font-bold', getValueColorClass(stat.color, stat.isAlert)]">{{ stat.value }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 파이프라인 -->
+    <div class="bg-white rounded-lg shadow p-3 mb-5">
+      <h3 class="text-center font-bold text-slate-600 mb-2 text-xs tracking-tight">채용 파이프라인</h3>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5">
+        <div v-for="stage in pipelineStages" :key="stage.name" class="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition">
+          <div class="flex items-center gap-1.5 mb-1">
+            <div :class="['w-3 h-3 rounded-full flex-shrink-0', stage.color]"></div>
+            <span class="text-xs font-medium text-gray-700 whitespace-nowrap">{{ stage.name }}</span>
+          </div>
+          <span class="text-base font-bold text-slate-600">{{ stage.count }}명</span>
+        </div>
+      </div>
+    </div>
+
     <!-- 필터 및 검색 -->
     <div class="bg-white rounded-xl shadow-lg mb-6 p-6 border border-gray-100">
       <div class="flex items-center justify-between mb-4">
@@ -43,27 +98,30 @@
         </div>
 
         <!-- 필터 옵션들 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <!-- 상태 필터 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <!-- Position 필터 -->
           <div class="relative">
-            <label class="block text-xs font-semibold text-gray-600 mb-1.5">상태</label>
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5">직무</label>
             <div class="relative">
               <Briefcase class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
               <select
-                v-model="filters.status"
+                v-model="filters.position"
                 class="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm appearance-none bg-white cursor-pointer hover:border-gray-300 transition"
               >
-                <option value="">전체 상태</option>
-                <option value="recruiting">채용중</option>
-                <option value="screening">서류검토중</option>
-                <option value="interviewing">면접진행중</option>
-                <option value="closed">마감</option>
-                <option value="paused">일시중단</option>
+                <option value="">전체 직무</option>
+                <option
+                  v-for="(label, key) in POSITION_MAP"
+                  :key="key"
+                  :value="key"
+                >
+                  {{ label }}
+                </option>
               </select>
               <ChevronDown class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
 
+          
           <!-- 부서 필터 -->
           <div class="relative">
             <label class="block text-xs font-semibold text-gray-600 mb-1.5">부서</label>
@@ -96,9 +154,9 @@
               >
                 <option value="">전체 경력</option>
                 <option value="신입">신입</option>
-                <option value="1-3년">주니어 (1-3년)</option>
-                <option value="3-5년">미드 (3-5년)</option>
-                <option value="5년 이상">시니어 (5년+)</option>
+                <option value="1-3년">1-3년</option>
+                <option value="3-5년">3-5년</option>
+                <option value="5년 이상">5년+</option>
               </select>
               <ChevronDown class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
             </div>
@@ -113,10 +171,31 @@
                 v-model="filters.type"
                 class="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm appearance-none bg-white cursor-pointer hover:border-gray-300 transition"
               >
-                <option value="">전체 고용형태</option>
+                <option value="">전체 형태</option>
                 <option value="정규직">정규직</option>
                 <option value="계약직">계약직</option>
                 <option value="인턴">인턴</option>
+                <option value="프리랜서">프리랜서</option>
+              </select>
+              <ChevronDown class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+
+          <!-- 상태 필터 -->
+          <div class="relative">
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5">상태</label>
+            <div class="relative">
+              <Check class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <select
+                v-model="filters.status"
+                class="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm appearance-none bg-white cursor-pointer hover:border-gray-300 transition"
+              >
+                <option value="">전체 상태</option>
+                <option value="recruiting">채용중</option>
+                <option value="screening">서류검토</option>
+                <option value="interviewing">면접중</option>
+                <option value="closed">마감</option>
+                <option value="paused">중단</option>
               </select>
               <ChevronDown class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
             </div>
@@ -454,7 +533,7 @@
     <!-- 공고 공유 모달 -->
     <div
       v-if="showShareModal"
-      class="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50"
+      class="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50"
       @click.self="closeShareModal"
     >
       <div class="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -698,14 +777,459 @@
       </div>
     </div>
   </div>
+
+  <!-- 공고 등록 모달 -->
+  <div
+    v-if="showAddJobModal"
+    class="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    @click.self="closeAddJobModal"
+  >
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <!-- 모달 헤더 -->
+      <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-slate-500 to-slate-600 rounded-lg flex items-center justify-center">
+            <Plus class="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">새 채용 공고 등록</h2>
+            <p class="text-sm text-gray-500">채용 공고 정보를 입력해주세요</p>
+          </div>
+        </div>
+        <button
+          @click="closeAddJobModal"
+          class="p-2 hover:bg-gray-100 rounded-lg transition"
+        >
+          <X class="w-5 h-5 text-gray-500" />
+        </button>
+      </div>
+
+      <!-- 모달 내용 -->
+      <div class="px-6 py-6">
+        <!-- 기본 정보 섹션 -->
+        <div class="mb-8">
+          <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Briefcase class="w-5 h-5 text-slate-600" />
+            기본 정보
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 공고 제목 -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                공고 제목 <span class="text-red-500">*</span>
+              </label>
+              <input
+                v-model="newJob.title"
+                type="text"
+                placeholder="예: 시니어 프론트엔드 개발자"
+                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition"
+              />
+            </div>
+
+            <!-- 직무 -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                직무 <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <Briefcase class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                <select
+                  v-model="newJob.position"
+                  class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent appearance-none bg-white cursor-pointer transition"
+                >
+                  <option value="">직무 선택</option>
+                  <option value="frontend">프론트엔드 개발자</option>
+                  <option value="backend">백엔드 개발자</option>
+                  <option value="fullstack">풀스택 개발자</option>
+                  <option value="designer">UX/UI 디자이너</option>
+                  <option value="pm">프로덕트 매니저</option>
+                  <option value="marketing">마케팅</option>
+                  <option value="sales">영업</option>
+                </select>
+                <ChevronDown class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            <!-- 부서 -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                부서 <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <Building class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                <select
+                  v-model="newJob.department"
+                  class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent appearance-none bg-white cursor-pointer transition"
+                >
+                  <option value="">부서 선택</option>
+                  <option value="개발팀">개발팀</option>
+                  <option value="디자인팀">디자인팀</option>
+                  <option value="프로덕트팀">프로덕트팀</option>
+                  <option value="마케팅팀">마케팅팀</option>
+                  <option value="영업팀">영업팀</option>
+                  <option value="인사팀">인사팀</option>
+                </select>
+                <ChevronDown class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            <!-- 경력 -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                경력 <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <Award class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                <select
+                  v-model="newJob.experience"
+                  class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent appearance-none bg-white cursor-pointer transition"
+                >
+                  <option value="">경력 선택</option>
+                  <option value="신입">신입</option>
+                  <option value="1-3년">1-3년</option>
+                  <option value="3-5년">3-5년</option>
+                  <option value="5년 이상">5년 이상</option>
+                </select>
+                <ChevronDown class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            <!-- 고용형태 -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                고용형태 <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <Briefcase class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                <select
+                  v-model="newJob.type"
+                  class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent appearance-none bg-white cursor-pointer transition"
+                >
+                  <option value="">고용형태 선택</option>
+                  <option value="정규직">정규직</option>
+                  <option value="계약직">계약직</option>
+                  <option value="인턴">인턴</option>
+                  <option value="프리랜서">프리랜서</option>
+                </select>
+                <ChevronDown class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            <!-- 상태 -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                공고 상태
+              </label>
+              <div class="relative">
+                <select
+                  v-model="newJob.status"
+                  class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent appearance-none bg-white cursor-pointer transition"
+                >
+                  <option value="recruiting">채용중</option>
+                  <option value="screening">서류검토중</option>
+                  <option value="interviewing">면접진행중</option>
+                  <option value="closed">마감</option>
+                  <option value="paused">일시중단</option>
+                </select>
+                <ChevronDown class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 일정 정보 섹션 -->
+        <div class="mb-8">
+          <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Calendar class="w-5 h-5 text-slate-600" />
+            일정 정보
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 게시일 -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                게시일
+              </label>
+              <div class="relative">
+                <Calendar class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                <input
+                  v-model="newJob.postedDate"
+                  type="date"
+                  class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition"
+                />
+              </div>
+            </div>
+
+            <!-- 마감일 -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                마감일 <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <Calendar class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                <input
+                  v-model="newJob.deadline"
+                  type="date"
+                  :min="newJob.postedDate"
+                  class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 상세 정보 섹션 (선택사항) -->
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <FileText class="w-5 h-5 text-slate-600" />
+            상세 정보 (선택사항)
+          </h3>
+          <div class="space-y-4">
+            <!-- 공고 설명 -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                공고 설명
+              </label>
+              <textarea
+                v-model="newJob.description"
+                rows="3"
+                placeholder="채용 공고에 대한 간단한 설명을 입력하세요..."
+                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition resize-none"
+              ></textarea>
+            </div>
+
+            <!-- 지원 자격 -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                지원 자격
+              </label>
+              <textarea
+                v-model="newJob.requirements"
+                rows="3"
+                placeholder="필수 자격 요건, 우대 사항 등을 입력하세요..."
+                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition resize-none"
+              ></textarea>
+            </div>
+
+            <!-- 주요 업무 -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                주요 업무
+              </label>
+              <textarea
+                v-model="newJob.responsibilities"
+                rows="3"
+                placeholder="담당하게 될 주요 업무를 입력하세요..."
+                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition resize-none"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- 안내 메시지 -->
+        <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div class="flex gap-3">
+            <AlertCircle class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p class="text-sm font-medium text-blue-900 mb-1">등록 안내</p>
+              <p class="text-sm text-blue-700">
+                공고 등록 후 채용 일정에 자동으로 표시되며, 팀원들과 공유할 수 있습니다.
+                필수 항목(*)은 반드시 입력해야 합니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 액션 버튼 -->
+        <div class="flex gap-3">
+          <button
+            @click="closeAddJobModal"
+            class="flex-1 px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+          >
+            취소
+          </button>
+          <button
+            @click="saveNewJob"
+            class="flex-1 px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition flex items-center justify-center gap-2 shadow-lg"
+          >
+            <Plus class="w-5 h-5" />
+            공고 등록하기
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 공고 세부 일정 모달 -->
+  <div
+    v-if="showJobDetailModal && selectedJobForDetail"
+    class="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    @click.self="closeJobDetailModal"
+  >
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+      <!-- 모달 헤더 -->
+      <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-2">
+              <span :class="['px-3 py-1 rounded-full text-xs font-semibold', getStatusClass(selectedJobForDetail.status)]">
+                {{ getStatusLabel(selectedJobForDetail.status) }}
+              </span>
+              <span v-if="selectedJobForDetail.isUrgent || selectedJobForDetail.daysLeft <= 3" class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                긴급
+              </span>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-1">{{ selectedJobForDetail.title }}</h2>
+            <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+              <div class="flex items-center gap-1">
+                <Building class="w-4 h-4" />
+                {{ selectedJobForDetail.department }}
+              </div>
+              <div class="flex items-center gap-1">
+                <Award class="w-4 h-4" />
+                {{ selectedJobForDetail.experience }}
+              </div>
+              <div class="flex items-center gap-1">
+                <Briefcase class="w-4 h-4" />
+                {{ selectedJobForDetail.type }}
+              </div>
+            </div>
+          </div>
+          <button
+            @click="closeJobDetailModal"
+            class="p-2 hover:bg-gray-100 rounded-lg transition"
+          >
+            <X class="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+      </div>
+
+      <!-- 모달 내용 -->
+      <div class="px-6 py-6">
+        <!-- 일정 정보 -->
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Calendar class="w-5 h-5 text-slate-600" />
+            채용 일정
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p class="text-sm text-gray-600 mb-1">게시일</p>
+              <p class="text-lg font-bold text-gray-900">{{ selectedJobForDetail.postedDate }}</p>
+            </div>
+            <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p class="text-sm text-gray-600 mb-1">마감일</p>
+              <div class="flex items-center justify-between">
+                <p class="text-lg font-bold text-gray-900">{{ selectedJobForDetail.deadline }}</p>
+                <span :class="[
+                  'text-sm font-semibold px-2 py-1 rounded',
+                  selectedJobForDetail.daysLeft <= 3 ? 'bg-red-100 text-red-700' :
+                  selectedJobForDetail.daysLeft <= 7 ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-green-100 text-green-700'
+                ]">
+                  D-{{ selectedJobForDetail.daysLeft }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 지원 현황 -->
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Users class="w-5 h-5 text-slate-600" />
+            지원 현황
+          </h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <p class="text-xs text-gray-600 mb-1">총 지원자</p>
+              <p class="text-2xl font-bold text-gray-900">{{ selectedJobForDetail.applicants }}명</p>
+            </div>
+            <div class="p-4 bg-orange-50 rounded-lg border border-orange-200">
+              <p class="text-xs text-gray-600 mb-1">서류전형</p>
+              <p class="text-2xl font-bold text-orange-700">{{ selectedJobForDetail.screening }}명</p>
+            </div>
+            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p class="text-xs text-gray-600 mb-1">1차 면접</p>
+              <p class="text-2xl font-bold text-blue-700">{{ selectedJobForDetail.interview1 }}명</p>
+            </div>
+            <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <p class="text-xs text-gray-600 mb-1">최종 면접</p>
+              <p class="text-2xl font-bold text-purple-700">{{ selectedJobForDetail.final }}명</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 진행률 -->
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <TrendingUp class="w-5 h-5 text-slate-600" />
+            채용 진행률
+          </h3>
+          <div class="space-y-3">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-700">전체 진행률</span>
+                <span class="text-sm font-bold text-gray-900">{{ selectedJobForDetail.progress }}%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  :class="['h-3 rounded-full transition-all', getProgressColor(selectedJobForDetail.progress)]"
+                  :style="{ width: `${selectedJobForDetail.progress}%` }"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 공유 정보 -->
+        <div v-if="selectedJobForDetail.sharedWith && selectedJobForDetail.sharedWith.length > 0" class="mb-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Share2 class="w-5 h-5 text-slate-600" />
+            공유 중
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="memberId in selectedJobForDetail.sharedWith"
+              :key="memberId"
+              class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium flex items-center gap-1"
+            >
+              <Users class="w-3 h-3" />
+              {{ getTeamMemberName(memberId) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- 액션 버튼 -->
+        <div class="flex gap-3 pt-4 border-t border-gray-200">
+          <button
+            @click="closeJobDetailModal"
+            class="flex-1 px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+          >
+            닫기
+          </button>
+          <button
+            @click="goToJobDetailPage(selectedJobForDetail.id)"
+            class="flex-1 px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition flex items-center justify-center gap-2 shadow-lg"
+          >
+            <ExternalLink class="w-5 h-5" />
+            상세 페이지로 이동
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+// 추가
+import { POSITION_MAP } from '../../../constants/schedules/process/process'
+import type { Statistic, PipelineStage } from '../../../types/schedules/process/process'
+import { getIconBgClass, getIconColorClass, getValueColorClass} from '../../../constants/schedules/process/process'
 import {
-  Plus, ChevronLeft, ChevronRight, Calendar, CalendarDays, Users, Briefcase,
-  List, FileText, FileCheck, Share2, X, Check, Filter, Search, ChevronDown,
-  Building, Award
+  Plus, ChevronLeft, ChevronRight, Calendar, CalendarDays, Users, Briefcase, Clock,
+  List, FileText, FileCheck, Share2, X, Check, Filter, Search, ChevronDown, AlertCircle,
+  Building, Award, MapPin, ExternalLink, TrendingUp
 } from 'lucide-vue-next'
 import type { Job, CalendarDate, Filters, TeamMember, ShareSettings } from '../../../types/schedules/jobposting/jobposting'
 import { useJobCalendar, useDragSelect, useJobShare } from '../../../composable/schedules/jobposting/useJobPosting'
@@ -717,46 +1241,84 @@ import {
 // State
 const searchQuery = ref('')
 const sortBy = ref<'deadline' | 'applicants'>('deadline')
-const filters = ref<Filters>({ status: '', department: '', experience: '', type: '' })
+const filters = ref<Filters>({ position: '', status: '', department: '', experience: '', type: '' })
+
+// 공고 세부 일정 모달 상태
+const showJobDetailModal = ref(false)
+const selectedJobForDetail = ref<Job | null>(null)
+
+// 공고 등록 모달 상태
+const showAddJobModal = ref(false)
+const newJob = ref({
+  title: '',
+  position: '',
+  department: '',
+  experience: '',
+  type: '',
+  status: 'recruiting' as JobStatus,
+  postedDate: new Date().toISOString().split('T')[0],
+  deadline: '',
+  description: '',
+  requirements: '',
+  responsibilities: ''
+})
+
+// 추가
+const statistics = ref<Statistic[]>([
+  { label: '금주 면접', value: '12건', icon: 'calendar', color: 'blue', isAlert: false },
+  { label: '오늘 일정', value: '4건', icon: 'clock', color: 'yellow', isAlert: false },
+  { label: '긴급 처리', value: '3건', icon: 'alert', color: 'red', isAlert: true },
+  { label: '진행중 지원자', value: '28명', icon: 'users', color: 'purple', isAlert: false },
+  { label: '이번달 채용', value: '8명', icon: 'check', color: 'green', isAlert: false }
+])
+
+const pipelineStages = ref<PipelineStage[]>([
+  { name: '서류 전형', count: 45, color: 'bg-orange-500' },
+  { name: '1차 면접', count: 18, color: 'bg-blue-500' },
+  { name: '2차 면접', count: 12, color: 'bg-indigo-500' },
+  { name: '최종 면접', count: 7, color: 'bg-purple-500' },
+  { name: '처우 협상', count: 4, color: 'bg-pink-500' },
+  { name: '온보딩 대기', count: 3, color: 'bg-green-500' }
+])
 
 const jobs = ref<Job[]>([
   {
-    id: 1, title: '시니어 프론트엔드 개발자', department: '개발팀', experience: '5년 이상', type: '정규직',
+    id: 1, position: 'frontend', title: '시니어 프론트엔드 개발자', department: '개발팀', experience: '5년 이상', type: '정규직',
     status: 'recruiting', postedDate: '2025-10-01', deadline: '2025-10-31', daysLeft: 16,
     applicants: 45, progress: 30, screening: 45, interview1: 12, interview2: 5, final: 2, sharedWith: [1, 2, 3]
   },
   {
-    id: 2, title: '백엔드 개발자', department: '개발팀', experience: '3-5년', type: '정규직',
+    id: 2, position: 'backend', title: '백엔드 개발자', department: '개발팀', experience: '3-5년', type: '정규직',
     status: 'screening', postedDate: '2025-09-25', deadline: '2025-10-25', daysLeft: 10,
     applicants: 38, progress: 45, screening: 38, interview1: 8, interview2: 3, final: 1, sharedWith: [1, 2]
   },
   {
-    id: 3, title: 'UX/UI 디자이너', department: '디자인팀', experience: '3-5년', type: '정규직',
+    id: 3, position: 'designer', title: 'UX/UI 디자이너', department: '디자인팀', experience: '3-5년', type: '정규직',
     status: 'interviewing', postedDate: '2025-09-20', deadline: '2025-10-20', daysLeft: 5,
     applicants: 52, progress: 65, screening: 52, interview1: 15, interview2: 8, final: 3, isUrgent: true, sharedWith: [1, 4, 3]
   },
   {
-    id: 4, title: '프로덕트 매니저', department: '프로덕트팀', experience: '5년 이상', type: '정규직',
+    id: 4, position: 'pm', title: '프로덕트 매니저', department: '프로덕트팀', experience: '5년 이상', type: '정규직',
     status: 'interviewing', postedDate: '2025-09-15', deadline: '2025-10-18', daysLeft: 3,
     applicants: 28, progress: 75, screening: 28, interview1: 10, interview2: 6, final: 4, isUrgent: true, sharedWith: [1, 7]
   },
   {
-    id: 5, title: '마케팅 매니저', department: '마케팅팀', experience: '3-5년', type: '정규직',
+    id: 5, position: 'marketing', title: '마케팅 매니저', department: '마케팅팀', experience: '3-5년', type: '정규직',
     status: 'recruiting', postedDate: '2025-10-05', deadline: '2025-11-05', daysLeft: 21,
     applicants: 31, progress: 25, screening: 31, interview1: 5, interview2: 0, final: 0
   },
   {
-    id: 6, title: '풀스택 개발자', department: '개발팀', experience: '3-5년', type: '정규직',
+    id: 6, position: 'fullstack', title: '풀스택 개발자', department: '개발팀', experience: '3-5년', type: '정규직',
     status: 'recruiting', postedDate: '2025-10-08', deadline: '2025-11-08', daysLeft: 24,
     applicants: 22, progress: 20, screening: 22, interview1: 3, interview2: 0, final: 0
   },
   {
-    id: 7, title: '데이터 분석가', department: '프로덕트팀', experience: '1-3년', type: '정규직',
+    id: 7, position: 'data', title: '데이터 분석가', department: '프로덕트팀', experience: '1-3년', type: '정규직',
     status: 'screening', postedDate: '2025-09-28', deadline: '2025-10-28', daysLeft: 13,
     applicants: 35, progress: 40, screening: 35, interview1: 7, interview2: 2, final: 0
   },
   {
-    id: 8, title: '개발 인턴', department: '개발팀', experience: '신입', type: '인턴',
+    id: 8, position: 'intern', title: '개발 인턴', department: '개발팀', experience: '신입', type: '인턴',
     status: 'recruiting', postedDate: '2025-10-17', deadline: '2025-11-19', daysLeft: 26,
     applicants: 18, progress: 15, screening: 18, interview1: 0, interview2: 0, final: 0
   }
@@ -799,6 +1361,7 @@ const activeFiltersDisplay = computed(() => {
     closed: '마감', paused: '일시중단'
   }
   
+  if (filters.value.position) active.push({ key: 'position', label: '직무', value: filters.value.position })
   if (filters.value.status) active.push({ key: 'status', label: '상태', value: statusLabels[filters.value.status] })
   if (filters.value.department) active.push({ key: 'department', label: '부서', value: filters.value.department })
   if (filters.value.experience) active.push({ key: 'experience', label: '경력', value: filters.value.experience })
@@ -808,18 +1371,18 @@ const activeFiltersDisplay = computed(() => {
 })
 
 const hasActiveFilters = computed(() => {
-  return filters.value.status !== '' || filters.value.department !== '' || 
+  return filters.value.position !== '' || filters.value.status !== '' || filters.value.department !== '' || 
          filters.value.experience !== '' || filters.value.type !== '' || searchQuery.value !== ''
 })
 
 // Methods
 const resetFilters = () => {
-  filters.value = { status: '', department: '', experience: '', type: '' }
+  filters.value = { position: '', status: '', department: '', experience: '', type: '' }
   searchQuery.value = ''
 }
 
 const removeFilter = (key: string) => {
-  if (key === 'status' || key === 'department' || key === 'experience' || key === 'type') {
+  if (key === 'position' || key === 'status' || key === 'department' || key === 'experience' || key === 'type') {
     filters.value[key] = ''
   }
 }
@@ -831,11 +1394,111 @@ const handleCellClick = (dateObj: CalendarDate) => {
 }
 
 const handleJobClick = (date: CalendarDate, job: Job) => {
-  viewJobDetail(job.id)
+  selectedJobForDetail.value = job
+  showJobDetailModal.value = true
+}
+
+const closeJobDetailModal = () => {
+  showJobDetailModal.value = false
+  selectedJobForDetail.value = null
+}
+
+const goToJobDetailPage = (jobId: number) => {
+  // Vue Router를 사용한다고 가정
+  window.location.href = `/recruiter/jobs/${jobId}`
+  // 또는 Vue Router 사용 시: router.push(`/recruiter/jobs/${jobId}`)
 }
 
 const openAddJobModal = () => {
-  alert('새로운 채용 공고를 등록할 수 있습니다.')
+  showAddJobModal.value = true
+  // 폼 초기화
+  newJob.value = {
+    title: '',
+    position: '',
+    department: '',
+    experience: '',
+    type: '',
+    status: 'recruiting',
+    postedDate: new Date().toISOString().split('T')[0],
+    deadline: '',
+    description: '',
+    requirements: '',
+    responsibilities: ''
+  }
+}
+
+const closeAddJobModal = () => {
+  showAddJobModal.value = false
+}
+
+const validateJobForm = () => {
+  if (!newJob.value.title.trim()) {
+    alert('공고 제목을 입력해주세요.')
+    return false
+  }
+  if (!newJob.value.position) {
+    alert('직무를 선택해주세요.')
+    return false
+  }
+  if (!newJob.value.department) {
+    alert('부서를 선택해주세요.')
+    return false
+  }
+  if (!newJob.value.experience) {
+    alert('경력을 선택해주세요.')
+    return false
+  }
+  if (!newJob.value.type) {
+    alert('고용형태를 선택해주세요.')
+    return false
+  }
+  if (!newJob.value.deadline) {
+    alert('마감일을 선택해주세요.')
+    return false
+  }
+  
+  // 마감일이 게시일보다 이전인지 확인
+  if (new Date(newJob.value.deadline) < new Date(newJob.value.postedDate)) {
+    alert('마감일은 게시일 이후여야 합니다.')
+    return false
+  }
+  
+  return true
+}
+
+const saveNewJob = () => {
+  if (!validateJobForm()) return
+  
+  // 새 공고 생성
+  const newId = Math.max(...jobs.value.map(j => j.id)) + 1
+  const postedDate = new Date(newJob.value.postedDate)
+  const deadlineDate = new Date(newJob.value.deadline)
+  const today = new Date()
+  const daysLeft = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  
+  const jobToAdd: Job = {
+    id: newId,
+    title: newJob.value.title,
+    department: newJob.value.department,
+    experience: newJob.value.experience,
+    type: newJob.value.type,
+    status: newJob.value.status,
+    postedDate: newJob.value.postedDate,
+    deadline: newJob.value.deadline,
+    daysLeft: daysLeft,
+    applicants: 0,
+    progress: 0,
+    screening: 0,
+    interview1: 0,
+    interview2: 0,
+    final: 0,
+    isUrgent: daysLeft <= 7
+  }
+  
+  jobs.value.push(jobToAdd)
+  
+  alert(`"${newJob.value.title}" 공고가 성공적으로 등록되었습니다!`)
+  closeAddJobModal()
 }
 
 const viewJobDetail = (jobId: number) => {
