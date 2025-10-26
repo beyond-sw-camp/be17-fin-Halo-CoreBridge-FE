@@ -17,6 +17,7 @@ import type {
 } from '@/types/jobPosting/RecruitProcess.ts'
 import type { ColorCode } from '@/types/common/ColorCode.ts'
 
+const route = useRoute()
 const recruitmentProcess = ref<RecruitProcess[]>([])
 
 // Process Setting Data
@@ -49,12 +50,6 @@ const colorCode = ref<ColorCode[]>([
   }
 ])
 
-const recruitProcessChangeOrderForm: RecruitProcessChangeOrderForm = reactive({
-  processId: undefined,
-  jobPostingId: undefined,
-  fromIdx: undefined,
-  toIdx: undefined
-})
 
 const recruitProcessForm: RecruitProcessForm = reactive({
   name: '',
@@ -85,7 +80,6 @@ const removeStep = (index: number) => {
 }
 
 onMounted(async () => {
-  const route = useRoute()
 
   const recruitProcessRequest: RecruitProcessRequest = {
     recruit: String(route.params.id)
@@ -98,8 +92,37 @@ onMounted(async () => {
 
 })
 
-const onDragEnd = () => {
-  console.log('드래그 종료')
+// 타입 정의 추가
+interface DraggableEvent {
+  oldIndex: number
+  newIndex: number
+  item: HTMLElement
+}
+
+const onDragEnd = async (event: DraggableEvent) => {
+
+  // 드래그로 인한 위치 변경이 없는 경우
+  if (event.oldIndex === event.newIndex) {
+    return
+  }
+
+  const movedProcess: RecruitProcess = recruitmentProcess.value[event.newIndex]
+
+  if (movedProcess == undefined) {
+    return
+  }
+
+  const recruitProcessChangeOrderForm: RecruitProcessChangeOrderForm = {
+    processId: movedProcess.id,
+    jobPostingId: Number(route.params.id),
+    fromIdx: event.oldIndex + 1,
+    toIdx: event.newIndex + 1
+  }
+
+  const response = await recruitProcessAPI.requestRecruitProcessChangeOrder(recruitProcessChangeOrderForm)
+  if (response.success) {
+    recruitmentProcess.value = response.results.recruitProcesses
+  }
 }
 
 </script>
@@ -187,7 +210,7 @@ const onDragEnd = () => {
 
                   <!-- Step Order -->
                   <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-sm font-semibold text-gray-600">
-                    {{ index + 1 }}
+                    {{ step.orderIdx }}
                   </div>
 
                   <!-- Step Color Preview -->
