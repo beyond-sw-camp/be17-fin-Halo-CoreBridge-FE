@@ -1,161 +1,174 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import type { JobPostingCreateRequest } from '@/types/jobPosting/JobPostingTypes'
+import { createJobPosting } from '@/api/schedules/jobposting/jobposting'
+import draggable from 'vuedraggable'
+import { GripVertical, Pencil, Trash2, User, Plus } from 'lucide-vue-next'
 
 const router = useRouter()
 
-const form = reactive({
+// -----------------------------
+// Form Data (백엔드 DTO 매칭)
+// -----------------------------
+const form = reactive<JobPostingCreateRequest>({
     title: '',
-    department: '',
-    employmentType: '',
-    experience: '',
+    employmentType: '', // FULL_TIME | CONTRACT | INTERN | PART_TIME
+    careerType: '',     // NEW | EXPERIENCED | ANY
+    minExperience: undefined,
+    maxExperience: undefined,
     positionLevel: '',
     location: '',
-    deadline: '',
-    headcount: '',
+    applyStartDate: '', // 'YYYY-MM-DD'
+    applyEndDate: '',
+    hireEndDate: '',
+    headcount: 0,
     summary: '',
     responsibilities: '',
     requirements: '',
     preferred: '',
     techStack: [] as string[],
-    salaryType: '',
-    salaryMin: '',
-    salaryMax: '',
+    recruitProcess: ['지원 완료', '서류 검토', '1차 면접', '2차 면접', '최종 합격'],
+    salaryType: '', // ANNUAL | MONTHLY | HOURLY
+    salaryMin: undefined,
+    salaryMax: undefined,
     salaryNegotiable: false,
     workingHours: '',
     benefits: '',
-    process: ['지원 완료', '서류 검토', '1차 면접', '2차 면접', '최종 합격'],
+    departmentId: 1,
     contactName: '',
     contactEmail: '',
     additionalInfo: '',
 })
 
+// -----------------------------
+// 기술스택 입력
+// -----------------------------
 const techInput = ref('')
-
 const addTech = () => {
     if (techInput.value.trim()) {
         form.techStack.push(techInput.value.trim())
         techInput.value = ''
     }
 }
+const removeTech = (i: number) => form.techStack.splice(i, 1)
 
-const removeTech = (i: number) => {
-    form.techStack.splice(i, 1)
+// -----------------------------
+// 채용 프로세스 (스테이지)
+// -----------------------------
+interface Stage {
+    id: number
+    name: string
+    dotColorClass: string
+    participants: number
+}
+interface StageEdit extends Stage {
+    edit: boolean
 }
 
+const maxStages = ref(10)
+const stages = ref<StageEdit[]>([
+    { id: 1, name: '과제 평가', dotColorClass: 'bg-orange-500', participants: 1, edit: false },
+    { id: 2, name: '직무 인터뷰', dotColorClass: 'bg-yellow-500', participants: 1, edit: false },
+    { id: 3, name: '컬쳐핏 인터뷰', dotColorClass: 'bg-green-500', participants: 1, edit: false },
+    { id: 4, name: '처우 협의', dotColorClass: 'bg-cyan-500', participants: 1, edit: false },
+])
+
+// recruitProcess 동기화
+const syncRecruitProcess = () => {
+    form.recruitProcess = ['지원 완료', ...stages.value.map(s => s.name), '최종 합격']
+}
+watch(stages, syncRecruitProcess, { deep: true })
+
+const editStage = (stage: StageEdit) => {
+    stage.edit = !stage.edit
+    if (!stage.edit) syncRecruitProcess()
+}
+const deleteStage = (id: number) => {
+    stages.value = stages.value.filter(s => s.id !== id)
+    syncRecruitProcess()
+}
+const addStage = () => {
+    if (stages.value.length >= maxStages.value) return
+    const newId = Math.max(...stages.value.map(s => s.id), 0) + 1
+    stages.value.push({
+        id: newId,
+        name: `새 단계 ${newId}`,
+        dotColorClass: 'bg-purple-500',
+        participants: 1,
+        edit: false,
+    })
+    syncRecruitProcess()
+}
+
+const onDragEnd = (event: any) => {
+  console.log('🔄 순서 변경 완료:', stages.value.map(s => s.name))
+  // 순서 변경 후 recruitProcess 재정렬
+  form.recruitProcess = ['지원 완료', ...stages.value.map(s => s.name), '최종 합격']
+}
+
+
+// -----------------------------
+// 페이지 이동/취소
+// -----------------------------
+const exit = () => {
+    if (confirm('작성 중인 내용이 저장되지 않습니다. 정말 나가시겠습니까?')) {
+        if (window.history.length > 1) router.back()
+        else router.push({ name: 'recruiter-jobs' })
+    }
+}
 const goBack = () => router.back()
 const cancel = () => router.push('/jobs')
 const saveDraft = () => console.log('임시 저장:', form)
 const previewPost = () => console.log('미리보기:', form)
-const submitForm = () => console.log('공고 등록:', form)
 
-import { GripVertical, Pencil, Trash2, User, Plus } from 'lucide-vue-next';
+// -----------------------------
+// 제출 (실제 API 호출)
+// -----------------------------
+const isSubmitting = ref(false)
 
-interface Stage {
-    id: number;
-    name: string;
-    dotColorClass: string;
-    participants: number;
-}
+const toDateTime = (d?: string | null, endOfDay = false) =>
+    d ? `${d} ${endOfDay ? '23:59:59' : '00:00:00'}` : ''
 
-interface StageEdit {
-    id: number;
-    name: string;
-    participants: number;
-    dotColorClass: string;
-    edit: boolean;
-}
-
-// 초기 데이터
-const initialStage = ref({
-    name: '접수',
-    participants: 1
-});
-
-const finalStage = ref({
-    name: '최종합격',
-    participants: 1
-});
-
-const maxStages = ref(10);
-
-const stages = ref<StageEdit[]>([
-    {
-        id: 1,
-        name: '과제 평가',
-        dotColorClass: 'bg-orange-500',
-        participants: 1,
-        edit: false
-    },
-    {
-        id: 2,
-        name: '직무 인터뷰',
-        dotColorClass: 'bg-yellow-500',
-        participants: 1,
-        edit: false
-    },
-    {
-        id: 3,
-        name: '컬쳐핏 인터뷰',
-        dotColorClass: 'bg-green-500',
-        participants: 1,
-        edit: false
-    },
-    {
-        id: 4,
-        name: '처우 협의',
-        dotColorClass: 'bg-cyan-500',
-        participants: 1,
-        edit: false
+const submitForm = async () => {
+    // 간단 필수 검증
+    if (!form.title || !form.employmentType || !form.location || !form.applyStartDate || !form.applyEndDate || !form.hireEndDate) {
+        alert('필수 항목(제목/고용형태/근무지역/접수기간/마감일)을 입력해주세요.')
+        return
     }
-]);
 
-// 함수들
-const editStage = (StageEdit: StageEdit) => {
-    console.log('Edit stage:', StageEdit.id);
-
-    StageEdit.edit = !StageEdit.edit;
-    // TODO: 단계 수정 로직 구현
-};
-
-const deleteStage = (id: number) => {
-    stages.value = stages.value.filter(stage => stage.id !== id);
-};
-
-const addStage = () => {
-    if (stages.value.length >= maxStages.value) return;
-
-    const colors = [
-        { dotColorClass: 'bg-purple-500' },
-        { dotColorClass: 'bg-pink-500' },
-        { dotColorClass: 'bg-indigo-500' },
-        { dotColorClass: 'bg-red-500' }
-    ];
-
-    const newId = Math.max(...stages.value.map(s => s.id), 0) + 1;
-    const colorIndex = (stages.value.length) % colors.length;
-
-    stages.value.push({
-        id: newId,
-        name: `새 단계 ${newId}`,
-        ...colors[colorIndex],
-        participants: 1
-    });
-};
-
-const exit = () => {
-
-    if (confirm('작성 중인 내용이 저장되지 않습니다. 정말 나가시겠습니까?')) {
-
-        if (window.history.length > 1) {
-            router.back()
-        } else {
-            router.push({ name: 'recruiter-jobs' })
+    isSubmitting.value = true
+    try {
+        // Enum/숫자/날짜 포맷 정리
+        const payload: JobPostingCreateRequest = {
+            ...form,
+            headcount: Number(form.headcount) || 0,
+            salaryMin: form.salaryMin == null || form.salaryMin === ('' as any) ? 0 : Number(form.salaryMin),
+            salaryMax: form.salaryMax == null || form.salaryMax === ('' as any) ? 0 : Number(form.salaryMax),
+            departmentId: Number(form.departmentId) || 1,
+            applyStartDate: toDateTime(form.applyStartDate, false),
+            applyEndDate: toDateTime(form.applyEndDate, true),
+            hireEndDate: toDateTime(form.hireEndDate, true),
+            recruitProcess: ['지원 완료', ...stages.value.map(s => s.name), '최종 합격'],
         }
 
+        const res = await createJobPosting(payload)
+
+        if (res.success) {
+            alert('✅ 채용공고 등록이 완료되었습니다!')
+            router.push('/recruiter/jobs')
+        } else {
+            alert(`등록 실패: ${res.message}`)
+        }
+    } catch (e) {
+        console.error('등록 오류:', e)
+        alert('서버 오류가 발생했습니다.')
+    } finally {
+        isSubmitting.value = false
     }
 }
 </script>
+
 <template>
     <div class="bg-gray-50 min-h-screen">
         <!-- Header -->
@@ -195,6 +208,7 @@ const exit = () => {
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     부서 <span class="text-red-500">*</span>
                                 </label>
+
                                 <select v-model="form.department"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600">
                                     <option value="">부서 선택</option>
@@ -212,10 +226,9 @@ const exit = () => {
                                 <select v-model="form.employmentType"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600">
                                     <option value="">고용 형태 선택</option>
-                                    <option value="fulltime">정규직</option>
-                                    <option value="contract">계약직</option>
-                                    <option value="intern">인턴</option>
-                                    <option value="parttime">파트타임</option>
+                                    <option value="정규직">정규직</option>
+                                    <option value="계약직">계약직</option>
+                                    <option value="인턴">인턴</option>
                                 </select>
                             </div>
                         </div>
@@ -225,14 +238,12 @@ const exit = () => {
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     경력 요건 <span class="text-red-500">*</span>
                                 </label>
-                                <select v-model="form.experience"
+                                <select v-model="form.careerType"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600">
                                     <option value="">경력 선택</option>
-                                    <option value="fresh">신입</option>
-                                    <option value="1-3">1-3년</option>
-                                    <option value="3-5">3-5년</option>
-                                    <option value="5+">5년 이상</option>
-                                    <option value="any">경력 무관</option>
+                                    <option value="신입">신입</option>
+                                    <option value="경력">경력</option>
+                                    <option value="경력무관">경력 무관</option>
                                 </select>
                             </div>
                             <div>
@@ -257,21 +268,21 @@ const exit = () => {
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     접수 시작일 <span class="text-red-500">*</span>
                                 </label>
-                                <input v-model="form.deadline" type="date"
+                                <input v-model="form.applyStartDate" type="date"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     접수 종료일 <span class="text-red-500">*</span>
                                 </label>
-                                <input v-model="form.deadline" type="date"
+                                <input v-model="form.applyEndDate" type="date"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     마감일 <span class="text-red-500">*</span>
                                 </label>
-                                <input v-model="form.deadline" type="date"
+                                <input v-model="form.hireEndDate" type="date"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600" />
                             </div>
                             <div>
@@ -358,13 +369,13 @@ const exit = () => {
                                 <select v-model="form.salaryType"
                                     class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600">
                                     <option value="">급여 형태</option>
-                                    <option value="yearly">연봉</option>
-                                    <option value="monthly">월급</option>
-                                    <option value="hourly">시급</option>
+                                    <option value="연봉">연봉</option>
+                                    <option value="월급">월급</option>
+                                    <option value="시급">시급</option>
                                 </select>
-                                <input v-model="form.salaryMin" type="text" placeholder="최소 금액"
+                                <input v-model="form.salaryMin" type="text" placeholder="최소 금액(단위 : 만원)"
                                     class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600" />
-                                <input v-model="form.salaryMax" type="text" placeholder="최대 금액"
+                                <input v-model="form.salaryMax" type="text" placeholder="최대 금액(단위 : 만원)"
                                     class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600" />
                             </div>
                             <div class="mt-2 flex items-center">
@@ -408,31 +419,41 @@ const exit = () => {
                     <hr class="my-4" />
 
                     <!-- 중간 단계 (드래그 가능) -->
-                    <div v-for="stage in stages" :key="stage.id"
-                        class="border border-gray-200 rounded-lg p-2 mb-4 bg-white cursor-move hover:border-slate-300 transition-colors">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <GripVertical :size="20" class="text-gray-400" />
-                                <div class="flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full" :class="stage.dotColorClass"></span>
-                                    <input v-if="stage.edit" v-model="stage.name" type="text"
-                                        @focusout="editStage(stage)"
-                                        class="border-b border-gray-300 focus:outline-none  px-1 py-0.5 text-slate-600 font-medium" />
-                                    <span v-else class="text-slate-600 font-medium">{{ stage.name }}</span>
+                    <draggable v-model="stages" item-key="id" handle=".drag-handle" animation="200"
+                        ghost-class="opacity-50" @end="onDragEnd">
+                        <template #item="{ element: stage }">
+                            <div
+                                class="border border-gray-200 rounded-lg p-2 mb-4 bg-white hover:border-slate-300 transition-colors">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <!-- 이 부분이 handle 역할 -->
+                                        <GripVertical :size="20" class="text-gray-400 drag-handle cursor-grab" />
+
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full" :class="stage.dotColorClass"></span>
+                                            <input v-if="stage.edit" v-model="stage.name" type="text"
+                                                @focusout="editStage(stage)"
+                                                class="border-b border-gray-300 focus:outline-none px-1 py-0.5 text-slate-600 font-medium" />
+                                            <span v-else class="text-slate-600 font-medium">{{ stage.name }}</span>
+                                        </div>
+
+                                        <button @click="editStage(stage)"
+                                            class="text-gray-400 hover:text-gray-600 transition-colors hover:cursor-pointer">
+                                            <Pencil :size="16" />
+                                        </button>
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <button @click="deleteStage(stage.id)"
+                                            class="text-gray-400 hover:text-red-600 transition-colors hover:cursor-pointer">
+                                            <Trash2 :size="16" />
+                                        </button>
+                                    </div>
                                 </div>
-                                <button @click="editStage(stage)"
-                                    class="text-gray-400 hover:text-gray-600 transition-colors hover:cursor-pointer">
-                                    <Pencil :size="16" />
-                                </button>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <button @click="deleteStage(stage.id)"
-                                    class="text-gray-400 hover:text-red-600 transition-colors hover:cursor-pointer">
-                                    <Trash2 :size="16" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                        </template>
+                    </draggable>
+
 
                     <!-- 단계 추가 버튼 -->
                     <div class="flex justify-center">
