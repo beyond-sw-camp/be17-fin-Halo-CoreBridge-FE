@@ -189,7 +189,7 @@ const submitForm = async () => {
 
         <!-- Main Content -->
         <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 my-20">
-            <form class="space-y-8" @submit.prevent="submitForm">
+            <form class="space-y-8" @submit.prevent="submitForm" @keydown.enter.prevent>
                 <!-- 기본 정보 -->
                 <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h2 class="text-xl font-bold text-slate-600 mb-6">기본 정보</h2>
@@ -338,8 +338,8 @@ const submitForm = async () => {
                                 기술 스택
                             </label>
                             <div class="flex gap-2 mb-3">
-                                <input v-model="techInput" type="text" placeholder="기술 스택 추가버튼  클릭"
-                                    @keyup.enter="addTech"
+                                <input v-model="techInput" type="text" placeholder="기술 스택 추가 후 enter"
+                                    @keyup.enter.prevent="addTech"
                                     class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600" />
                                 <button type="button"
                                     class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700"
@@ -437,7 +437,7 @@ const submitForm = async () => {
                                             <span v-else class="text-slate-600 font-medium">{{ stage.name }}</span>
                                         </div>
 
-                                        <button @click="editStage(stage)"
+                                        <button type="button" @click="editStage(stage)"
                                             class="text-gray-400 hover:text-gray-600 transition-colors hover:cursor-pointer">
                                             <Pencil :size="16" />
                                         </button>
@@ -457,7 +457,7 @@ const submitForm = async () => {
 
                     <!-- 단계 추가 버튼 -->
                     <div class="flex justify-center">
-                        <button @click="addStage"
+                        <button type="button" @click="addStage"
                             class="flex items-center justify-center gap-2 text-slate-600 bg-slate-100 mb-6 p-4  hover:bg-slate-200 rounded-lg hover:cursor-pointer font-medium transition-colors w-full h-full"
                             :disabled="stages.length >= maxStages">
                             <div class="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center">
