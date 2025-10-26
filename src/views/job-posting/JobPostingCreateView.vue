@@ -338,7 +338,7 @@ const submitForm = async () => {
                                 기술 스택
                             </label>
                             <div class="flex gap-2 mb-3">
-                                <input v-model="techInput" type="text" placeholder="기술 스택 입력 후 Enter"
+                                <input v-model="techInput" type="text" placeholder="기술 스택 추가버튼  클릭"
                                     @keyup.enter="addTech"
                                     class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600" />
                                 <button type="button"
