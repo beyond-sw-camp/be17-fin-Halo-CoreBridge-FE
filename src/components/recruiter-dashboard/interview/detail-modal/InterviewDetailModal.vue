@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { X, Calendar, FileText, MapPin, Users, List } from 'lucide-vue-next'
+import InterviewCancelModal from '@/components/recruiter-dashboard/interview/cancel-modal/InterviewCancelModal.vue'
 
 interface Applicant {
   name: string
@@ -101,6 +102,15 @@ const handleCancel = () => {
 
 const handleViewResume = () => {
   // 이력서 보기 로직
+}
+
+const isOpenCancelModal = ref(false)
+const openCancelModal = () => {
+  isOpenCancelModal.value = true
+}
+
+const closeCancelModal = () => {
+  isOpenCancelModal.value = false
 }
 </script>
 
@@ -224,11 +234,12 @@ const handleViewResume = () => {
                   면접 수정
                 </button>
                 <button
-                  @click="handleCancel"
+                  @click="openCancelModal"
                   class="px-6 py-3 border border-slate-200 hover:cursor-pointer hover:bg-slate-50 text-slate-700 rounded-xl font-medium transition-all"
                 >
                   취소하기
                 </button>
+                <InterviewCancelModal :open-modal="isOpenCancelModal" :interview="interview" @close="closeCancelModal" />
               </div>
             </div>
           </div>
@@ -238,10 +249,4 @@ const handleViewResume = () => {
   </Teleport>
 </template>
 
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-* {
-  font-family: 'Inter', sans-serif;
-}
-</style>
+<style scoped></style>
