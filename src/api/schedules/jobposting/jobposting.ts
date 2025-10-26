@@ -39,7 +39,7 @@ export const getJobs = async (): Promise<ApiResponse> => {
   const url = '/api/job-postings'
 
   await api
-  .post(url)
+  .get(url)
   .then((res) => {
     console.log(res)
     data = res.data
