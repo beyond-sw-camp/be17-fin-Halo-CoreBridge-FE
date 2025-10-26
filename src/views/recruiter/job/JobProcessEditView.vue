@@ -4,8 +4,7 @@ import draggable from 'vuedraggable';
 import {
   ChevronRight,
   Plus,
-  Trash2,
-  GripVertical
+  GripVertical,
 } from 'lucide-vue-next'
 
 import recruitProcessAPI from '@/api/recruit-process'
@@ -16,14 +15,10 @@ import type {
   RecruitProcessRequest
 } from '@/types/jobPosting/RecruitProcess.ts'
 import type { ColorCode } from '@/types/common/ColorCode.ts'
+import RecruitDropdown from '@/components/recruiter-dashboard/RecruitDropdown.vue'
 
 const route = useRoute()
 const recruitmentProcess = ref<RecruitProcess[]>([])
-
-// Process Setting Data
-const newStepName = ref('')
-const newStepColor = ref()
-const editingIndex = ref(-1)
 
 const colorCode = ref<ColorCode[]>([
   {
@@ -54,20 +49,6 @@ const recruitProcessForm: RecruitProcessForm = reactive({
   colorCode: colorCode.value[0]?.code,
   jobPostingId: Number(route.params.id),
 })
-
-// Process Setting Methods
-const addStep = () => {
-  if (!newStepName.value.trim()) return
-
-  recruitmentProcess.value.push({
-    name: newStepName.value.trim(),
-    color: newStepColor.value
-  })
-
-  newStepName.value = ''
-  newStepColor.value = 'bg-blue-500'
-}
-
 
 const removeStep = (index: number) => {
   if (recruitmentProcess.value.length <= 1) return
@@ -134,6 +115,14 @@ const addProcess = async () => {
   } else {
     console.log(response)
   }
+}
+
+const edit = () => {
+  alert("수정")
+}
+
+const deleteProcess = () => {
+  alert("삭제")
 }
 </script>
 <template>
@@ -233,14 +222,7 @@ const addProcess = async () => {
 
                   <!-- Actions -->
                   <div class="flex items-center gap-2">
-                    <button
-                      v-if="editingIndex !== index && recruitmentProcess.length > 1"
-                      @click="removeStep(index)"
-                      class="p-1 text-red-400 hover:text-red-600 transition-colors"
-                      title="삭제"
-                    >
-                      <Trash2 :size="16" />
-                    </button>
+                    <RecruitDropdown  @edit-menu-click="edit" @delete-menu-click="deleteProcess" />
                   </div>
                 </div>
               </template>
