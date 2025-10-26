@@ -24,8 +24,6 @@ const recruitmentProcess = ref<RecruitProcess[]>([])
 const newStepName = ref('')
 const newStepColor = ref()
 const editingIndex = ref(-1)
-const editingName = ref('')
-const editingColor = ref('')
 
 const colorCode = ref<ColorCode[]>([
   {
@@ -54,7 +52,7 @@ const colorCode = ref<ColorCode[]>([
 const recruitProcessForm: RecruitProcessForm = reactive({
   name: '',
   colorCode: colorCode.value[0]?.code,
-  jobPostingId: -1,
+  jobPostingId: Number(route.params.id),
 })
 
 // Process Setting Methods
@@ -125,6 +123,18 @@ const onDragEnd = async (event: DraggableEvent) => {
   }
 }
 
+/*
+ * 채용 프로세스 추가
+ */
+const addProcess = async () => {
+
+  const response = await recruitProcessAPI.requestRecruitProcessAdding(recruitProcessForm)
+  if (response.success) {
+    recruitmentProcess.value = response.results.recruitProcesses
+  } else {
+    console.log(response)
+  }
+}
 </script>
 <template>
   <div class="bg-gray-50 min-h-screen">
@@ -182,7 +192,7 @@ const onDragEnd = async (event: DraggableEvent) => {
                   </option>
                 </select>
               </div>
-              <button @click="addStep" :disabled="!recruitProcessForm.name.trim()"
+              <button @click="addProcess" :disabled="!recruitProcessForm.name.trim()"
                       class="hover:cursor-pointer px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
                 <Plus :size="16" class="inline mr-2" />
                 추가
