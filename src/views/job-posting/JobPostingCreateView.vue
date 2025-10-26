@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { JobPostingCreateRequest } from '@/types/jobPosting/JobPostingTypes'
 import { createJobPosting } from '@/api/schedules/jobposting/jobposting'
@@ -102,9 +102,9 @@ const addStage = () => {
 }
 
 const onDragEnd = (event: any) => {
-  console.log('🔄 순서 변경 완료:', stages.value.map(s => s.name))
-  // 순서 변경 후 recruitProcess 재정렬
-  form.recruitProcess = ['지원 완료', ...stages.value.map(s => s.name), '최종 합격']
+    console.log('🔄 순서 변경 완료:', stages.value.map(s => s.name))
+    // 순서 변경 후 recruitProcess 재정렬
+    form.recruitProcess = ['지원 완료', ...stages.value.map(s => s.name), '최종 합격']
 }
 
 
@@ -167,6 +167,11 @@ const submitForm = async () => {
         isSubmitting.value = false
     }
 }
+
+// -----------------------------
+// 경력 선택여부 반응형 함수
+// -----------------------------
+const isExperienced = computed(() => form.careerType === '경력')
 </script>
 
 <template>
@@ -245,6 +250,26 @@ const submitForm = async () => {
                                     <option value="경력">경력</option>
                                     <option value="경력무관">경력 무관</option>
                                 </select>
+
+                                <!-- 경력 선택시에만 노출 -->
+                                <transition name="fade">
+                                    <div v-if="isExperienced" class="mt-4 grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                최소 경력 (년)
+                                            </label>
+                                            <input v-model="form.minExperience" type="number" min="0" placeholder="예: 1"
+                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600" />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                최대 경력 (년)
+                                            </label>
+                                            <input v-model="form.maxExperience" type="number" min="0" placeholder="예: 5"
+                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600" />
+                                        </div>
+                                    </div>
+                                </transition>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
