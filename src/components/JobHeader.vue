@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { getHeaderById } from '@/api/schedules/jobposting/jobposting'
+import { getHeaderById } from '@/api/job-posting/index'
 import { Building2, MapPin, Briefcase, DollarSign, Share2 } from 'lucide-vue-next'
 
 // -----------------------------

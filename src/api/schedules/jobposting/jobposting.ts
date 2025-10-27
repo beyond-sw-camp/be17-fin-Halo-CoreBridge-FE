@@ -1,102 +1,20 @@
 import api from '@/plugins/AxiosInterceptor'
 import type { Job, JobPostingSchedule } from '../../../types/schedules/jobposting/jobposting'
-import type { JobPostingCreateRequest, JobPostingDetailResponse } from '@/types/jobPosting/JobPostingTypes'
 
 // ---- 공고 CRUD --------------------------------------------------------------
-export const createJobPosting = async (payload: JobPostingCreateRequest): Promise<ApiResponse> => {
-  let data: ApiResponse = {
-    success: false,
-    code: 0,
-    message: '',
-    results: undefined,
-  }
-
-  const url = '/api/job-postings'
-
-  await api
-  .post(url, payload)
-  .then((res) => {
-    console.log(res)
-    data = res.data
-  })
-  .catch((error) => {
-    console.log(error)
-    data = error.response.data as ApiResponse
-  })
-
-  return data
+export const createJob = async (job: Job): Promise<Job> => {
+  const res = await api.post<ApiResponse<Job>>('/jobs', job)
+  return res.data.results
 }
 
-export const getJobs = async (): Promise<ApiResponse> => {
-  let data: ApiResponse = {
-    success: false,
-    code: 0,
-    message: '',
-    results: undefined,
-  }
-
-  const url = '/api/job-postings'
-
-  await api
-  .get(url)
-  .then((res) => {
-    console.log(res)
-    data = res.data
-  })
-  .catch((error) => {
-    console.log(error)
-    data = error.response.data as ApiResponse
-  })
-
-  return data
+export const getJobs = async (): Promise<Job[]> => {
+  const res = await api.get<ApiResponse<Job[]>>('/jobs')
+  return res.data.results
 }
 
-export const getHeaderById = async (id: number): Promise<ApiResponse> => {
-  let data: ApiResponse = {
-    success: false,
-    code: 0,
-    message: '',
-    results: undefined,
-  }
-
-  const url = `/api/job-postings/header/${id}`
-
-  await api
-  .get(url)
-  .then((res) => {
-    console.log(res)
-    data = res.data
-  })
-  .catch((error) => {
-    console.log(error)
-    data = error.response.data as ApiResponse
-  })
-
-  return data
-}
-
-export const getJobById = async (id: number): Promise<ApiResponse> => {
-  let data: ApiResponse = {
-    success: false,
-    code: 0,
-    message: '',
-    results: undefined,
-  }
-
-  const url = `/api/job-postings/${id}`
-
-  await api
-  .get(url)
-  .then((res) => {
-    console.log(res)
-    data = res.data
-  })
-  .catch((error) => {
-    console.log(error)
-    data = error.response.data as ApiResponse
-  })
-
-  return data
+export const getJobById = async (id: number): Promise<Job> => {
+  const res = await api.get<ApiResponse<Job>>(`/jobs/${id}`)
+  return res.data.results
 }
 
 export const updateJob = async (id: number, job: Partial<Job>): Promise<Job> => {
@@ -107,8 +25,6 @@ export const updateJob = async (id: number, job: Partial<Job>): Promise<Job> => 
 export const deleteJob = async (id: number): Promise<void> => {
   await api.delete(`/jobs/${id}`)
 }
-
-*/
 
 // ---- 공고 일정 (JobPostingSchedule) ----------------------------------------
 

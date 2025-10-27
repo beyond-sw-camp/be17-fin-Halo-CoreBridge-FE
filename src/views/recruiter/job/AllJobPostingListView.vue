@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { JobPostingListResponse } from '@/types/jobPosting/JobPostingTypes'
-import { getJobs } from '@/api/schedules/jobposting/jobposting'
+import { getJobs } from '@/api/job-posting/index'
 import {
     FileText,
     CheckCircle,
