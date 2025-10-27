@@ -1,29 +1,62 @@
 /**
  * 채용공고 생성 폼 (POST /api/jobPostings)
  */
-export interface JobPostingCreateForm {
+export interface JobPostingCreateRequest {
   title: string
-  description: string
   employmentType: string
   careerType: string
-  minExperience?: number | null
-  maxExperience?: number | null
-  departmentId: number
+  minExperience?: number
+  maxExperience?: number
+  positionLevel?: string
+  location: string
   applyStartDate: string
   applyEndDate: string
-  skills: string[]
+  hireEndDate: string
+  headcount: number
+  summary: string
+  responsibilities: string
+  requirements: string
+  preferred: string
+  techStack: string[]
+  recruitProcess: string[]
+  salaryType: string
+  salaryMin?: number
+  salaryMax?: number
+  salaryNegotiable?: boolean
+  workingHours: string
+  benefits: string
+  departmentId: number
+  contactName: string
+  contactEmail: string
+  additionalInfo?: string
 }
 
 /**
- * 채용공고 요약 정보 (목록 조회용)
+ * 특정 채용공고에 대한 프로세스 정리
+ * 전체 응답 데이터 정보
  */
-export interface JobPostingSummary {
+
+export interface ProcessSummary {
+  stageName : String
+  count: number
+  orderIndex: number
+}
+
+export interface JobPostingListResponse {
   id: number
   title: string
-  department: string
+  summaryText: string
+  departmentName: string
   employmentType: string
-  applyEndDate: string
+  careerType: string
+  status: string
+  hireEndDate: string
+  dday: string
+  applicantCount: number
+  progressPercent: number
+  processSummaries: ProcessSummary[]
 }
+
 
 /**
  * 채용공고 상세 정보 (상세 조회용)
