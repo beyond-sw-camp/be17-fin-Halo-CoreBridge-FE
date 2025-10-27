@@ -1,8 +1,33 @@
 // src/api/jobposting.ts
 import api from '../../../plugins/AxiosInterceptor'
 import type { Job, JobPostingSchedule } from '../../../types/schedules/jobposting/jobposting'
+import type { JobPostingCreateRequest, JobPostingDetail } from '@/types/jobPosting/JobPostingTypes'
 
 // ---- 공고 CRUD --------------------------------------------------------------
+export const createJobPosting = async (payload: JobPostingCreateRequest): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined,
+  }
+
+  const url = '/api/job-postings'
+
+  await api
+  .post(url, payload)
+  .then((res) => {
+    console.log(res)
+    data = res.data
+  })
+  .catch((error) => {
+    console.log(error)
+    data = error.response.data as ApiResponse
+  })
+
+  return data
+}
+
 export const getJobs = async (params?: Record<string, any>): Promise<Job[]> => {
   const res = await api.get<ApiResponse<Job[]>>('/jobs', { params })
   return res.data.results
@@ -10,11 +35,6 @@ export const getJobs = async (params?: Record<string, any>): Promise<Job[]> => {
 
 export const getJobById = async (id: number): Promise<Job> => {
   const res = await api.get<ApiResponse<Job>>(`/jobs/${id}`)
-  return res.data.results
-}
-
-export const createJob = async (job: Partial<Job>): Promise<Job> => {
-  const res = await api.post<ApiResponse<Job>>('/jobs', job)
   return res.data.results
 }
 
