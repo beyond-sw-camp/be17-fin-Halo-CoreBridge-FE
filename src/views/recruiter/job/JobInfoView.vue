@@ -184,7 +184,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Users, Clock, Calendar, User, Mail } from 'lucide-vue-next' // ✅ 본문에서 사용하는 아이콘만 남김
+import { Users, Clock, Calendar, User, Mail } from 'lucide-vue-next' // 본문에서 사용하는 아이콘만 남김
 
 interface JobPosting {
     title: string

@@ -1,17 +1,34 @@
 /**
  * 채용공고 생성 폼 (POST /api/jobPostings)
  */
-export interface JobPostingCreateForm {
+export interface JobPostingCreateRequest {
   title: string
-  description: string
   employmentType: string
   careerType: string
-  minExperience?: number | null
-  maxExperience?: number | null
-  departmentId: number
+  minExperience?: number
+  maxExperience?: number
+  positionLevel?: string
+  location: string
   applyStartDate: string
   applyEndDate: string
-  skills: string[]
+  hireEndDate: string
+  headcount: number
+  summary: string
+  responsibilities: string
+  requirements: string
+  preferred: string
+  techStack: string[]
+  recruitProcess: string[]
+  salaryType: string
+  salaryMin?: number
+  salaryMax?: number
+  salaryNegotiable?: boolean
+  workingHours: string
+  benefits: string
+  departmentId: number
+  contactName: string
+  contactEmail: string
+  additionalInfo?: string
 }
 
 /**

@@ -89,6 +89,28 @@ const router = createRouter({
             },
           ],
         },
+        {
+          path: 'interviews',
+          name: 'recruiter-interview-layout',
+          component: () => import('@/views/layout/InterviewLayout.vue'),
+          children: [
+            {
+              path: '',
+              name: 'recruiter-interviews',
+              component: () =>  import('@/views/recruiter/interview/InterviewsView.vue')
+            },
+            {
+              path: 'interviewers',
+              name: 'recruiter-interview-interviewers',
+              component: () => import('@/views/recruiter/interview/InterviewerManagementView.vue')
+            },
+            {
+              path: 'rooms',
+              name: 'recruiter-interview-rooms',
+              component: () => import('@/views/recruiter/interview/RoomManagementView.vue')
+            }
+          ]
+        }
       ],
     },
 

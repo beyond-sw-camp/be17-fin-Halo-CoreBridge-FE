@@ -1,103 +1,3 @@
-<template>
-    <div class="bg-gray-50 min-h-screen">
-        <!-- Main Content -->
-        <main>
-            <!-- Applicant List Content (when applicants-list tab is active) -->
-            <div>
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-blue-50 rounded-lg">
-                                <Users :size="24" class="text-blue-600" />
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">전체 지원자</p>
-                                <p class="text-2xl font-bold text-slate-700">{{ stats.total }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-yellow-50 rounded-lg">
-                                <FileText :size="24" class="text-yellow-600" />
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">서류 심사</p>
-                                <p class="text-2xl font-bold text-slate-700">{{ stats.pending }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-green-50 rounded-lg">
-                                <CheckCircle :size="24" class="text-green-600" />
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">서류 통과</p>
-                                <p class="text-2xl font-bold text-slate-700">{{ stats.passed }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-purple-50 rounded-lg">
-                                <Clock :size="24" class="text-purple-600" />
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">면접 대기</p>
-                                <p class="text-2xl font-bold text-slate-700">{{ stats.interview }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Filter Section -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                    <div class="flex flex-col md:flex-row gap-4">
-                        <div class="flex-1 relative">
-                            <Search :size="20"
-                                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                            <input type="text" v-model="searchQuery" placeholder="이름, 이메일로 검색..."
-                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent" />
-                        </div>
-                        <div class="flex gap-2">
-                            <div class="relative">
-                                <Filter :size="20"
-                                    class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                <select v-model="statusFilter"
-                                    class="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent appearance-none bg-white cursor-pointer">
-                                    <option v-for="option in statusOptions" :key="option.value" :value="option.value">
-                                        {{ option.label }}
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Applicants List -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-xl font-semibold text-slate-600 mb-4">
-                        지원자 목록 ({{ filteredApplicants.length }})
-                    </h2>
-                    <div v-if="filteredApplicants.length > 0" class="space-y-4">
-                        <ApplicantListCard v-for="applicant in filteredApplicants" :key="applicant.id"
-                            :applicant="applicant" @click="viewApplicantDetail(applicant.id)" />
-                    </div>
-                    <div v-else class="text-center py-12">
-                        <p class="text-gray-500">검색 결과가 없습니다.</p>
-                    </div>
-                </div>
-            </div>
-
-        </main>
-    </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { ArrowLeft, Users, FileText, CheckCircle, Clock, Search, Filter } from 'lucide-vue-next';
@@ -249,3 +149,105 @@ onMounted(() => {
     console.log('지원자 리스트 로드');
 });
 </script>
+
+
+<template>
+    <div class="bg-gray-50 min-h-screen">
+        <!-- Main Content -->
+        <main>
+            <!-- Applicant List Content (when applicants-list tab is active) -->
+            <div>
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-blue-50 rounded-lg">
+                                <Users :size="24" class="text-blue-600" />
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">전체 지원자</p>
+                                <p class="text-2xl font-bold text-slate-700">{{ stats.total }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-yellow-50 rounded-lg">
+                                <FileText :size="24" class="text-yellow-600" />
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">서류 심사</p>
+                                <p class="text-2xl font-bold text-slate-700">{{ stats.pending }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-green-50 rounded-lg">
+                                <CheckCircle :size="24" class="text-green-600" />
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">서류 통과</p>
+                                <p class="text-2xl font-bold text-slate-700">{{ stats.passed }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-purple-50 rounded-lg">
+                                <Clock :size="24" class="text-purple-600" />
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">면접 대기</p>
+                                <p class="text-2xl font-bold text-slate-700">{{ stats.interview }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <div class="flex-1 relative">
+                            <Search :size="20"
+                                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <input type="text" v-model="searchQuery" placeholder="이름, 이메일로 검색..."
+                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent" />
+                        </div>
+                        <div class="flex gap-2">
+                            <div class="relative">
+                                <Filter :size="20"
+                                    class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                <select v-model="statusFilter"
+                                    class="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent appearance-none bg-white cursor-pointer">
+                                    <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Applicants List -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-xl font-semibold text-slate-600 mb-4">
+                        지원자 목록 ({{ filteredApplicants.length }})
+                    </h2>
+                    <div v-if="filteredApplicants.length > 0" class="space-y-4">
+                        <ApplicantListCard v-for="applicant in filteredApplicants" :key="applicant.id"
+                            :applicant="applicant" @click="viewApplicantDetail(applicant.id)" />
+                    </div>
+                    <div v-else class="text-center py-12">
+                        <p class="text-gray-500">검색 결과가 없습니다.</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</template>
+
