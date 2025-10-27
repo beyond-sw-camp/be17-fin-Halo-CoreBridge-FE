@@ -140,6 +140,7 @@ const editConfirm = async (recruitProcessEditForm: RecruitProcessEditForm) => {
 
   const response = await recruitProcessAPI.requestUpdateRecruitProcess(recruitProcessEditForm)
   if (response.success) {
+    recruitmentProcess.value = response.results.recruitProcesses
     handleUpdateModalClose()
   }
 }

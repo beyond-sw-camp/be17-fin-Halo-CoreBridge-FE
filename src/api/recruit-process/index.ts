@@ -102,13 +102,15 @@ const requestRecruitProcessAdding = async (req: RecruitProcessForm): Promise<Api
  * @param {RecruitProcessForm} req - 요청 객체
  * @returns
  */
-const requestUpdateRecruitProcess = async (req: RecruitProcessEditForm): Promise<ApiResponse<string>> => {
+const requestUpdateRecruitProcess = async (req: RecruitProcessEditForm): Promise<ApiResponse<RecruitProcessResponse>> => {
 
-  let data: ApiResponse<string> = {
+  let data: ApiResponse<RecruitProcessResponse> = {
     success: false,
     code: 0,
     message: '',
-    results: '',
+    results: {
+      recruitProcesses: []
+    },
   }
 
   const url: string = '/api/recruiter/processes/' + req.id
@@ -120,10 +122,10 @@ const requestUpdateRecruitProcess = async (req: RecruitProcessEditForm): Promise
       jobPostingId: req.jobPostingId,
     })
     .then((res) => {
-      data = res.data as ApiResponse<string>
+      data = res.data as ApiResponse<RecruitProcessResponse>
     })
     .catch((error) => {
-      data = error.response.data as ApiResponse<string>
+      data = error.response.data as ApiResponse<RecruitProcessResponse>
     })
 
   return data
