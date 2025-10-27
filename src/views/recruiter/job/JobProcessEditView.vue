@@ -4,26 +4,22 @@ import draggable from 'vuedraggable';
 import {
   ChevronRight,
   Plus,
-  Trash2,
-  GripVertical
+  GripVertical,
 } from 'lucide-vue-next'
 
 import recruitProcessAPI from '@/api/recruit-process'
 import { useRoute } from 'vue-router'
 import type {
-  RecruitProcess, RecruitProcessChangeOrderForm,
+  RecruitProcess, RecruitProcessChangeOrderForm, RecruitProcessEditForm,
   RecruitProcessForm,
   RecruitProcessRequest
 } from '@/types/jobPosting/RecruitProcess.ts'
 import type { ColorCode } from '@/types/common/ColorCode.ts'
+import RecruitDropdown from '@/components/recruiter-dashboard/RecruitDropdown.vue'
+import RecruitEditModal from '@/components/recruiter-dashboard/RecruitEditModal.vue'
 
 const route = useRoute()
 const recruitmentProcess = ref<RecruitProcess[]>([])
-
-// Process Setting Data
-const newStepName = ref('')
-const newStepColor = ref()
-const editingIndex = ref(-1)
 
 const colorCode = ref<ColorCode[]>([
   {
@@ -54,28 +50,6 @@ const recruitProcessForm: RecruitProcessForm = reactive({
   colorCode: colorCode.value[0]?.code,
   jobPostingId: Number(route.params.id),
 })
-
-// Process Setting Methods
-const addStep = () => {
-  if (!newStepName.value.trim()) return
-
-  recruitmentProcess.value.push({
-    name: newStepName.value.trim(),
-    color: newStepColor.value
-  })
-
-  newStepName.value = ''
-  newStepColor.value = 'bg-blue-500'
-}
-
-
-const removeStep = (index: number) => {
-  if (recruitmentProcess.value.length <= 1) return
-
-  if (confirm('이 단계를 삭제하시겠습니까?')) {
-    recruitmentProcess.value.splice(index, 1)
-  }
-}
 
 onMounted(async () => {
 
@@ -135,9 +109,46 @@ const addProcess = async () => {
     console.log(response)
   }
 }
+
+const editProcess = ref<RecruitProcessEditForm>({
+  id: 0,
+  name: '',
+  colorCode: '',
+  jobPostingId: 0,
+})
+
+const isOpenUpdateModal = ref(false)
+const currentColorCodeName = ref('')
+const edit = (recruitProcess: RecruitProcess) => {
+  isOpenUpdateModal.value = true
+
+  currentColorCodeName.value = recruitProcess.colorCode.name
+  editProcess.value.id = recruitProcess.id
+  editProcess.value.name = recruitProcess.name
+  editProcess.value.colorCode = recruitProcess.colorCode.code
+  editProcess.value.jobPostingId = Number(route.params.id)
+}
+
+const deleteProcess = () => {
+  alert("삭제")
+}
+
+const handleUpdateModalClose = () => {
+  isOpenUpdateModal.value = false
+}
+
+const editConfirm = async (recruitProcessEditForm: RecruitProcessEditForm) => {
+
+  const response = await recruitProcessAPI.requestUpdateRecruitProcess(recruitProcessEditForm)
+  if (response.success) {
+    recruitmentProcess.value = response.results.recruitProcesses
+    handleUpdateModalClose()
+  }
+}
 </script>
 <template>
   <div class="bg-gray-50 min-h-screen">
+    <RecruitEditModal :open-modal="isOpenUpdateModal" :edit-process="editProcess" @close="handleUpdateModalClose" @confirm="editConfirm" :current-color-code="currentColorCodeName" />
     <!-- Main Content -->
     <main>
       <!-- Process Setting Tab Content -->
@@ -154,9 +165,9 @@ const addProcess = async () => {
             <div v-for="(step, index) in recruitmentProcess" :key="index"
                  class="flex items-center gap-2 min-w-fit">
               <div class="flex flex-col items-center">
-                <div :class="`bg-${step.colorCode}`"
+                <div :class="`bg-${step.colorCode.code}`"
                      class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                  {{ index + 1 }}
+                  {{ step.orderIdx }}
                 </div>
                 <span class="text-sm font-medium text-slate-700 mt-2 text-center whitespace-nowrap">
                   {{ step.name }}
@@ -211,7 +222,7 @@ const addProcess = async () => {
               :animation="200"
               @end="onDragEnd"
             >
-              <template #item="{ element: step, index }">
+              <template #item="{ element: step }">
                 <div class="drag-handle cursor-move flex items-center gap-4 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   <!-- Drag Handle -->
                   <div class=" p-1 text-gray-400 hover:text-slate-600 transition-colors">
@@ -224,7 +235,7 @@ const addProcess = async () => {
                   </div>
 
                   <!-- Step Color Preview -->
-                  <div :class="`bg-${step.colorCode}`" class="w-6 h-6 rounded-full"></div>
+                  <div :class="`bg-${step.colorCode.code}`" class="w-6 h-6 rounded-full"></div>
 
                   <!-- Step Name (Editable) -->
                   <div class="flex-1">
@@ -233,14 +244,7 @@ const addProcess = async () => {
 
                   <!-- Actions -->
                   <div class="flex items-center gap-2">
-                    <button
-                      v-if="editingIndex !== index && recruitmentProcess.length > 1"
-                      @click="removeStep(index)"
-                      class="p-1 text-red-400 hover:text-red-600 transition-colors"
-                      title="삭제"
-                    >
-                      <Trash2 :size="16" />
-                    </button>
+                    <RecruitDropdown  @edit-menu-click="edit(step)" @delete-menu-click="deleteProcess" />
                   </div>
                 </div>
               </template>

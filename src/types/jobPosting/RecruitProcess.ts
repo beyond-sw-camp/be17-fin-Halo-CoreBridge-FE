@@ -1,7 +1,9 @@
+import type { ColorCodeResponse } from '@/types/common/ColorCode.ts'
+
 export interface RecruitProcess {
   id: number
   name: string
-  colorCode: string
+  colorCode: ColorCodeResponse
   orderIdx: number
 }
 
@@ -24,4 +26,11 @@ export interface RecruitProcessChangeOrderForm {
   jobPostingId: number | undefined
   fromIdx: number | undefined
   toIdx: number | undefined
+}
+
+export interface RecruitProcessEditForm {
+  id: number | undefined
+  name: string | undefined
+  colorCode: string | undefined
+  jobPostingId: number | undefined
 }

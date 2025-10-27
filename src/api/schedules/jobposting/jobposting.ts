@@ -1,5 +1,4 @@
-// src/api/jobposting.ts
-import api from '../../../plugins/AxiosInterceptor'
+import api from '@/plugins/AxiosInterceptor'
 import type { Job, JobPostingSchedule } from '../../../types/schedules/jobposting/jobposting'
 import type { JobPostingCreateRequest, JobPostingDetailResponse } from '@/types/jobPosting/JobPostingTypes'
 
@@ -109,18 +108,6 @@ export const deleteJob = async (id: number): Promise<void> => {
   await api.delete(`/jobs/${id}`)
 }
 
-// ---- 공유(share) 기능 (UI 유지, API 비활성) ---------------------------------
-export const SHARE_API_ENABLED = false
-/*
-// (백엔드 준비되면 주석 해제)
-export const shareJob = async (
-  jobId: number,
-  memberIds: number[],
-  permission: 'view' | 'edit'
-): Promise<void> => {
-  const res = await api.post<ApiResponse<void>>(`/jobs/${jobId}/share`, { memberIds, permission })
-  return res.data.results
-}
 */
 
 // ---- 공고 일정 (JobPostingSchedule) ----------------------------------------
@@ -139,24 +126,62 @@ export const getSchedulesByJobPosting = async (jobPostingId: number): Promise<Jo
   return res.data.results
 }
 
-// 일정 등록
-export const createJobPostingSchedule = async (
-  payload: Partial<JobPostingSchedule> & { jobPostingId: number; startDate: string; endDate?: string }
-): Promise<JobPostingSchedule> => {
-  const res = await api.post<ApiResponse<JobPostingSchedule>>('/api/schedule/jobposting', payload)
-  return res.data.results
+/**
+ * 채용 공고 스케줄 생성
+ */
+export const createJobPostingSchedule = async (data: any) => {
+  const response = await api.post('/api/schedules/jobpostings', data)
+  return response.data?.results // result만 반환
 }
 
-// 일정 수정
-export const updateJobPostingSchedule = async (
-  scheduleId: number,
-  payload: Partial<JobPostingSchedule>
-): Promise<JobPostingSchedule> => {
-  const res = await api.put<ApiResponse<JobPostingSchedule>>(`/schedule/jobposting/${scheduleId}`, payload)
-  return res.data.results
+/**
+ * 채용 공고 스케줄 수정
+ */
+export const updateJobPostingSchedule = async (id: number, data: any) => {
+  const response = await api.put(`/api/schedules/jobpostings/${id}`, data)
+  return response.data?.results
 }
 
-// 일정 삭제
-export const deleteJobPostingSchedule = async (scheduleId: number): Promise<void> => {
-  await api.delete(`/schedule/jobposting/${scheduleId}`)
+/**
+ * 채용 공고 스케줄 삭제
+ */
+export const deleteJobPostingSchedule = async (id: number) => {
+  const response = await api.delete(`/api/schedules/jobpostings/${id}`)
+  return response.data?.result
+}
+
+
+/**
+ * 채용 공고 공유
+ */
+export const shareJobPostingSchedule = async (id: number, userIds: number[]) => {
+  const response = await api.post(`/api/schedules/jobpostings/${id}/share`, { userIds })
+  return response.data?.results
+}
+
+/**
+ * 채용 공고 스케줄 전체 조회
+ */
+export const getJobPostingSchedules = async () => {
+  const response = await api.get('/api/schedules/jobpostings')
+  return response.data?.results || [] // 배열 반환 보장
+}
+
+/**
+ * 채용 공고 스케줄 상세 조회
+ */
+export const getJobPostingScheduleById = async (id: number) => {
+  const response = await api.get(`/api/schedules/jobpostings/${id}`)
+  return response.data?.results
+}
+
+
+/**
+ * 캘린더 데이터 조회
+ */
+export const getJobPostingCalendar = async (year: number, month: number) => {
+  const response = await api.get(`/api/schedules/jobpostings/calendar`, {
+    params: { year, month }
+  })
+  return response.data?.results
 }

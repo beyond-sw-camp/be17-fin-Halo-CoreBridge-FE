@@ -3,9 +3,6 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { Users, Clock, Calendar, User, Mail, MapPin } from 'lucide-vue-next'
 import { getJobById } from '@/api/schedules/jobposting/jobposting'
-import { inject } from 'vue'
-
-const jobPostings = inject('jobPosting')
 
 // -----------------------------
 // 타입 정의
