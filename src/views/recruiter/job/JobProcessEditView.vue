@@ -10,12 +10,13 @@ import {
 import recruitProcessAPI from '@/api/recruit-process'
 import { useRoute } from 'vue-router'
 import type {
-  RecruitProcess, RecruitProcessChangeOrderForm,
+  RecruitProcess, RecruitProcessChangeOrderForm, RecruitProcessEditForm,
   RecruitProcessForm,
   RecruitProcessRequest
 } from '@/types/jobPosting/RecruitProcess.ts'
 import type { ColorCode } from '@/types/common/ColorCode.ts'
 import RecruitDropdown from '@/components/recruiter-dashboard/RecruitDropdown.vue'
+import RecruitEditModal from '@/components/recruiter-dashboard/RecruitEditModal.vue'
 
 const route = useRoute()
 const recruitmentProcess = ref<RecruitProcess[]>([])
@@ -49,14 +50,6 @@ const recruitProcessForm: RecruitProcessForm = reactive({
   colorCode: colorCode.value[0]?.code,
   jobPostingId: Number(route.params.id),
 })
-
-const removeStep = (index: number) => {
-  if (recruitmentProcess.value.length <= 1) return
-
-  if (confirm('이 단계를 삭제하시겠습니까?')) {
-    recruitmentProcess.value.splice(index, 1)
-  }
-}
 
 onMounted(async () => {
 
@@ -117,16 +110,43 @@ const addProcess = async () => {
   }
 }
 
-const edit = () => {
-  alert("수정")
+const editProcess = ref<RecruitProcessEditForm>({
+  id: 0,
+  name: '',
+  colorCode: '',
+  jobPostingId: 0,
+})
+
+const isOpenUpdateModal = ref(false)
+
+const edit = (recruitProcess: RecruitProcess) => {
+  isOpenUpdateModal.value = true
+
+  editProcess.value.id = recruitProcess.id
+  editProcess.value.name = recruitProcess.name
+  editProcess.value.colorCode = recruitProcess.colorCode.code
+  editProcess.value.jobPostingId = Number(route.params.id)
 }
 
 const deleteProcess = () => {
   alert("삭제")
 }
+
+const handleUpdateModalClose = () => {
+  isOpenUpdateModal.value = false
+}
+
+const editConfirm = async (recruitProcessEditForm: RecruitProcessEditForm) => {
+
+  const response = await recruitProcessAPI.requestUpdateRecruitProcess(recruitProcessEditForm)
+  if (response.success) {
+    handleUpdateModalClose()
+  }
+}
 </script>
 <template>
   <div class="bg-gray-50 min-h-screen">
+    <RecruitEditModal :open-modal="isOpenUpdateModal" :edit-process="editProcess" @close="handleUpdateModalClose" @confirm="editConfirm" />
     <!-- Main Content -->
     <main>
       <!-- Process Setting Tab Content -->
@@ -143,9 +163,9 @@ const deleteProcess = () => {
             <div v-for="(step, index) in recruitmentProcess" :key="index"
                  class="flex items-center gap-2 min-w-fit">
               <div class="flex flex-col items-center">
-                <div :class="`bg-${step.colorCode}`"
+                <div :class="`bg-${step.colorCode.code}`"
                      class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                  {{ index + 1 }}
+                  {{ step.orderIdx }}
                 </div>
                 <span class="text-sm font-medium text-slate-700 mt-2 text-center whitespace-nowrap">
                   {{ step.name }}
@@ -200,7 +220,7 @@ const deleteProcess = () => {
               :animation="200"
               @end="onDragEnd"
             >
-              <template #item="{ element: step, index }">
+              <template #item="{ element: step }">
                 <div class="drag-handle cursor-move flex items-center gap-4 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   <!-- Drag Handle -->
                   <div class=" p-1 text-gray-400 hover:text-slate-600 transition-colors">
@@ -213,7 +233,7 @@ const deleteProcess = () => {
                   </div>
 
                   <!-- Step Color Preview -->
-                  <div :class="`bg-${step.colorCode}`" class="w-6 h-6 rounded-full"></div>
+                  <div :class="`bg-${step.colorCode.code}`" class="w-6 h-6 rounded-full"></div>
 
                   <!-- Step Name (Editable) -->
                   <div class="flex-1">
@@ -222,7 +242,7 @@ const deleteProcess = () => {
 
                   <!-- Actions -->
                   <div class="flex items-center gap-2">
-                    <RecruitDropdown  @edit-menu-click="edit" @delete-menu-click="deleteProcess" />
+                    <RecruitDropdown  @edit-menu-click="edit(step)" @delete-menu-click="deleteProcess" />
                   </div>
                 </div>
               </template>
