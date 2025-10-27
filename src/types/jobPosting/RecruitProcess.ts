@@ -25,3 +25,10 @@ export interface RecruitProcessChangeOrderForm {
   fromIdx: number | undefined
   toIdx: number | undefined
 }
+
+export interface RecruitProcessEditForm {
+  id: number | undefined
+  name: string | undefined
+  colorCode: string | undefined
+  jobPostingId: number | undefined
+}
