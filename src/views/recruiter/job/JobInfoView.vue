@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { Users, Clock, Calendar, User, Mail, MapPin } from 'lucide-vue-next'
-import { getJobById } from '@/api/schedules/jobposting/jobposting'
+import { getJobById } from '@/api/job-posting/index'
 
 // -----------------------------
 // 타입 정의

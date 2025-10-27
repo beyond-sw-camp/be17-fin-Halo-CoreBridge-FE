@@ -2,7 +2,7 @@
 import { reactive, ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { JobPostingCreateRequest } from '@/types/jobPosting/JobPostingTypes'
-import { createJobPosting } from '@/api/schedules/jobposting/jobposting'
+import { createJobPosting } from '@/api/job-posting/index'
 import draggable from 'vuedraggable'
 import { GripVertical, Pencil, Trash2, User, Plus } from 'lucide-vue-next'
 
