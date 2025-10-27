@@ -34,3 +34,7 @@ export interface RecruitProcessEditForm {
   colorCode: string | undefined
   jobPostingId: number | undefined
 }
+
+export interface RecruitProcessDeleteForm {
+  id: number | undefined
+}
