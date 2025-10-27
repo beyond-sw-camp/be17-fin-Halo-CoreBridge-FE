@@ -2,6 +2,10 @@
 import { ref, watch } from 'vue'
 import type { ColorCode } from '@/types/common/ColorCode.ts'
 
+const props = defineProps<{
+  colorCodeName?: string
+}>()
+
 const emit = defineEmits<{
   colorCode: [code: string]
 }>()
@@ -29,7 +33,7 @@ const colorCode = ref<ColorCode[]>([
   }
 ])
 
-const selectedColor = ref<string | undefined>(colorCode.value[0]?.code)
+const selectedColor = ref<string>(props.colorCodeName ?? 'BLUE')
 
 watch(selectedColor, (newVal) => {
 
@@ -37,7 +41,7 @@ watch(selectedColor, (newVal) => {
     emit('colorCode', newVal)
   }
 
-})
+},{immediate:true})
 
 </script>
 

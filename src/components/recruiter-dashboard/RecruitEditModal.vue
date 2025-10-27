@@ -5,6 +5,7 @@ import ColorCode from '@/components/common/ColorCode.vue'
 interface Props {
   openModal: boolean
   editProcess: RecruitProcessEditForm
+  currentColorCode: string
 }
 
 const props = defineProps<Props>()
@@ -64,7 +65,7 @@ const handleColorCodeChange = (colorCode: string) => {
                   class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all resize-none"
                   v-model="recruitProcessEditForm.name"
                 >
-                <ColorCode @color-code="handleColorCodeChange" />
+                <ColorCode @color-code="handleColorCodeChange" :color-code-name="props.currentColorCode" />
               </div>
 
               <!-- Action Buttons -->

@@ -1,9 +1,9 @@
-import type { ColorCode } from '@/types/common/ColorCode.ts'
+import type { ColorCodeResponse } from '@/types/common/ColorCode.ts'
 
 export interface RecruitProcess {
   id: number
   name: string
-  colorCode: ColorCode
+  colorCode: ColorCodeResponse
   orderIdx: number
 }
 

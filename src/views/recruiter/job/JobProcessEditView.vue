@@ -118,10 +118,11 @@ const editProcess = ref<RecruitProcessEditForm>({
 })
 
 const isOpenUpdateModal = ref(false)
-
+const currentColorCodeName = ref('')
 const edit = (recruitProcess: RecruitProcess) => {
   isOpenUpdateModal.value = true
 
+  currentColorCodeName.value = recruitProcess.colorCode.name
   editProcess.value.id = recruitProcess.id
   editProcess.value.name = recruitProcess.name
   editProcess.value.colorCode = recruitProcess.colorCode.code
@@ -147,7 +148,7 @@ const editConfirm = async (recruitProcessEditForm: RecruitProcessEditForm) => {
 </script>
 <template>
   <div class="bg-gray-50 min-h-screen">
-    <RecruitEditModal :open-modal="isOpenUpdateModal" :edit-process="editProcess" @close="handleUpdateModalClose" @confirm="editConfirm" />
+    <RecruitEditModal :open-modal="isOpenUpdateModal" :edit-process="editProcess" @close="handleUpdateModalClose" @confirm="editConfirm" :current-color-code="currentColorCodeName" />
     <!-- Main Content -->
     <main>
       <!-- Process Setting Tab Content -->
