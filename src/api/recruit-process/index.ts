@@ -1,6 +1,7 @@
 import api from '@/plugins/AxiosInterceptor'
 import type {
-  RecruitProcessChangeOrderForm, RecruitProcessEditForm, RecruitProcessForm,
+  RecruitProcessChangeOrderForm,
+  RecruitProcessDeleteForm, RecruitProcessEditForm, RecruitProcessForm,
   RecruitProcessRequest,
   RecruitProcessResponse
 } from '@/types/jobPosting/RecruitProcess.ts'
@@ -131,9 +132,40 @@ const requestUpdateRecruitProcess = async (req: RecruitProcessEditForm): Promise
   return data
 }
 
+/**
+ * 채용 프로세스 삭제 요청 API
+ * @param {RecruitProcessForm} req - 요청 객체
+ * @returns
+ */
+const requestDeleteRecruitProcess = async (req: RecruitProcessDeleteForm): Promise<ApiResponse<RecruitProcessResponse>> => {
+
+  let data: ApiResponse<RecruitProcessResponse> = {
+    success: false,
+    code: 0,
+    message: '',
+    results: {
+      recruitProcesses: []
+    },
+  }
+
+  const url: string = '/api/recruiter/processes/' + req.id
+
+  await api
+    .delete(url)
+    .then((res) => {
+      data = res.data as ApiResponse<RecruitProcessResponse>
+    })
+    .catch((error) => {
+      data = error.response.data as ApiResponse<RecruitProcessResponse>
+    })
+
+  return data
+}
+
 export default {
   requestRecruitProcesses,
   requestRecruitProcessChangeOrder,
   requestRecruitProcessAdding,
-  requestUpdateRecruitProcess
+  requestUpdateRecruitProcess,
+  requestDeleteRecruitProcess
 }

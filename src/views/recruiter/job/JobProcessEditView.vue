@@ -10,13 +10,14 @@ import {
 import recruitProcessAPI from '@/api/recruit-process'
 import { useRoute } from 'vue-router'
 import type {
-  RecruitProcess, RecruitProcessChangeOrderForm, RecruitProcessEditForm,
+  RecruitProcess, RecruitProcessChangeOrderForm, RecruitProcessDeleteForm, RecruitProcessEditForm,
   RecruitProcessForm,
   RecruitProcessRequest
 } from '@/types/jobPosting/RecruitProcess.ts'
 import type { ColorCode } from '@/types/common/ColorCode.ts'
 import RecruitDropdown from '@/components/recruiter-dashboard/RecruitDropdown.vue'
 import RecruitEditModal from '@/components/recruiter-dashboard/RecruitEditModal.vue'
+import RecruitDeleteModal from '@/components/recruiter-dashboard/RecruitDeleteModal.vue'
 
 const route = useRoute()
 const recruitmentProcess = ref<RecruitProcess[]>([])
@@ -129,10 +130,6 @@ const edit = (recruitProcess: RecruitProcess) => {
   editProcess.value.jobPostingId = Number(route.params.id)
 }
 
-const deleteProcess = () => {
-  alert("삭제")
-}
-
 const handleUpdateModalClose = () => {
   isOpenUpdateModal.value = false
 }
@@ -145,10 +142,40 @@ const editConfirm = async (recruitProcessEditForm: RecruitProcessEditForm) => {
     handleUpdateModalClose()
   }
 }
+
+const isDeletedError = ref(false)
+const isOpenDeleteModal = ref(false)
+const deletedErrorMsg = ref('')
+const delProcess = ref<RecruitProcessDeleteForm>({
+  id: 0
+})
+const deleteProcess = (recruitProcess: RecruitProcess) => {
+  isOpenDeleteModal.value = true
+  delProcess.value!.id = recruitProcess.id
+}
+
+const handleDeleteModalClose = () => {
+  isOpenDeleteModal.value = false
+  isDeletedError.value = false
+  deletedErrorMsg.value = ''
+}
+
+const deleteConfirm = async () => {
+
+  const response = await recruitProcessAPI.requestDeleteRecruitProcess(delProcess.value)
+  if (response.success) {
+    recruitmentProcess.value = response.results.recruitProcesses
+  } else {
+    isOpenDeleteModal.value = true
+    isDeletedError.value = true
+    deletedErrorMsg.value = response.message
+  }
+}
 </script>
 <template>
   <div class="bg-gray-50 min-h-screen">
     <RecruitEditModal :open-modal="isOpenUpdateModal" :edit-process="editProcess" @close="handleUpdateModalClose" @confirm="editConfirm" :current-color-code="currentColorCodeName" />
+    <RecruitDeleteModal :open-modal="isOpenDeleteModal" @close="handleDeleteModalClose" @confirm="deleteConfirm" :deleted-error-msg="deletedErrorMsg" :is-deleted-error="isDeletedError" />
     <!-- Main Content -->
     <main>
       <!-- Process Setting Tab Content -->
@@ -244,7 +271,7 @@ const editConfirm = async (recruitProcessEditForm: RecruitProcessEditForm) => {
 
                   <!-- Actions -->
                   <div class="flex items-center gap-2">
-                    <RecruitDropdown  @edit-menu-click="edit(step)" @delete-menu-click="deleteProcess" />
+                    <RecruitDropdown  @edit-menu-click="edit(step)" @delete-menu-click="deleteProcess(step)" />
                   </div>
                 </div>
               </template>
