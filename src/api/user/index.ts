@@ -46,7 +46,30 @@ const requestLogin = async (req: UserLogin): Promise<ApiResponse> => {
   return data
 }
 
+const requestLogout = async (): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined,
+  }
+
+  const url: string = '/api/users/logout'
+
+  await api
+    .post(url)
+    .then((res) => {
+      data = res.data as ApiResponse
+    })
+    .catch((error) => {
+      data = error.response.data as ApiResponse
+    })
+
+  return data
+}
+
 export default {
   requestSignup,
   requestLogin,
+  requestLogout
 }
