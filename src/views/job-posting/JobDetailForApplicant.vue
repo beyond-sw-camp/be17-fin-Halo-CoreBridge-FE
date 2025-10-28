@@ -118,10 +118,22 @@ onMounted(async () => {
 // -----------------------------
 // Utility Methods
 // -----------------------------
-const formatExperience = (min?: number, max?: number) => {
+const formatExperience = (min?: number | null, max?: number | null) => {
+
+  //  둘 다 0이면 "경력 무관"
   if (min === 0 && max === 0) return ''
-  if (min === max) return `${min}년`
-  return `${min}~${max}년`
+
+  //  둘 다 값이 있고 같다면 "3년"
+  if (min != null && max != null && min === max) return `• ${min}년`
+
+  //  둘 다 값이 있으면 "3~5년"
+  if (min != null && max != null) return `• ${min}~${max}년`
+
+  //  하나만 있는 경우
+  if (min != null) return `• ${min}년 이상`
+  if (max != null) return `• ${max}년 이하`
+
+  return ''
 }
 
 const formatDateRange = (start?: string, end?: string) => {
@@ -211,7 +223,7 @@ const handleApply = () => router.push(`/apply/${jobId}`)
               </div>
               <div class="flex items-center gap-2">
                 <Briefcase :size="20" />
-                {{ basicInfo?.careerType }} •
+                {{ basicInfo?.careerType }} 
                 {{ formatExperience(basicInfo?.minExperience, basicInfo?.maxExperience) }}
               </div>
             </div>
