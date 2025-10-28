@@ -4,7 +4,7 @@ import {
   Search,
   Briefcase,
   MapPin,
-  Eye,
+  Eye
 } from 'lucide-vue-next'
 
 import { getJobsPublic } from '@/api/job-posting'
@@ -13,9 +13,7 @@ import type { JobPostingPublic } from '@/types/jobPosting/JobPostingTypes.ts'
 // 공고 데이터 (DB에서 오는 걸로 가정)
 const jobs = ref<JobPostingPublic[]>([])
 
-
 const searchQuery = ref('')
-const sortBy = ref('최신순')
 
 const employmentTypes = ref([
   {
@@ -25,7 +23,7 @@ const employmentTypes = ref([
   {
     code: 'CONTRACT',
     label: '계약직'
-  },{
+  }, {
     code: 'INTERN',
     label: '인턴'
   }
@@ -41,6 +39,19 @@ onMounted(async () => {
     jobs.value = response.results.jobs
   }
 })
+
+const orderFilter = ref([
+  {
+    label: '최신순',
+    code: 'lastest'
+  },
+  {
+    label: '오래된 수',
+    code: 'old'
+  }
+])
+
+const selectedOrder = ref(orderFilter.value[0]!.label)
 
 </script>
 
@@ -129,10 +140,8 @@ onMounted(async () => {
         <h3 class="text-2xl font-bold text-slate-600">
           진행 중인 채용 공고 <span class="text-gray-500 text-xl ml-2">{{ jobs.length }}</span>
         </h3>
-        <select v-model="sortBy" class="hover:cursor-pointer px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600 text-sm">
-          <option>최신순</option>
-          <option>마감임박순</option>
-          <option>지원자순</option>
+        <select v-model="selectedOrder" class="hover:cursor-pointer px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600 text-sm">
+          <option v-for="filter in orderFilter" :key="filter.code">{{ filter.label }}</option>
         </select>
       </div>
 
@@ -152,15 +161,14 @@ onMounted(async () => {
             </div>
 
             <h3 class="text-xl font-bold text-slate-600 mb-2 group-hover:text-slate-700">{{ job.title }}</h3>
-            <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ job.description }}</p>
 
-            <div class="flex flex-wrap gap-2 mb-4">
-              <span
-                v-for="tag in job.tags"
-                :key="tag"
-                class="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium"
-              >{{ tag }}</span>
-            </div>
+            <!--            <div class="flex flex-wrap gap-2 mb-4">-->
+            <!--              <span-->
+            <!--                v-for="tag in job.tags"-->
+            <!--                :key="tag"-->
+            <!--                class="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium"-->
+            <!--              >{{ tag }}</span>-->
+            <!--            </div>-->
 
             <div class="space-y-2 text-sm text-gray-600 mb-4">
               <div class="flex items-center gap-2">
