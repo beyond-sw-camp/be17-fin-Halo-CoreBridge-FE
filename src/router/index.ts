@@ -122,8 +122,8 @@ const router = createRouter({
       component: () => import('@/views/job-posting/JobPostingCreateView.vue'),
     },
     {
-      path: '/job-posting/detail-list',
-      name: 'jobPostingDetailList',
+      path: '/jobs/:id',
+      name: 'jobPostingDetailListForApplicant',
       component: () => import('@/views/job-posting/JobDetailForApplicant.vue'),
     },
     {
