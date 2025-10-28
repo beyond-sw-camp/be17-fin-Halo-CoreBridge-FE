@@ -27,11 +27,6 @@ const handleMenuClick = (menuId: string) => {
     // router.push({ name: menuId });
 };
 
-const handleLogout = () => {
-    console.log('Logout clicked');
-    // 로그아웃 로직 추가
-};
-
 </script>
 
 <template>
@@ -60,7 +55,7 @@ const handleLogout = () => {
                     class="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-white font-medium shadow-md">
                     CS</div> -->
             </div>
-            <ProfileDropdown @menu-click="handleMenuClick" @logout="handleLogout" />
+            <ProfileDropdown @menu-click="handleMenuClick" />
         </div>
     </header>
 </template>

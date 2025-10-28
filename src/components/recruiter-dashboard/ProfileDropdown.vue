@@ -54,6 +54,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import DropdownMenuItem from '@/components/recruiter-dashboard/DropdownMenuItem.vue';
+import userAPI from '@/api/user'
+
+import { useRouter } from 'vue-router'
+const router = useRouter();
 
 
 interface MenuItem {
@@ -76,7 +80,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   menuClick: [menuId: string];
-  logout: [];
   mobileAppClick: [];
 }>();
 
@@ -108,9 +111,13 @@ const handleMenuClick = (menuId: string) => {
   closeDropdown();
 };
 
-const handleLogout = () => {
-  emit('logout');
+const handleLogout = async () => {
   closeDropdown();
+
+  const response = await userAPI.requestLogout()
+  if (response.success) {
+    router.push('/login');
+  }
 };
 
 // Click outside handler
