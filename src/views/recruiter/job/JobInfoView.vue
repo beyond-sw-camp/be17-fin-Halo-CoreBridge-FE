@@ -1,16 +1,23 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Users, Clock, Calendar, User, Mail, MapPin } from 'lucide-vue-next'
+import { Users, Clock, Calendar, User, Mail, MapPin, Code } from 'lucide-vue-next'
 import { getJobById } from '@/api/job-posting/index'
+import ColorCode from '@/components/common/ColorCode.vue'
 
 // -----------------------------
 // 타입 정의
 // -----------------------------
+interface colorCode {
+    name: string
+    label: string
+    code: string
+}
+
 interface RecruitProcessRead {
     id: number
     name: string
-    colorCode: string
+    colorCode: colorCode
     orderIdx: number
 }
 
@@ -56,6 +63,7 @@ const jobId = Number(route.params.id)
 
 const jobPosting = ref<JobPostingDetailResponse | null>(null)
 const recruitmentProcess = ref<RecruitProcessRead[]>([])
+const colorCode = ref<colorCode[]>([])
 const isLoading = ref(true)
 const errorMessage = ref('')
 
@@ -222,7 +230,7 @@ const handleDelete = () => {
                         <li v-for="step in recruitmentProcess" :key="step.id" class="relative flex items-start gap-3">
                             <!-- 동그라미 -->
                             <div class="z-10 w-4 h-4 rounded-full flex-shrink-0 border-2 border-white shadow"
-                                :class="`bg-${step.colorCode}`"></div>
+                                :class="`bg-${step.colorCode.code}`"></div>
 
                             <!-- 프로세스 내용 -->
                             <div>
