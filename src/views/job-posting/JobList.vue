@@ -65,17 +65,20 @@ const selectedOrder = ref(orderFilter.value[0]!.label)
           <div class="flex items-center gap-8">
             <h1 class="text-2xl font-bold text-slate-600">회사명</h1>
             <nav class="hidden md:flex gap-6">
-              <a href="#" class="text-slate-600 font-medium hover:text-slate-800 transition">채용공고</a>
+              <a href="#"
+                 class="text-slate-600 font-medium hover:text-slate-800 transition">채용공고</a>
               <a href="#" class="text-gray-600 hover:text-slate-800 transition">회사소개</a>
               <a href="#" class="text-gray-600 hover:text-slate-800 transition">기업문화</a>
               <a href="#" class="text-gray-600 hover:text-slate-800 transition">복지혜택</a>
             </nav>
           </div>
           <div class="flex items-center gap-3">
-            <button class="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition text-sm hover:cursor-pointer">
+            <button
+              class="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition text-sm hover:cursor-pointer">
               지원현황
             </button>
-            <RouterLink to="/login" class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium hover:cursor-pointer">
+            <RouterLink to="/login"
+                        class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium hover:cursor-pointer">
               로그인
             </RouterLink>
           </div>
@@ -110,25 +113,29 @@ const selectedOrder = ref(orderFilter.value[0]!.label)
               placeholder="포지션, 기술 스택으로 검색..."
               class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600 focus:border-transparent"
             >
-            <Search class="w-6 h-6 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
+            <Search
+              class="w-6 h-6 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
           </div>
-<!--          <select v-model="selectedJob" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600">-->
-<!--            <option>전체 직군</option>-->
-<!--            <option>개발</option>-->
-<!--            <option>디자인</option>-->
-<!--            <option>마케팅</option>-->
-<!--            <option>기획</option>-->
-<!--            <option>영업</option>-->
-<!--          </select>-->
-<!--          <select v-model="selectedExp" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600">-->
-<!--            <option>전체 경력</option>-->
-<!--            <option>신입</option>-->
-<!--            <option>1-3년</option>-->
-<!--            <option>3-5년</option>-->
-<!--            <option>5년 이상</option>-->
-<!--          </select>-->
-          <select v-model="selectedType" class="hover:cursor-pointer px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600">
-            <option v-for="employmentType in employmentTypes" :key="employmentType.code">{{ employmentType.label }}</option>
+          <!--          <select v-model="selectedJob" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600">-->
+          <!--            <option>전체 직군</option>-->
+          <!--            <option>개발</option>-->
+          <!--            <option>디자인</option>-->
+          <!--            <option>마케팅</option>-->
+          <!--            <option>기획</option>-->
+          <!--            <option>영업</option>-->
+          <!--          </select>-->
+          <!--          <select v-model="selectedExp" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600">-->
+          <!--            <option>전체 경력</option>-->
+          <!--            <option>신입</option>-->
+          <!--            <option>1-3년</option>-->
+          <!--            <option>3-5년</option>-->
+          <!--            <option>5년 이상</option>-->
+          <!--          </select>-->
+          <select v-model="selectedType"
+                  class="hover:cursor-pointer px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600">
+            <option v-for="employmentType in employmentTypes" :key="employmentType.code">
+              {{ employmentType.label }}
+            </option>
           </select>
         </div>
       </div>
@@ -140,7 +147,8 @@ const selectedOrder = ref(orderFilter.value[0]!.label)
         <h3 class="text-2xl font-bold text-slate-600">
           진행 중인 채용 공고 <span class="text-gray-500 text-xl ml-2">{{ jobs.length }}</span>
         </h3>
-        <select v-model="selectedOrder" class="hover:cursor-pointer px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600 text-sm">
+        <select v-model="selectedOrder"
+                class="hover:cursor-pointer px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600 text-sm">
           <option v-for="filter in orderFilter" :key="filter.code">{{ filter.label }}</option>
         </select>
       </div>
@@ -151,55 +159,62 @@ const selectedOrder = ref(orderFilter.value[0]!.label)
           :key="job.id"
           class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all cursor-pointer overflow-hidden group"
         >
-          <div class="p-6">
-            <div class="flex items-start justify-between mb-4">
-              <div class="flex items-center gap-3">
-                <div class="px-5 py-2 text-sm bg-slate-200 rounded-lg flex items-center justify-center font-bold">
-                  {{ job.department }}
+          <RouterLink :to="{ path: `/jobs/${job.id}` }">
+            <div class="p-6">
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="px-5 py-2 text-sm bg-slate-200 rounded-lg flex items-center justify-center font-bold">
+                    {{ job.department }}
+                  </div>
+                </div>
+              </div>
+
+              <h3 class="text-xl font-bold text-slate-600 mb-2 group-hover:text-slate-700">
+                {{ job.title }}</h3>
+
+              <!--            <div class="flex flex-wrap gap-2 mb-4">-->
+              <!--              <span-->
+              <!--                v-for="tag in job.tags"-->
+              <!--                :key="tag"-->
+              <!--                class="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium"-->
+              <!--              >{{ tag }}</span>-->
+              <!--            </div>-->
+
+              <div class="space-y-2 text-sm text-gray-600 mb-4">
+                <div class="flex items-center gap-2">
+                  <Briefcase class="w-4 h-4" />
+                  <span>{{ job.experience }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <MapPin class="w-4 h-4" />
+                  <span>{{ job.location }}</span>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                <div class="text-xs text-gray-500">
+                  <span :class="job.deadline.includes('5') ? 'text-red-600' : 'text-orange-600'"
+                        class="font-medium">{{ job.deadline }}</span>
+                </div>
+                <div class="flex items-center gap-1 text-xs text-gray-500">
+                  <Eye class="w-4 h-4" />
+                  <span>{{ job.views }}</span>
                 </div>
               </div>
             </div>
-
-            <h3 class="text-xl font-bold text-slate-600 mb-2 group-hover:text-slate-700">{{ job.title }}</h3>
-
-            <!--            <div class="flex flex-wrap gap-2 mb-4">-->
-            <!--              <span-->
-            <!--                v-for="tag in job.tags"-->
-            <!--                :key="tag"-->
-            <!--                class="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium"-->
-            <!--              >{{ tag }}</span>-->
-            <!--            </div>-->
-
-            <div class="space-y-2 text-sm text-gray-600 mb-4">
-              <div class="flex items-center gap-2">
-                <Briefcase class="w-4 h-4" />
-                <span>{{ job.experience }}</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <MapPin class="w-4 h-4" />
-                <span>{{ job.location }}</span>
-              </div>
+            <div
+              class="bg-slate-600 text-white text-center py-3 font-medium group-hover:bg-slate-700 transition">
+              상세 보기
             </div>
-
-            <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-              <div class="text-xs text-gray-500">
-                <span :class="job.deadline.includes('5') ? 'text-red-600' : 'text-orange-600'" class="font-medium">{{ job.deadline }}</span>
-              </div>
-              <div class="flex items-center gap-1 text-xs text-gray-500">
-                <Eye class="w-4 h-4" />
-                <span>{{ job.views }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="bg-slate-600 text-white text-center py-3 font-medium group-hover:bg-slate-700 transition">
-            상세 보기
-          </div>
+          </RouterLink>
         </div>
       </div>
 
       <!-- Load More -->
       <div class="text-center mt-12">
-        <button class="hover:cursor-pointer px-8 py-3 border-2 border-slate-600 text-slate-600 rounded-lg hover:bg-slate-600 hover:text-white transition font-medium">
+        <button
+          class="hover:cursor-pointer px-8 py-3 border-2 border-slate-600 text-slate-600 rounded-lg hover:bg-slate-600 hover:text-white transition font-medium">
           더 많은 공고 보기
         </button>
       </div>
