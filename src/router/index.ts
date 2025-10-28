@@ -7,7 +7,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('@/views/job-posting/JobList.vue'),
+      redirect: '/jobs'
     },
     {
       path: '/signup',
@@ -120,6 +120,11 @@ const router = createRouter({
       path: '/job-posting/create',
       name: 'jobPostingCreate',
       component: () => import('@/views/job-posting/JobPostingCreateView.vue'),
+    },
+    {
+      path: '/jobs',
+      name: 'jobs',
+      component: () => import('@/views/job-posting/JobList.vue'),
     },
     {
       path: '/jobs/:id',
