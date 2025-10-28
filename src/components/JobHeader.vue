@@ -21,7 +21,7 @@ interface headerResponse {
   salaryType: string
   salaryMin: number
   salaryMax: number
-  SalaryNegotiable: boolean
+  salaryNegotiable: boolean
 }
 
 // -----------------------------
@@ -193,7 +193,7 @@ const isActive = (tab: Tab) => route.path === tab.path
             </div>
           </div>
           <span class="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full font-medium">
-            {{ jobPosting.SalaryNegotiable ? '협의 가능' : '고정 급여' }}
+            {{ jobPosting.salaryNegotiable ? '협의 가능' : '고정 급여' }}
           </span>
         </div>
       </div>
