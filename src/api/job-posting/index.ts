@@ -1,5 +1,8 @@
 import api from '@/plugins/AxiosInterceptor'
-import type { JobPostingCreateRequest,} from '@/types/jobPosting/JobPostingTypes'
+import type {
+  JobPostingCreateRequest,
+  JobPostingPublicResponse
+} from '@/types/jobPosting/JobPostingTypes'
 
 // ---- 공고 CRUD --------------------------------------------------------------
 export const createJobPosting = async (payload: JobPostingCreateRequest): Promise<ApiResponse> => {
@@ -94,6 +97,32 @@ export const getJobById = async (id: number): Promise<ApiResponse> => {
     console.log(error)
     data = error.response.data as ApiResponse
   })
+
+  return data
+}
+
+export const getJobsPublic = async (): Promise<ApiResponse<JobPostingPublicResponse>> => {
+  let data: ApiResponse<JobPostingPublicResponse> = {
+    success: false,
+    code: 0,
+    message: '',
+    results: {
+      jobs: []
+    }
+  }
+
+  const url = `/api/jobs`
+
+  await api
+    .get(url)
+    .then((res) => {
+      console.log(res)
+      data = res.data as ApiResponse<JobPostingPublicResponse>
+    })
+    .catch((error) => {
+      console.log(error)
+      data = error.response.data as ApiResponse<JobPostingPublicResponse>
+    })
 
   return data
 }

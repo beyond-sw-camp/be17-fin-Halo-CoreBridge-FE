@@ -7,7 +7,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      component: () => import('@/views/job-posting/JobList.vue'),
     },
     {
       path: '/signup',
