@@ -37,7 +37,7 @@ export interface JobPostingCreateRequest {
  */
 
 export interface ProcessSummary {
-  stageName : String
+  stageName: String
   count: number
   orderIndex: number
 }
@@ -70,4 +70,19 @@ export interface JobPostingDetail {
   skills: string[]
   applyStartDate: string
   applyEndDate: string
+}
+
+export interface JobPostingPublic {
+  id: number
+  title: string
+  summary: string
+  experience: string
+  location: string,
+  deadline: string,
+  department: string
+  views: number
+}
+
+export interface JobPostingPublicResponse {
+  jobs: JobPostingPublic[]
 }
