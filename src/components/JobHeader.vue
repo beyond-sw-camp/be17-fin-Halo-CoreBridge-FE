@@ -61,10 +61,22 @@ const getStatusClass = (status?: string) => {
   return 'bg-gray-100 text-gray-700'
 }
 
-const formatExperience = (min: number, max: number) => {
-  if (min === 0 && max === 0) return '경력 무관'
-  if (min === max) return `${min}년`
-  return `${min}~${max}년`
+const formatExperience = (min?: number | null, max?: number | null) => {
+
+  //  둘 다 0이면 "경력 무관"
+  if (min === 0 && max === 0) return ''
+
+  //  둘 다 값이 있고 같다면 "3년"
+  if (min != null && max != null && min === max) return `• ${min}년`
+
+  //  둘 다 값이 있으면 "3~5년"
+  if (min != null && max != null) return `• ${min}~${max}년`
+
+  //  하나만 있는 경우
+  if (min != null) return `• ${min}년 이상`
+  if (max != null) return `• ${max}년 이하`
+
+  return ''
 }
 
 const formatSalary = (type: string, min: number, max: number) => {
@@ -138,7 +150,7 @@ const isActive = (tab: Tab) => route.path === tab.path
 
                 <div class="flex items-center gap-2">
                   <Briefcase :size="18" />
-                  {{ jobPosting.careerType }} •
+                  {{ jobPosting.careerType }} 
                   {{ formatExperience(jobPosting.minExperience, jobPosting.maxExperience) }}
                 </div>
               </div>
