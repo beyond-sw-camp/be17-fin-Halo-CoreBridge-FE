@@ -31,11 +31,7 @@ export const useUserStore = defineStore('user', () => {
       return userInfo.value.role === 'ROLE_APPLICANT'
     }
 
-    const getIsLogin = () => {
-      return isLogin.value
-    }
-
-    return { userInfo, logout, login, isApplicant, getIsLogin }
+    return { userInfo, logout, login, isApplicant, isLogin }
   },
   {
     persist: {
