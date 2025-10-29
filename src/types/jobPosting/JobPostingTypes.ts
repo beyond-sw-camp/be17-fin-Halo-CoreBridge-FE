@@ -1,10 +1,12 @@
+import type { EnumMember, EnumType } from "typescript"
+
 /**
  * 채용공고 생성 폼 (POST /api/jobPostings)
  */
 export interface JobPostingCreateRequest {
   title: string
-  employmentType: string
-  careerType: string
+  employmentType: string | null
+  careerType: string | null
   minExperience?: number
   maxExperience?: number
   positionLevel?: string
@@ -19,7 +21,7 @@ export interface JobPostingCreateRequest {
   preferred: string
   techStack: string[]
   recruitProcess: string[]
-  salaryType: string
+  salaryType: string | null
   salaryMin?: number
   salaryMax?: number
   salaryNegotiable?: boolean
