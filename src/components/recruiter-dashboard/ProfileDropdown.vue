@@ -55,10 +55,11 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import DropdownMenuItem from '@/components/recruiter-dashboard/DropdownMenuItem.vue';
 import userAPI from '@/api/user'
+import { useUserStore } from '@/store/useUserStore.ts'
 
 import { useRouter } from 'vue-router'
 const router = useRouter();
-
+const userStore = useUserStore()
 
 interface MenuItem {
   id: string;
@@ -116,7 +117,7 @@ const handleLogout = async () => {
 
   const response = await userAPI.requestLogout()
   if (response.success) {
-    router.push('/login');
+    userStore.logout()
   }
 };
 
