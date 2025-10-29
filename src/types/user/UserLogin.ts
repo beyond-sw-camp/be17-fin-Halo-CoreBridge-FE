@@ -8,3 +8,9 @@ export interface UserLoginError {
   password: string
   global: string
 }
+
+export interface UserLoginResponse {
+  name: string
+  role: string
+  email: string
+}

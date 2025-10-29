@@ -9,6 +9,10 @@ import {
 
 import { getJobsPublic } from '@/api/job-posting'
 import type { JobPostingPublic } from '@/types/jobPosting/JobPostingTypes.ts'
+import ProfileDropdown from '@/components/recruiter-dashboard/ProfileDropdown.vue'
+import { useUserStore } from '@/store/useUserStore.ts'
+
+const userStore = useUserStore()
 
 // 공고 데이터 (DB에서 오는 걸로 가정)
 const jobs = ref<JobPostingPublic[]>([])
@@ -72,7 +76,7 @@ const selectedOrder = ref(orderFilter.value[0]!.label)
               <a href="#" class="text-gray-600 hover:text-slate-800 transition">복지혜택</a>
             </nav>
           </div>
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3" v-if="!userStore.getIsLogin">
             <button
               class="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition text-sm hover:cursor-pointer">
               지원현황
@@ -81,6 +85,17 @@ const selectedOrder = ref(orderFilter.value[0]!.label)
                         class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium hover:cursor-pointer">
               로그인
             </RouterLink>
+          </div>
+          <div class="flex items-center space-x-4" v-else>
+            <div class="flex items-center space-x-3 pl-4 border-l border-slate-200">
+              <div class="text-center">
+                <p class="text-sm font-medium text-slate-800">{{ userStore.userInfo.name }}</p>
+              </div>
+              <!-- <div
+                  class="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-white font-medium shadow-md">
+                  CS</div> -->
+            </div>
+            <ProfileDropdown @menu-click="handleMenuClick" />
           </div>
         </div>
       </div>

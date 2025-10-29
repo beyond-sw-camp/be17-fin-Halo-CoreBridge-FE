@@ -1,6 +1,6 @@
 import api from '@/plugins/AxiosInterceptor'
 import type { UserForm } from '@/types/user/UserForm'
-import type { UserLogin } from '@/types/user/UserLogin'
+import type { UserLogin, UserLoginResponse } from '@/types/user/UserLogin'
 
 const requestSignup = async (req: UserForm): Promise<ApiResponse> => {
   let data: ApiResponse = {
@@ -24,12 +24,12 @@ const requestSignup = async (req: UserForm): Promise<ApiResponse> => {
   return data
 }
 
-const requestLogin = async (req: UserLogin): Promise<ApiResponse> => {
-  let data: ApiResponse = {
+const requestLogin = async (req: UserLogin): Promise<ApiResponse<UserLoginResponse>> => {
+  let data: ApiResponse<UserLoginResponse> = {
     success: false,
     code: 0,
     message: '',
-    results: undefined,
+    results: {} as UserLoginResponse,
   }
 
   const url: string = 'http://localhost:8080/login'
@@ -38,6 +38,28 @@ const requestLogin = async (req: UserLogin): Promise<ApiResponse> => {
     .post(url, req)
     .then((res) => {
       data = res.data
+    })
+    .catch((error) => {
+      data = error.response.data as ApiResponse<UserLoginResponse>
+    })
+
+  return data
+}
+
+const requestLogout = async (): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined,
+  }
+
+  const url: string = '/api/users/logout'
+
+  await api
+    .post(url)
+    .then((res) => {
+      data = res.data as ApiResponse
     })
     .catch((error) => {
       data = error.response.data as ApiResponse
@@ -49,4 +71,5 @@ const requestLogin = async (req: UserLogin): Promise<ApiResponse> => {
 export default {
   requestSignup,
   requestLogin,
+  requestLogout
 }

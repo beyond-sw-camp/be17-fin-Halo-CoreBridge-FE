@@ -2,8 +2,10 @@
 import { ref, reactive } from 'vue'
 import userAPI from '@/api/user'
 import { UserRound, Mail, LockKeyhole } from 'lucide-vue-next'
-import router from '@/router'
 import type { UserLogin, UserLoginError } from '@/types/user/UserLogin'
+import { useUserStore } from '@/store/useUserStore.ts'
+
+const userStore = useUserStore()
 
 const formData: UserLogin = reactive({
     email: '',
@@ -56,8 +58,8 @@ const handleSubmit = async () => {
         // 로그인 처리
         const response = await userAPI.requestLogin(formData)
         if (response.success) {
-            // 로그인 성공 시 리다이렉트 등 처리
-            router.push({ name: 'home' })
+          // 로그인 성공 시 리다이렉트 등 처리
+          userStore.login(response.results)
         } else {
             errors.global = response.message || '로그인에 실패했습니다. 다시 시도해주세요.'
         }

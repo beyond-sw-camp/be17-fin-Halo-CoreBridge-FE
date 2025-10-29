@@ -1,36 +1,8 @@
 <script setup lang="ts">
-import { Search, Bell } from 'lucide-vue-next'
 import ProfileDropdown from '@/components/recruiter-dashboard/ProfileDropdown.vue'
-import { computed, ref } from 'vue'
+import { useUserStore } from '@/store/useUserStore'
 
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-const roleTitle = computed(() => (route.path.startsWith('/admin') ? 'Admin' : 'Recruiter'))
-
-interface User {
-    name: string;
-    email: string;
-    role: string;
-}
-
-const handleMenuClick = (menuId: string) => {
-    const menuNames: Record<string, string> = {
-        account: '계정 설정',
-        security: '보안 설정',
-        notification: '알림 설정',
-    };
-
-    console.log('Menu clicked:', menuId);
-
-    // 여기에 각 메뉴에 대한 라우팅 로직 추가
-    // router.push({ name: menuId });
-};
-
-const handleLogout = () => {
-    console.log('Logout clicked');
-    // 로그아웃 로직 추가
-};
+const userStore = useUserStore()
 
 </script>
 
@@ -46,21 +18,16 @@ const handleLogout = () => {
             </div>
         </div> -->
         <div class="flex items-center space-x-4">
-            <button
-                class="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all">
-                <Bell size="20" />
-                <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
             <div class="flex items-center space-x-3 pl-4 border-l border-slate-200">
                 <div class="text-center">
-                    <p class="text-sm font-medium text-slate-800">이상우</p>
-                    <p class="text-xs text-slate-500">{{ roleTitle }}</p>
+                    <p class="text-sm font-medium text-slate-800">{{ userStore.userInfo.name }}</p>
+                    <p class="text-xs text-slate-500">{{ userStore.userInfo.role }}</p>
                 </div>
                 <!-- <div
                     class="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-white font-medium shadow-md">
                     CS</div> -->
             </div>
-            <ProfileDropdown @menu-click="handleMenuClick" @logout="handleLogout" />
+            <ProfileDropdown />
         </div>
     </header>
 </template>
