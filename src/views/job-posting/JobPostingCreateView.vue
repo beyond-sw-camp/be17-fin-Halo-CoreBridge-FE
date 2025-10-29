@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { reactive, ref, watch, computed } from 'vue'
+import { reactive, ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import type { JobPostingCreateRequest } from '@/types/jobPosting/JobPostingTypes'
-import { createJobPosting } from '@/api/job-posting/index'
+import { createJobPosting, getDepartment } from '@/api/job-posting/index'
 import draggable from 'vuedraggable'
 import { GripVertical, Pencil, Trash2, Plus } from 'lucide-vue-next'
 
@@ -22,6 +22,10 @@ interface StageEdit extends Stage {
     edit: boolean
 }
 
+interface Department {
+    id: number
+    name: string
+}
 // ===========================
 // Form State
 // ===========================
@@ -49,14 +53,17 @@ const form = reactive<JobPostingCreateRequest>({
     salaryNegotiable: false,
     workingHours: '',
     benefits: '',
-    departmentId: 1,
+    departmentId: null,
     contactName: '',
     contactEmail: '',
     additionalInfo: '',
 })
+const department = ref<Department[]>([])
 
 const errors = reactive<Record<string, string>>({})
 const isSubmitting = ref(false)
+const errorMessage = ref('')
+const isLoading = ref(true)
 
 // ===========================
 // Tech Stack Management
@@ -148,7 +155,7 @@ const submitForm = async () => {
             headcount: Number(form.headcount) || 0,
             salaryMin: form.salaryMin == null || form.salaryMin === ('' as any) ? 0 : Number(form.salaryMin),
             salaryMax: form.salaryMax == null || form.salaryMax === ('' as any) ? 0 : Number(form.salaryMax),
-            departmentId: Number(form.departmentId) || 1,
+            departmentId: Number(form.departmentId) || null,
             applyStartDate: toDateTime(form.applyStartDate, false) as any,
             applyEndDate: toDateTime(form.applyEndDate, true) as any,
             hireEndDate: toDateTime(form.hireEndDate, true) as any,
@@ -204,6 +211,22 @@ const isSalaryInvalid = computed(() => {
     return form.salaryType === '고정급여' && (!form.salaryMin || !form.salaryMax)
 })
 
+
+onMounted(async () => {
+    try {
+        const response = await getDepartment()
+        if (response.success) {
+            department.value = response.results
+        } else {
+            errorMessage.value = response.message || '데이터를 불러오지 못했습니다.'
+        }
+    } catch (err: any) {
+        console.error(err)
+        errorMessage.value = '서버오류 발생'
+    } finally {
+        isLoading.value = false;
+    }
+})
 </script>
 
 <template>
@@ -252,11 +275,10 @@ const isSalaryInvalid = computed(() => {
                                     'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent',
                                     errors.departmentId ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                 ]">
-                                    <option :value="1">개발팀</option>
-                                    <option :value="2">디자인팀</option>
-                                    <option :value="3">마케팅팀</option>
-                                    <option :value="4">영업팀</option>
-                                    <option :value="5">인사팀</option>
+                                    <option disabled value=null>부서 선택</option>
+                                    <option v-for="dept in department" :key="dept.id" :value="dept.id">
+                                        {{ dept.name }}
+                                    </option>
                                 </select>
                                 <p v-if="errors.departmentId" class="text-sm text-red-500 mt-1">{{ errors.departmentId
                                 }}</p>
@@ -296,12 +318,18 @@ const isSalaryInvalid = computed(() => {
                                     <option value="경력">경력</option>
                                     <option value="경력무관">경력 무관</option>
                                 </select>
+
+                                <!-- 경력 선택 안 했을 때 -->
+                                <p v-if="errors.careerType" class="text-sm text-red-500 mt-1">
+                                    {{ errors.careerType }}
+                                </p>
+
+                                <!-- 경력직 선택 시 세부 입력창 -->
                                 <transition name="fade">
                                     <div v-if="isExperienced" class="mt-4 grid grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                최소 경력 (년)
-                                            </label>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">최소 경력
+                                                (년)</label>
                                             <input v-model="form.minExperience" type="number" min="0" placeholder="예: 1"
                                                 :class="[
                                                     'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:border-transparent',
@@ -312,9 +340,8 @@ const isSalaryInvalid = computed(() => {
                                         </div>
 
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                최대 경력 (년)
-                                            </label>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">최대 경력
+                                                (년)</label>
                                             <input v-model="form.maxExperience" type="number" min="0" placeholder="예: 5"
                                                 :class="[
                                                     'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:border-transparent',
@@ -324,15 +351,14 @@ const isSalaryInvalid = computed(() => {
                                                 ]" />
                                         </div>
 
-                                        <!-- 에러 메시지 -->
                                         <p v-if="form.careerType === '경력' && (!form.minExperience || !form.maxExperience)"
                                             class="col-span-2 text-sm text-red-500 mt-1">
                                             경력직일 경우 최소/최대 경력을 모두 입력해주세요.
                                         </p>
                                     </div>
-
                                 </transition>
                             </div>
+
 
                             <!-- 직급 -->
                             <div>
@@ -471,13 +497,13 @@ const isSalaryInvalid = computed(() => {
                             </label>
                             <div class="flex gap-2 mb-3">
                                 <input v-model="techInput" type="text" placeholder="기술 스택 추가 후 Enter"
-                                    @keyup.enter.prevent="addTech" :class="[
+                                    @keydown.enter.prevent="addTech" :class="[
                                         'w-full px-3 py-1.5 text-sm border rounded-lg focus:ring-2 focus:border-transparent resize-none',
                                         'placeholder:text-left placeholder:whitespace-pre-line placeholder:text-gray-400',
                                         errors.techStack ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                     ]" />
                                 <button type="button"
-                                    class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700"
+                                    class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 whitespace-nowrap"
                                     @click="addTech">
                                     추가
                                 </button>
@@ -707,7 +733,7 @@ const isSalaryInvalid = computed(() => {
                         임시 저장
                     </button>
                     <button
-                        class="px-6 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition font-medium"
+                        class="px-6 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition font-medium "
                         type="submit" :disabled="isSubmitting">
                         {{ isSubmitting ? '등록 중...' : '공고 등록' }}
                     </button>

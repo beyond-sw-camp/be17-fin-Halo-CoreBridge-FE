@@ -207,7 +207,7 @@ watch([searchQuery, statusFilter, departmentFilter], () => {
 
             <!-- Stats -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="bg-white rounded-lg shadow-sm  border-slate-500 p-6">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-gray-600 text-sm font-medium">전체 공고</span>
                         <FileText class="w-6 h-6 text-slate-500" />
@@ -215,7 +215,7 @@ watch([searchQuery, statusFilter, departmentFilter], () => {
                     <div class="text-3xl font-bold text-slate-700">{{ stats.total }}</div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="bg-white rounded-lg shadow-sm  border-slate-500 p-6">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-gray-600 text-sm font-medium">채용 중</span>
                         <CheckCircle class="w-6 h-6 text-green-500" />
@@ -223,7 +223,7 @@ watch([searchQuery, statusFilter, departmentFilter], () => {
                     <div class="text-3xl font-bold text-green-600">{{ stats.active }}</div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="bg-white rounded-lg shadow-sm  border-slate-500 p-6">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-gray-600 text-sm font-medium">전체 지원자</span>
                         <Users class="w-6 h-6 text-blue-500" />
@@ -233,7 +233,7 @@ watch([searchQuery, statusFilter, departmentFilter], () => {
                     </div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="bg-white rounded-lg shadow-sm  border-slate-500 p-6">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-gray-600 text-sm font-medium">최종 합격</span>
                         <Award class="w-6 h-6 text-purple-500" />
