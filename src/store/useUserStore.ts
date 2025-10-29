@@ -14,7 +14,7 @@ export const useUserStore = defineStore('user', () => {
     })
     const isLogin = ref(false)
 
-    const login = ({ name, role }: UserLoginResponse) => {
+    const login = ({ name, role, email }: UserLoginResponse) => {
       userInfo.value.name = name
       userInfo.value.role = role
       isLogin.value = true
@@ -23,6 +23,12 @@ export const useUserStore = defineStore('user', () => {
 
     const logout = () => {
       isLogin.value = false
+      userInfo.value = {
+        name: '',
+        role: '',
+        email: ''
+      }
+
       sessionStorage.removeItem('user')
       router.push('/login')
     }
