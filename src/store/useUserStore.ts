@@ -17,13 +17,11 @@ export const useUserStore = defineStore('user', () => {
       userInfo.value.name = name
       userInfo.value.role = role
       isLogin.value = true
+      router.push('/')
     }
 
     const logout = () => {
       isLogin.value = false
-      userInfo.value.name = ''
-      userInfo.value.role = ''
-
       sessionStorage.removeItem('user')
       router.push('/login')
     }
