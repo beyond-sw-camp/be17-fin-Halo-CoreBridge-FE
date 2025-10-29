@@ -27,7 +27,7 @@ export interface JobPostingCreateRequest {
   salaryNegotiable?: boolean
   workingHours: string
   benefits: string
-  departmentId: number
+  departmentId: number | null
   contactName: string
   contactEmail: string
   additionalInfo?: string

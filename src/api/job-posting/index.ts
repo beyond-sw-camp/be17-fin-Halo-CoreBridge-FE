@@ -4,6 +4,31 @@ import type {
   JobPostingPublicResponse
 } from '@/types/jobPosting/JobPostingTypes'
 
+// 부서 불러오기
+export const getDepartment = async (): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined
+  }
+
+  const url = `/api/department`
+
+  await api
+    .get(url)
+    .then((res) => {
+      console.log(res)
+      data = res.data as ApiResponse
+    })
+    .catch((error) => {
+      console.log(error)
+      data = error.response.data as ApiResponse
+    })
+
+  return data
+}
+
 // ---- 공고 CRUD --------------------------------------------------------------
 export const createJobPosting = async (payload: JobPostingCreateRequest): Promise<ApiResponse> => {
   let data: ApiResponse = {
