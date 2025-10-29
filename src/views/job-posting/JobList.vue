@@ -76,7 +76,7 @@ const selectedOrder = ref(orderFilter.value[0]!.label)
               <a href="#" class="text-gray-600 hover:text-slate-800 transition">복지혜택</a>
             </nav>
           </div>
-          <div class="flex items-center gap-3" v-if="!userStore.getIsLogin">
+          <div class="flex items-center gap-3" v-if="!userStore.isLogin">
             <button
               class="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition text-sm hover:cursor-pointer">
               지원현황
@@ -95,7 +95,7 @@ const selectedOrder = ref(orderFilter.value[0]!.label)
                   class="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-white font-medium shadow-md">
                   CS</div> -->
             </div>
-            <ProfileDropdown @menu-click="handleMenuClick" />
+            <ProfileDropdown />
           </div>
         </div>
       </div>
