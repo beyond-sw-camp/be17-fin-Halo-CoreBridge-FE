@@ -12,4 +12,5 @@ export interface UserLoginError {
 export interface UserLoginResponse {
   name: string
   role: string
+  email: string
 }

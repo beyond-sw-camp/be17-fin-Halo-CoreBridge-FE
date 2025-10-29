@@ -9,7 +9,8 @@ export const useUserStore = defineStore('user', () => {
 
     const userInfo = ref<UserLoginResponse>({
       name: '',
-      role: ''
+      role: '',
+      email: ''
     })
     const isLogin = ref(false)
 
