@@ -2,7 +2,7 @@
   <div class="relative" ref="dropdownRef">
     <!-- Profile Button -->
     <button @click="toggleDropdown"
-      class="w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center text-white font-semibold hover:bg-slate-800 transition focus:outline-none focus:ring-3 focus:ring-slate-500 focus:ring-offset-2"
+      class="hover:cursor-pointer w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center text-white font-semibold hover:bg-slate-800 transition focus:outline-none focus:ring-3 focus:ring-slate-500 focus:ring-offset-2"
       :aria-expanded="isOpen" aria-haspopup="true">
       {{ userInitial }}
     </button>
@@ -22,13 +22,13 @@
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center space-x-2">
-                <span class="font-semibold text-gray-900 truncate">{{ userName }}</span>
-                <span v-if="userRole"
+                <span class="font-semibold text-gray-900 truncate">{{ userStore.userInfo.name }}</span>
+                <span
                   class="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded whitespace-nowrap">
-                  {{ userRole }}
+                  {{ userStore.userInfo.role }}
                 </span>
               </div>
-              <p class="text-sm text-gray-600 truncate">{{ userEmail }}</p>
+              <p class="text-sm text-gray-600 truncate">{{ userStore.userInfo.email }}</p>
             </div>
           </div>
         </div>
@@ -57,8 +57,6 @@ import DropdownMenuItem from '@/components/recruiter-dashboard/DropdownMenuItem.
 import userAPI from '@/api/user'
 import { useUserStore } from '@/store/useUserStore.ts'
 
-import { useRouter } from 'vue-router'
-const router = useRouter();
 const userStore = useUserStore()
 
 interface MenuItem {
@@ -67,35 +65,18 @@ interface MenuItem {
   label: string;
 }
 
-interface Props {
-  userName?: string;
-  userEmail?: string;
-  userRole?: string;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  userName: '이상우',
-  userEmail: 'com.corebridge@gmail.com',
-  userRole: '관리자'
-});
-
-const emit = defineEmits<{
-  menuClick: [menuId: string];
-  mobileAppClick: [];
-}>();
-
 // State
 const isOpen = ref(false);
 const dropdownRef = ref<HTMLElement | null>(null);
 
 // Computed
-const userInitial = ref(props.userName.charAt(0));
+const userInitial = ref(userStore.userInfo.name.charAt(0));
 
 // Menu items
 const menuItems: MenuItem[] = [
   { id: 'account', icon: 'user', label: '계정 설정' },
-  { id: 'security', icon: 'lock', label: '보안 설정' },
-  { id: 'notification', icon: 'bell', label: '알림 설정' },
+  // { id: 'security', icon: 'lock', label: '보안 설정' },
+  // { id: 'notification', icon: 'bell', label: '알림 설정' },
 ];
 
 // Methods
@@ -108,7 +89,16 @@ const closeDropdown = () => {
 };
 
 const handleMenuClick = (menuId: string) => {
-  emit('menuClick', menuId);
+  const menuNames: Record<string, string> = {
+    account: '계정 설정',
+    security: '보안 설정',
+    notification: '알림 설정',
+  };
+
+  console.log('Menu clicked:', menuId);
+
+  // 여기에 각 메뉴에 대한 라우팅 로직 추가
+  // router.push({ name: menuId });
   closeDropdown();
 };
 
