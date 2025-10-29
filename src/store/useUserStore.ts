@@ -26,7 +26,15 @@ export const useUserStore = defineStore('user', () => {
       router.push('/login')
     }
 
-    return { userInfo, logout, login }
+    const isApplicant = () => {
+      return userInfo.value.role === 'ROLE_APPLICANT'
+    }
+
+    const getIsLogin = () => {
+      return isLogin.value
+    }
+
+    return { userInfo, logout, login, isApplicant, getIsLogin }
   },
   {
     persist: {
