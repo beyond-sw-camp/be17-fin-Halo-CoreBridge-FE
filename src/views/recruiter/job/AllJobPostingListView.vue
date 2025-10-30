@@ -26,7 +26,7 @@ const searchQuery = ref('')
 const statusFilter = ref('')
 const departmentFilter = ref('')
 const currentPage = ref(1)
-const itemsPerPage = 5
+const itemsPerPage = 10
 
 const jobs = ref<JobPostingListResponse[]>([])
 const isLoading = ref(false)
