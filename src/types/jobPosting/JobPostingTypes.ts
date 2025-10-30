@@ -3,6 +3,13 @@ import type { EnumMember, EnumType } from "typescript"
 /**
  * 채용공고 생성 폼 (POST /api/jobPostings)
  */
+export interface RecruitProcessCreate {
+  name: string
+  color: string
+  orderIdx: string
+}
+
+
 export interface JobPostingCreateRequest {
   title: string
   employmentType: string | null
