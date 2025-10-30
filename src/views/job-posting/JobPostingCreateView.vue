@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import type { JobPostingCreateRequest } from '@/types/jobPosting/JobPostingTypes'
+import type { JobPostingCreateRequest, RecruitProcessCreate } from '@/types/jobPosting/JobPostingTypes'
 import { createJobPosting, getDepartment } from '@/api/job-posting/index'
 import draggable from 'vuedraggable'
 import { GripVertical, Pencil, Trash2, Plus } from 'lucide-vue-next'
@@ -11,14 +11,10 @@ const router = useRouter()
 // ===========================
 // Types
 // ===========================
-interface Stage {
+interface StageEdit {
     id: number
     name: string
-    dotColorClass: string
-    participants: number
-}
-
-interface StageEdit extends Stage {
+    color: string // Enum(ColorCode)
     edit: boolean
 }
 
@@ -26,6 +22,7 @@ interface Department {
     id: number
     name: string
 }
+
 // ===========================
 // Form State
 // ===========================
@@ -46,7 +43,13 @@ const form = reactive<JobPostingCreateRequest>({
     requirements: '',
     preferred: '',
     techStack: [] as string[],
-    recruitProcess: ['지원 완료', '서류 검토', '1차 면접', '2차 면접', '최종 합격'],
+    recruitProcess: [
+        { name: '지원 완료', color: 'BLUE', orderIdx: 1 },
+        { name: '서류 검토', color: 'ORANGE', orderIdx: 2 },
+        { name: '1차 면접', color: 'PINK', orderIdx: 3 },
+        { name: '2차 면접', color: 'PURPLE', orderIdx: 4 },
+        { name: '최종 합격', color: 'RED', orderIdx: 5 },
+    ],
     salaryType: null,
     salaryMin: undefined,
     salaryMax: undefined,
@@ -58,71 +61,92 @@ const form = reactive<JobPostingCreateRequest>({
     contactEmail: '',
     additionalInfo: '',
 })
-const department = ref<Department[]>([])
 
+const department = ref<Department[]>([])
 const errors = reactive<Record<string, string>>({})
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 const isLoading = ref(true)
 
+// 채용프로세스의 시작과 끝 고정(색상만 변경 가능)
+const fixedStart = reactive({ name: '지원 완료', color: 'BLUE', orderIdx: '' })
+const fixedEnd = reactive({ name: '최종 합격', color: 'RED', orderIdx: '' })
+
 // ===========================
 // Tech Stack Management
 // ===========================
 const techInput = ref('')
-
 const addTech = () => {
-    const trimmedValue = techInput.value.trim()
-    if (trimmedValue) {
-        form.techStack.push(trimmedValue)
+    const trimmed = techInput.value.trim()
+    if (trimmed) {
+        form.techStack.push(trimmed)
         techInput.value = ''
         errors.techStack = ''
     }
 }
-
-const removeTech = (index: number) => {
-    form.techStack.splice(index, 1)
-}
+const removeTech = (i: number) => form.techStack.splice(i, 1)
 
 // ===========================
-// Recruitment Process Stages
+// Recruitment Process
 // ===========================
+const baseColors = ['BLUE', 'ORANGE', 'PINK', 'PURPLE', 'RED']
 const maxStages = ref(10)
+
 const stages = ref<StageEdit[]>([
-    { id: 1, name: '1차 면접', dotColorClass: 'bg-orange-500', participants: 1, edit: false },
-    { id: 2, name: '2차 면접', dotColorClass: 'bg-yellow-500', participants: 1, edit: false },
-    { id: 3, name: '임원 면접', dotColorClass: 'bg-green-500', participants: 1, edit: false },
+    { id: 1, name: '서류 검토', color: 'BLUE', edit: false },
+    { id: 2, name: '1차 면접', color: 'ORANGE', edit: false },
+    { id: 3, name: '2차 면접', color: 'PURPLE', edit: false },
 ])
 
+//  객체 기반 동기화
 const syncRecruitProcess = () => {
-    form.recruitProcess = ['지원 완료', ...stages.value.map(s => s.name), '최종 합격']
-}
+    // 중간단계 순서에 맞춰 orderIdx 재계산
+    const middle = stages.value.map((s, idx) => ({
+        id: idx + 1, // id는 순서대로 다시 매기기
+        name: s.name,
+        color: s.color,
+        orderIdx: idx + 2, // 2부터 시작 (지원 완료가 1)
+    }))
 
+    // 전체 조합
+    form.recruitProcess = [
+        { name: fixedStart.name, color: fixedStart.color, orderIdx: 1 },
+        ...middle,
+        { name: fixedEnd.name, color: fixedEnd.color, orderIdx: middle.length + 2 },
+    ]
+}
 watch(stages, syncRecruitProcess, { deep: true })
 
-const editStage = (stage: StageEdit) => {
-    stage.edit = !stage.edit
-    if (!stage.edit) syncRecruitProcess()
-}
-
-const deleteStage = (id: number) => {
-    stages.value = stages.value.filter(s => s.id !== id)
-    syncRecruitProcess()
-}
-
 const addStage = () => {
-    if (stages.value.length >= maxStages.value) return
-    const newId = Math.max(...stages.value.map(s => s.id), 0) + 1
+    const newId = Math.max(0, ...stages.value.map(s => s.id)) + 1
     stages.value.push({
         id: newId,
         name: `새 단계 ${newId}`,
-        dotColorClass: 'bg-purple-500',
-        participants: 1,
+        color: 'PURPLE',
         edit: false,
     })
     syncRecruitProcess()
 }
 
+const editStage = (s: StageEdit) => {
+    s.edit = !s.edit
+    if (!s.edit) syncRecruitProcess()
+}
+
+// 중간단계 삭제
+const deleteStage = (id: number) => {
+    stages.value = stages.value.filter(s => s.id !== id)
+    // id 다시 정렬 후 동기화
+    stages.value = stages.value.map((s, idx) => ({ ...s, id: idx + 1 }))
+    syncRecruitProcess()
+}
+
 const onDragEnd = () => {
+    // 드래그 후 순서가 바뀌면 id와 orderIdx도 다시 세팅
+    stages.value = stages.value.map((s, idx) => ({
+        ...s,
+        id: idx + 1,
+    }))
     syncRecruitProcess()
 }
 
@@ -142,10 +166,8 @@ const saveDraft = () => {
 // ===========================
 // Form Submission
 // ===========================
-const toDateTime = (dateStr?: string | null, endOfDay = false): string | null => {
-    if (!dateStr || dateStr.trim() === '') return null
-    return `${dateStr} ${endOfDay ? '23:59:59' : '00:00:00'}`
-}
+const toDateTime = (d?: string | null, end = false): string | null =>
+    !d || d.trim() === '' ? null : `${d} ${end ? '23:59:59' : '00:00:00'}`
 
 const submitForm = async () => {
     isSubmitting.value = true
@@ -153,13 +175,13 @@ const submitForm = async () => {
         const payload: JobPostingCreateRequest = {
             ...form,
             headcount: Number(form.headcount) || 0,
-            salaryMin: form.salaryMin == null || form.salaryMin === ('' as any) ? 0 : Number(form.salaryMin),
-            salaryMax: form.salaryMax == null || form.salaryMax === ('' as any) ? 0 : Number(form.salaryMax),
+            salaryMin: Number(form.salaryMin) || 0,
+            salaryMax: Number(form.salaryMax) || 0,
             departmentId: Number(form.departmentId) || null,
             applyStartDate: toDateTime(form.applyStartDate, false) as any,
             applyEndDate: toDateTime(form.applyEndDate, true) as any,
             hireEndDate: toDateTime(form.hireEndDate, true) as any,
-            recruitProcess: form.recruitProcess,
+            recruitProcess: form.recruitProcess, // 
         }
 
         Object.keys(errors).forEach(k => (errors[k] = ''))
@@ -171,10 +193,9 @@ const submitForm = async () => {
             router.push('/recruiter/jobs')
         } else {
             Object.assign(errors, res.results || {})
-            console.warn('Validation Errors:', errors)
         }
-    } catch (e) {
-        console.error('등록 오류:', e)
+    } catch (err) {
+        console.error('등록 오류:', err)
         alert('서버 오류가 발생했습니다.')
     } finally {
         isSubmitting.value = false
@@ -182,7 +203,7 @@ const submitForm = async () => {
 }
 
 // ===========================
-// Error Auto-Clear on Input
+// Auto Clear Error
 // ===========================
 watch(
     () => ({ ...form }),
@@ -202,32 +223,26 @@ watch(
 // Computed
 // ===========================
 const isExperienced = computed(() => form.careerType === '경력')
+const isExperienceInvalid = computed(() => form.careerType === '경력' && (!form.minExperience || !form.maxExperience))
+const isSalaryInvalid = computed(() => form.salaryType === '고정급여' && (!form.salaryMin || !form.salaryMax))
 
-const isExperienceInvalid = computed(() => {
-    return form.careerType === '경력' && (!form.minExperience || !form.maxExperience)
-})
-
-const isSalaryInvalid = computed(() => {
-    return form.salaryType === '고정급여' && (!form.salaryMin || !form.salaryMax)
-})
-
-
+// ===========================
+// Load Departments
+// ===========================
 onMounted(async () => {
     try {
-        const response = await getDepartment()
-        if (response.success) {
-            department.value = response.results
-        } else {
-            errorMessage.value = response.message || '데이터를 불러오지 못했습니다.'
-        }
+        const res = await getDepartment()
+        if (res.success) department.value = res.results
+        else errorMessage.value = res.message || '데이터를 불러오지 못했습니다.'
     } catch (err: any) {
         console.error(err)
         errorMessage.value = '서버오류 발생'
     } finally {
-        isLoading.value = false;
+        isLoading.value = false
     }
 })
 </script>
+
 
 <template>
     <div class="bg-gray-50 min-h-screen">
@@ -281,7 +296,7 @@ onMounted(async () => {
                                     </option>
                                 </select>
                                 <p v-if="errors.departmentId" class="text-sm text-red-500 mt-1">{{ errors.departmentId
-                                }}</p>
+                                    }}</p>
                             </div>
 
                             <!-- 고용 형태 -->
@@ -402,7 +417,7 @@ onMounted(async () => {
                                     errors.applyEndDate ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                 ]" />
                                 <p v-if="errors.applyEndDate" class="text-sm text-red-500 mt-1">{{ errors.applyEndDate
-                                }}</p>
+                                    }}</p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -615,70 +630,103 @@ onMounted(async () => {
                 </section>
 
                 <!-- 채용 프로세스 설정 -->
-                <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-xl font-bold text-slate-600 mb-6">채용 프로세스 설정</h2>
+                <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-xl font-bold text-slate-700 mb-6">채용 프로세스 설정</h2>
 
-                    <!-- 접수 (고정) -->
-                    <div class="border border-gray-200 rounded-lg p-2 mb-4 bg-white">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
-                            <span class="text-slate-600 font-medium">접수</span>
+                    <!-- 지원 완료 (고정 이름 + 색상 선택 가능) -->
+                    <div
+                        class="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 mb-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3.5 h-3.5 rounded-full"
+                                :class="`bg-${fixedStart.color.toLowerCase()}-500`"></span>
+                            <span class="text-slate-700 font-medium text-sm">지원 완료</span>
                         </div>
+                        <select v-model="fixedStart.color"
+                            class="border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-700 focus:ring-2 focus:ring-slate-300 focus:outline-none"
+                            @change="syncRecruitProcess">
+                            <option v-for="color in baseColors" :key="color" :value="color">{{ color }}</option>
+                        </select>
                     </div>
 
                     <hr class="my-4" />
 
                     <!-- 중간 단계 (드래그 가능) -->
-                    <draggable v-model="stages" item-key="id" handle=".drag-handle" animation="200"
-                        ghost-class="opacity-50" @end="onDragEnd">
+                    <draggable v-model="stages" item-key="id" handle=".drag-handle" animation="200" @end="onDragEnd">
                         <template #item="{ element: stage }">
                             <div
-                                class="border border-gray-200 rounded-lg p-2 mb-4 bg-white hover:border-slate-300 transition-colors">
+                                class="border border-gray-200 rounded-lg px-4 py-3 mb-3 bg-white hover:shadow-sm hover:border-slate-300 transition-all">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-3">
-                                        <GripVertical :size="20" class="text-gray-400 drag-handle cursor-grab" />
+                                        <GripVertical :size="18" class="text-gray-400 drag-handle cursor-grab" />
                                         <div class="flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full" :class="stage.dotColorClass"></span>
+                                            <span class="w-3.5 h-3.5 rounded-full"
+                                                :class="`bg-${stage.color.toLowerCase()}-500`"></span>
+
+                                            <!-- 단계명 -->
                                             <input v-if="stage.edit" v-model="stage.name" type="text"
                                                 @focusout="editStage(stage)"
-                                                class="border-b border-gray-300 focus:outline-none px-1 py-0.5 text-slate-600 font-medium" />
-                                            <span v-else class="text-slate-600 font-medium">{{ stage.name }}</span>
+                                                class="border-b border-gray-300 focus:border-slate-400 focus:outline-none px-1 py-0.5 text-slate-700 font-medium text-sm bg-transparent" />
+                                            <span v-else class="text-slate-700 font-medium text-sm tracking-tight">
+                                                {{ stage.name }}
+                                            </span>
+
+                                            <!-- 색상 선택 -->
+                                            <select v-model="stage.color"
+                                                class="ml-2 border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-700 focus:ring-2 focus:ring-slate-300 focus:outline-none"
+                                                @change="syncRecruitProcess">
+                                                <option v-for="color in baseColors" :key="color" :value="color">
+                                                    {{ color }}
+                                                </option>
+                                            </select>
+
+                                            <!-- 수정 버튼 -->
+                                            <button type="button" @click="editStage(stage)"
+                                                class="text-gray-400 hover:text-slate-600 transition-colors ml-1">
+                                                <Pencil :size="14" />
+                                            </button>
                                         </div>
-                                        <button type="button" @click="editStage(stage)"
-                                            class="text-gray-400 hover:text-gray-600 transition-colors hover:cursor-pointer">
-                                            <Pencil :size="16" />
-                                        </button>
                                     </div>
 
+                                    <!-- 삭제 버튼 -->
                                     <button type="button" @click="deleteStage(stage.id)"
-                                        class="text-gray-400 hover:text-red-600 transition-colors hover:cursor-pointer">
-                                        <Trash2 :size="16" />
+                                        class="text-gray-400 hover:text-red-500 transition-colors">
+                                        <Trash2 :size="15" />
                                     </button>
                                 </div>
                             </div>
                         </template>
                     </draggable>
 
-                    <!-- 단계 추가 버튼 -->
-                    <div class="flex justify-center">
+                    <!-- 단계 추가 -->
+                    <div class="flex justify-center mt-6">
                         <button type="button" @click="addStage"
-                            class="flex items-center justify-center gap-2 text-slate-600 bg-slate-100 mb-6 p-4 hover:bg-slate-200 rounded-lg hover:cursor-pointer font-medium transition-colors w-full h-full"
-                            :disabled="stages.length >= maxStages">
-                            <div class="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center">
-                                <Plus :size="16" class="text-white" />
+                            class="flex items-center justify-center gap-2 px-5 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition-all text-sm font-medium">
+                            <div class="w-5 h-5 rounded-full bg-slate-600 flex items-center justify-center">
+                                <Plus :size="14" class="text-white" />
                             </div>
-                            <span>단계 추가 ({{ stages.length }}/{{ maxStages }})</span>
+                            <span>단계 추가 ({{ stages.length }}/10)</span>
                         </button>
                     </div>
 
-                    <!-- 최종합격 (고정) -->
-                    <div class="border border-gray-200 rounded-lg p-2 bg-white">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-                            <span class="text-slate-600 font-medium">최종합격</span>
+                    <!-- 최종 합격 (고정 이름 + 색상 선택 가능) -->
+                    <div
+                        class="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 mt-6 bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3.5 h-3.5 rounded-full"
+                                :class="`bg-${fixedEnd.color.toLowerCase()}-500`"></span>
+                            <span class="text-slate-700 font-medium text-sm">최종 합격</span>
                         </div>
+                        <select v-model="fixedEnd.color"
+                            class="border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-700 focus:ring-2 focus:ring-slate-300 focus:outline-none"
+                            @change="syncRecruitProcess">
+                            <option v-for="color in baseColors" :key="color" :value="color">
+                                {{ color }}
+                            </option>
+                        </select>
                     </div>
                 </section>
+
+
 
                 <!-- 추가 정보 -->
                 <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -706,7 +754,7 @@ onMounted(async () => {
                                     errors.contactEmail ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                 ]" />
                                 <p v-if="errors.contactEmail" class="text-sm text-red-500 mt-1">{{ errors.contactEmail
-                                }}</p>
+                                    }}</p>
                             </div>
                         </div>
 
@@ -720,7 +768,7 @@ onMounted(async () => {
     errors.additionalInfo ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
 ]"></textarea>
                             <p v-if="errors.additionalInfo" class="text-sm text-red-500 mt-1">{{ errors.additionalInfo
-                            }}</p>
+                                }}</p>
                         </div>
                     </div>
                 </section>
