@@ -6,7 +6,12 @@ import type { EnumMember, EnumType } from "typescript"
 export interface RecruitProcessCreate {
   name: string
   color: string
-  orderIdx: string
+  orderIdx: number
+}
+
+export interface questionaryCreateForm {
+  title: string
+  subtitle: string
 }
 
 
@@ -27,7 +32,8 @@ export interface JobPostingCreateRequest {
   requirements: string
   preferred: string
   techStack: string[]
-  recruitProcess: string[]
+  recruitProcess: RecruitProcessCreate[]
+  coverLetterTitles: questionaryCreateForm[]
   salaryType: string | null
   salaryMin?: number
   salaryMax?: number
