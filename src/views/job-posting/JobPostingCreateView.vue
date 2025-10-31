@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import type { JobPostingCreateRequest, RecruitProcessCreate } from '@/types/jobPosting/JobPostingTypes'
+import type { JobPostingCreateRequest } from '@/types/jobPosting/JobPostingTypes'
 import { createJobPosting, getDepartment } from '@/api/job-posting/index'
 import draggable from 'vuedraggable'
 import { GripVertical, Pencil, Trash2, Plus } from 'lucide-vue-next'
