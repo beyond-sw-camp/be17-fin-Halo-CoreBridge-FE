@@ -95,6 +95,7 @@
     - [3. WBS](#-3-wbs)
     - [4. 시스템 아키텍처](#-4-시스템-아키텍처)
     - [5. ERD](#-5-erd)
+    - [6. UI/UX 단위테스터 결과서](#-6-uiux-단위테스터-결과서)
 
 ---
 
@@ -237,6 +238,69 @@
 <div markdown="1">
 
 ![ERD.png](./docs/ERD.png)
+
+</div>
+</details>
+
+### 🧩 6. UI/UX 단위테스터 결과서
+
+<div>
+<details markdown="2">
+  <summary>🎯 UI/UX 단위 테스트결과서</summary>
+  <div>
+    <ul>
+
+  <details>
+  <summary>지원자 </summary>
+
+  이메일인증
+  ![이메일인증](./gif/applicant/1.%20이메일인증.gif)
+
+  회원가입
+  ![회원가입](./gif/applicant/2.%20회원가입.gif)
+
+  로그인
+  ![설명 텍스트](./gif/applicant/3.%20로그인.gif)
+
+  로그아웃
+  ![설명 텍스트](./gif/applicant/4.%20로그아웃.gif)
+
+  채용공고 전체조회 및 상세조회
+  ![설명 텍스트](./gif/applicant/5.%20지원자용%20채용공고%20전체조회%20및%20상세조회.gif)
+
+  </details>
+  <details>
+  <summary> 채용관리자 </summary>
+
+  프로세스 생성
+  ![설명 텍스트](./gif/recruiter/1.%20채용공고%20최초저장시%20프로세스%20설정.gif)
+
+  질문지 생성
+  ![설명 텍스트](./gif/recruiter/2.%20채용공고%20최초저장시%20질문지%20생성.gif)
+
+  채용공고 저장
+  ![설명 텍스트](./gif/recruiter/3.%20채용공고%20저장.gif)
+
+  채용공고 상세조회
+  ![설명 텍스트](./gif/recruiter/4.%20채용공고%20전체조회%20상세조회.gif)
+
+  채용 파이프라인 수정
+  ![설명 텍스트](./gif/recruiter/5.%20채용관리%20파이프라인%20편집기능.gif)
+
+  채용 프로세스 추가
+  ![설명 텍스트](./gif/recruiter/6.%20채용프로세스%20추가.gif)
+
+  채용 프로세스 삭제
+  ![설명 텍스트](./gif/recruiter/7.%20채용프로세스%20삭제.gif)
+
+  채용 프로세스 순서편집
+  ![설명 텍스트](./gif/recruiter/8.%20채용프로세스%20순서편집.gif)
+
+  채용 프로세스 이름 및 색상 편집
+  ![설명 텍스트](./gif/recruiter/9.%20채용프로세스%20이름%20및%20색상%20수정.gif)
+  </details>
+
+---
 
 </div>
 </details>
