@@ -167,7 +167,7 @@ const getStatusClass = (status?: string): string => {
 }
 
 const exit = () => router.push('/jobs')
-const handleApply = () => router.push(`/apply/${jobId}`)
+const handleApply = () => router.push(`/resume/${jobId}`)
 </script>
 
 <template>

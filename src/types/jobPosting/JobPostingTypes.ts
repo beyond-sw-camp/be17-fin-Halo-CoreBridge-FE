@@ -11,7 +11,7 @@ export interface RecruitProcessCreate {
 
 export interface questionaryCreateForm {
   title: string
-  subTitle: string
+  subtitle: string
 }
 
 
@@ -33,7 +33,7 @@ export interface JobPostingCreateRequest {
   preferred: string
   techStack: string[]
   recruitProcess: RecruitProcessCreate[]
-  questionaryList: questionaryCreateForm[]
+  coverLetterTitles: questionaryCreateForm[]
   salaryType: string | null
   salaryMin?: number
   salaryMax?: number
