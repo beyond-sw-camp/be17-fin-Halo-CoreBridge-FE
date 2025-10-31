@@ -64,11 +64,8 @@ const stageLists = ref<Record<string, Applicant[]>>({})
 // -------------------------
 // Computed
 // -------------------------
-const jobPostingId = computed(() => {
-  const qp = route.query.jobPostingId || route.params.jobPostingId
-  const value = Array.isArray(qp) ? qp[0] : qp
-  return value ? Number(value) : 1
-})
+const jobPostingId = computed(() => Number(route.params.id))
+console.log(route.params)
 
 // -------------------------
 // Helper Functions
