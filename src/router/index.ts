@@ -5,11 +5,6 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/playground',
-      name: 'Playground',
-      component: () => import('@/views/recruiter/job/modal/questionaryForm.vue')
-    },
-    {
       path: '/',
       name: 'home',
       redirect: '/jobs'
