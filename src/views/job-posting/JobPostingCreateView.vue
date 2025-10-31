@@ -311,7 +311,7 @@ onMounted(async () => {
                                     </option>
                                 </select>
                                 <p v-if="errors.departmentId" class="text-sm text-red-500 mt-1">{{ errors.departmentId
-                                    }}</p>
+                                }}</p>
                             </div>
 
                             <!-- 고용 형태 -->
@@ -432,7 +432,7 @@ onMounted(async () => {
                                     errors.applyEndDate ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                 ]" />
                                 <p v-if="errors.applyEndDate" class="text-sm text-red-500 mt-1">{{ errors.applyEndDate
-                                    }}</p>
+                                }}</p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -695,7 +695,7 @@ onMounted(async () => {
                                                 class="border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-700 focus:ring-2 focus:ring-slate-300 focus:outline-none min-w-[90px]"
                                                 @change="syncRecruitProcess">
                                                 <option v-for="color in baseColors" :key="color" :value="color">{{ color
-                                                }}</option>
+                                                    }}</option>
                                             </select>
 
                                             <!-- 수정 버튼 -->
@@ -749,7 +749,7 @@ onMounted(async () => {
 
                     <!-- 안내 문구 -->
                     <p class="text-sm text-gray-500 mb-4">
-                        지원자가 이 공고에 지원할 때 작성해야 하는 자기소개서 문항을 등록해주세요.
+                        지원자가 이 공고에 지원할 때 작성해야 하는 자기소개서 문항을 최소 3가지 이상 등록해주세요.
                     </p>
 
                     <!-- 이력서 문항 미리보기 버튼 -->
@@ -835,6 +835,12 @@ onMounted(async () => {
                     </div>
 
                     <!-- 문항 추가 버튼 -->
+                    <div class="flex justify-center mt-4">
+                        <p v-if="errors.coverLetterTitles" class="text-sm text-red-500 mt-1">{{
+                            errors.coverLetterTitles
+                            }}</p>
+                    </div>
+                    <div class="mt-4"></div>
                     <div class="flex justify-center mt-6">
                         <button type="button" @click="addQuestion"
                             class="flex items-center justify-center gap-2 px-5 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium">
@@ -864,7 +870,7 @@ onMounted(async () => {
                                     errors.contactName ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                 ]" />
                                 <p v-if="errors.contactName" class="text-sm text-red-500 mt-1">{{ errors.contactName
-                                }}
+                                    }}
                                 </p>
                             </div>
                             <div>
@@ -877,7 +883,7 @@ onMounted(async () => {
                                 ]" />
                                 <p v-if="errors.contactEmail" class="text-sm text-red-500 mt-1">{{
                                     errors.contactEmail
-                                }}</p>
+                                    }}</p>
                             </div>
                         </div>
 
@@ -892,7 +898,7 @@ onMounted(async () => {
 ]"></textarea>
                             <p v-if="errors.additionalInfo" class="text-sm text-red-500 mt-1">{{
                                 errors.additionalInfo
-                            }}</p>
+                                }}</p>
                         </div>
                     </div>
                 </section>
