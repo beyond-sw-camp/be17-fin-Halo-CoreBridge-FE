@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -119,17 +118,17 @@ const router = createRouter({
     {
       path: '/job-posting/create',
       name: 'jobPostingCreate',
-      component: () => import('@/views/job-posting/JobPostingCreateView.vue'),
+      component: () => import('@/views/jobposting/JobPostingCreateView.vue'),
     },
     {
       path: '/jobs',
       name: 'jobs',
-      component: () => import('@/views/job-posting/JobList.vue'),
+      component: () => import('@/views/jobposting/JobList.vue'),
     },
     {
       path: '/jobs/:id',
       name: 'jobPostingDetailListForApplicant',
-      component: () => import('@/views/job-posting/JobDetailForApplicant.vue'),
+      component: () => import('@/views/jobposting/JobDetailForApplicant.vue'),
     },
     {
       path: '/admin',
@@ -158,7 +157,7 @@ const router = createRouter({
     {
       path: '/applicantlist',
       name: 'applicantlist',
-      component: () => import('@/views/ApplicantList/ApplicantListView.vue'),
+      component: () => import('@/views/applicantlist/ApplicantListView.vue'),
     },
     {
       path: '/applicantdetail',
@@ -168,7 +167,7 @@ const router = createRouter({
         {
           path: '',
           name: 'applicantdetailside',
-          component: () => import('@/components/Applicant/ApplicantSidebar.vue'),
+          component: () => import('@/components/applicant/ApplicantSidebar.vue'),
         },
       ],
     },

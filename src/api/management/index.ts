@@ -1,4 +1,4 @@
-import api from '@/plugins/AxiosInterceptor'
+import api from '@/plugins/axiosInterceptor'
 
 // -------------------------
 // Types

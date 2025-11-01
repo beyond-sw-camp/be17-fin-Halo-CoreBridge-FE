@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { Users, Clock, Calendar, User, Mail, MapPin, Code } from 'lucide-vue-next'
-import { getJobById } from '@/api/job-posting/index'
+import { getJobById } from '@/api/jobposting/index'
 import ColorCode from '@/components/common/ColorCode.vue'
 
 // -----------------------------

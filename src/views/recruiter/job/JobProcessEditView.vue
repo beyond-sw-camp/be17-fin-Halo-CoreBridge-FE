@@ -13,7 +13,7 @@ import type {
   RecruitProcess, RecruitProcessChangeOrderForm, RecruitProcessDeleteForm, RecruitProcessEditForm,
   RecruitProcessForm,
   RecruitProcessRequest
-} from '@/types/jobPosting/RecruitProcess.ts'
+} from '@/types/jobposting/RecruitProcess'
 import type { ColorCode } from '@/types/common/ColorCode.ts'
 import RecruitDropdown from '@/components/recruiter-dashboard/RecruitDropdown.vue'
 import RecruitEditModal from '@/components/recruiter-dashboard/RecruitEditModal.vue'

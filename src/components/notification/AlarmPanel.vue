@@ -185,7 +185,7 @@ import {
   Bell, X, Clock, Briefcase, UserPlus,
   AlertCircle, CheckCircle, Calendar, TrendingUp
 } from 'lucide-vue-next'
-import { useNotificationSSE } from '@/composable/notification/useNotificationSSE'
+import { useNotificationSSE } from '@/composables/notification/useNotificationSSE'
 import type { NotificationItem } from '../../types/notification/notification'
 
 
