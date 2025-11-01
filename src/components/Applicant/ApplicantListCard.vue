@@ -8,9 +8,9 @@ interface Applicant {
     appliedAt: string;
     status: string;
     statusColor: string;
-    careerYears: number;
     education: string;
     certificates: number;
+    careerType: string;
     skills: string[];
 }
 
@@ -40,7 +40,8 @@ defineEmits(['click', 'viewDetail']);
                 applicant.statusColor === 'blue' ? 'bg-blue-50 text-blue-600' :
                     applicant.statusColor === 'green' ? 'bg-green-50 text-green-600' :
                         applicant.statusColor === 'yellow' ? 'bg-yellow-50 text-yellow-600' :
-                            'bg-gray-50 text-gray-600'
+                            applicant.statusColor === 'purple' ? 'bg-purple-50 text-purple-600' :
+                                'bg-gray-50 text-gray-600'
             ]">
                 {{ applicant.status }}
             </span>
@@ -49,7 +50,7 @@ defineEmits(['click', 'viewDetail']);
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div class="flex items-center gap-2">
                 <Briefcase :size="16" class="text-gray-400" />
-                <span class="text-sm text-gray-600">경력 {{ applicant.careerYears }}년</span>
+                <span class="text-sm text-gray-600">{{ applicant.careerType }}</span>
             </div>
             <div class="flex items-center gap-2">
                 <GraduationCap :size="16" class="text-gray-400" />
