@@ -4,7 +4,7 @@ import { adminNavs, recruiterNavs } from '@/constants/SidebarNavs'
 import { useRoute, useRouter } from 'vue-router'
 import { useSidebarStore } from '@/store/useSidebarStore'
 
-const sidebarOpen = ref(true)
+const sidebarOpen = ref(true) 
 const currentPath = ref('')
 const expandedMenus = ref<Set<string>>(new Set())
 
