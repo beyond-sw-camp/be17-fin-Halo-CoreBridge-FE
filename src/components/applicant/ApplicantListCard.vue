@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Briefcase, Calendar, Award, GraduationCap } from 'lucide-vue-next';
 
-interface Applicant {
+interface Applicant { 
     id: number;
     name: string;
     email: string;
