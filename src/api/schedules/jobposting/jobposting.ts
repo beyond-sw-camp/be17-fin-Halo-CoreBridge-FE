@@ -1,4 +1,4 @@
-import api from '@/plugins/AxiosInterceptor'
+import api from '@/plugins/axiosInterceptor'
 import type { Job, JobPostingSchedule } from '../../../types/schedules/jobposting/jobposting'
 
 // ---- 공고 CRUD --------------------------------------------------------------

@@ -1,8 +1,8 @@
-import api from '@/plugins/AxiosInterceptor'
+import api from '@/plugins/axiosInterceptor'
 import type {
   JobPostingCreateRequest,
   JobPostingPublicResponse
-} from '@/types/jobPosting/JobPostingTypes'
+} from '@/types/jobposting/JobPostingTypes'
 
 // 부서 불러오기
 export const getDepartment = async (): Promise<ApiResponse> => {

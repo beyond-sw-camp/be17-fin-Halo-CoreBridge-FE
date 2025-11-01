@@ -191,7 +191,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { ArrowLeft, Users, FileText, CheckCircle, Clock, Search, Filter } from 'lucide-vue-next';
-import ApplicantListCard from '@/components/Applicant/ApplicantListCard.vue';
+import ApplicantListCard from '@/components/applicant/ApplicantListCard.vue';
 
 import {
   Building2,

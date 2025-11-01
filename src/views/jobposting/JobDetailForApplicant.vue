@@ -17,7 +17,7 @@ import {
   Info,
   Code
 } from 'lucide-vue-next'
-import { getJobById, getHeaderById } from '@/api/job-posting'
+import { getJobById, getHeaderById } from '@/api/jobposting'
 
 // -----------------------------
 // Interfaces
