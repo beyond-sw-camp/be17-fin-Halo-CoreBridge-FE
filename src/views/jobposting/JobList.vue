@@ -7,8 +7,8 @@ import {
   Eye
 } from 'lucide-vue-next'
 
-import { getJobsPublic } from '@/api/job-posting'
-import type { JobPostingPublic } from '@/types/jobPosting/JobPostingTypes.ts'
+import { getJobsPublic } from '@/api/jobposting'
+import type { JobPostingPublic } from '@/types/jobposting/JobPostingTypes'
 import ProfileDropdown from '@/components/recruiter-dashboard/ProfileDropdown.vue'
 import { useUserStore } from '@/store/useUserStore.ts'
 

@@ -17,7 +17,7 @@ import {
   Info,
   Code
 } from 'lucide-vue-next'
-import { getJobById, getHeaderById } from '@/api/job-posting'
+import { getJobById, getHeaderById } from '@/api/jobposting'
 
 // -----------------------------
 // Interfaces
@@ -167,7 +167,7 @@ const getStatusClass = (status?: string): string => {
 }
 
 const exit = () => router.push('/jobs')
-const handleApply = () => router.push(`/apply/${jobId}`)
+const handleApply = () => router.push(`/resume/${jobId}`)
 </script>
 
 <template>

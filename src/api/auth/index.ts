@@ -1,4 +1,4 @@
-import api from '@/plugins/AxiosInterceptor'
+import api from '@/plugins/axiosInterceptor'
 import type { EmailFindForm, EmailFindResponse, EmailForm } from '@/types/user/Email'
 import type { PasswordChange } from '@/types/user/UserUpdateForm'
 import { useLoadingStore } from '@/store/useLoadingStore'

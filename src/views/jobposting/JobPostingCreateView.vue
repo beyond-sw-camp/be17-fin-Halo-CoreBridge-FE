@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { reactive, ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import type { JobPostingCreateRequest, RecruitProcessCreate } from '@/types/jobPosting/JobPostingTypes'
-import { createJobPosting, getDepartment } from '@/api/job-posting/index'
+import type { JobPostingCreateRequest } from '@/types/jobposting/JobPostingTypes'
+import { createJobPosting, getDepartment } from '@/api/jobposting/index'
 import draggable from 'vuedraggable'
 import { GripVertical, Pencil, Trash2, Plus } from 'lucide-vue-next'
 
@@ -49,6 +49,9 @@ const form = reactive<JobPostingCreateRequest>({
         { name: '1차 면접', color: 'PINK', orderIdx: 3 },
         { name: '2차 면접', color: 'PURPLE', orderIdx: 4 },
         { name: '최종 합격', color: 'RED', orderIdx: 5 },
+    ],
+    coverLetterTitles: [
+        { title: '', subtitle: '' }
     ],
     salaryType: null,
     salaryMin: undefined,
@@ -149,6 +152,18 @@ const onDragEnd = () => {
     }))
     syncRecruitProcess()
 }
+// ===========================
+// 질문지 문항 관련 메소드
+// ===========================
+const addQuestion = () => {
+    form.coverLetterTitles.push({ title: '', subtitle: '' })
+}
+
+const removeQuestion = (index: number) => {
+    form.coverLetterTitles.splice(index, 1)
+}
+
+const isPreviewOpen = ref(false)
 
 // ===========================
 // Navigation & Actions
@@ -296,7 +311,7 @@ onMounted(async () => {
                                     </option>
                                 </select>
                                 <p v-if="errors.departmentId" class="text-sm text-red-500 mt-1">{{ errors.departmentId
-                                    }}</p>
+                                }}</p>
                             </div>
 
                             <!-- 고용 형태 -->
@@ -417,7 +432,7 @@ onMounted(async () => {
                                     errors.applyEndDate ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                 ]" />
                                 <p v-if="errors.applyEndDate" class="text-sm text-red-500 mt-1">{{ errors.applyEndDate
-                                    }}</p>
+                                }}</p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -656,27 +671,31 @@ onMounted(async () => {
                             <div
                                 class="border border-gray-200 rounded-lg px-4 py-3 mb-3 bg-white hover:shadow-sm hover:border-slate-300 transition-all">
                                 <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
+                                    <!-- 왼쪽 영역 -->
+                                    <div class="flex items-center gap-3 w-full">
+                                        <!-- 드래그 핸들 -->
                                         <GripVertical :size="18" class="text-gray-400 drag-handle cursor-grab" />
-                                        <div class="flex items-center gap-2">
-                                            <span class="w-3.5 h-3.5 rounded-full"
-                                                :class="`bg-${stage.color.toLowerCase()}-500`"></span>
 
-                                            <!-- 단계명 -->
+                                        <!-- 색상 미리보기 -->
+                                        <span class="w-3.5 h-3.5 rounded-full"
+                                            :class="`bg-${stage.color.toLowerCase()}-500`"></span>
+
+                                        <!-- 단계명 + 색상 드롭다운 -->
+                                        <div class="flex items-center gap-2 w-full">
                                             <input v-if="stage.edit" v-model="stage.name" type="text"
-                                                @focusout="editStage(stage)"
-                                                class="border-b border-gray-300 focus:border-slate-400 focus:outline-none px-1 py-0.5 text-slate-700 font-medium text-sm bg-transparent" />
-                                            <span v-else class="text-slate-700 font-medium text-sm tracking-tight">
+                                                @focusout="editStage(stage)" placeholder="단계명 입력 (예: 1차 면접)"
+                                                class="px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-slate-600 focus:border-transparent text-slate-700 w-full" />
+                                            <span v-else
+                                                class="text-slate-700 font-medium text-sm tracking-tight cursor-pointer flex-grow"
+                                                @click="editStage(stage)">
                                                 {{ stage.name }}
                                             </span>
 
-                                            <!-- 색상 선택 -->
                                             <select v-model="stage.color"
-                                                class="ml-2 border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-700 focus:ring-2 focus:ring-slate-300 focus:outline-none"
+                                                class="border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-700 focus:ring-2 focus:ring-slate-300 focus:outline-none min-w-[90px]"
                                                 @change="syncRecruitProcess">
-                                                <option v-for="color in baseColors" :key="color" :value="color">
-                                                    {{ color }}
-                                                </option>
+                                                <option v-for="color in baseColors" :key="color" :value="color">{{ color
+                                                    }}</option>
                                             </select>
 
                                             <!-- 수정 버튼 -->
@@ -689,7 +708,7 @@ onMounted(async () => {
 
                                     <!-- 삭제 버튼 -->
                                     <button type="button" @click="deleteStage(stage.id)"
-                                        class="text-gray-400 hover:text-red-500 transition-colors">
+                                        class="text-gray-400 hover:text-red-500 transition-colors ml-3">
                                         <Trash2 :size="15" />
                                     </button>
                                 </div>
@@ -719,13 +738,121 @@ onMounted(async () => {
                         <select v-model="fixedEnd.color"
                             class="border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-700 focus:ring-2 focus:ring-slate-300 focus:outline-none"
                             @change="syncRecruitProcess">
-                            <option v-for="color in baseColors" :key="color" :value="color">
-                                {{ color }}
-                            </option>
+                            <option v-for="color in baseColors" :key="color" :value="color">{{ color }}</option>
                         </select>
                     </div>
                 </section>
 
+                <!--  이력서 문항 설정 -->
+                <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-xl font-bold text-slate-700 mb-6">이력서 문항 설정</h2>
+
+                    <!-- 안내 문구 -->
+                    <p class="text-sm text-gray-500 mb-4">
+                        지원자가 이 공고에 지원할 때 작성해야 하는 자기소개서 문항을 최소 3가지 이상 등록해주세요.
+                    </p>
+
+                    <!-- 이력서 문항 미리보기 버튼 -->
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button" @click="addQuestion"
+                            class="flex items-center justify-center gap-2 px-5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition-all text-sm font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4" />
+                            </svg>
+                            문항 추가
+                        </button>
+
+                        <!--  미리보기 버튼 -->
+                        <button type="button" @click="isPreviewOpen = true"
+                            class="flex items-center justify-center gap-2 px-5 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            미리보기
+                        </button>
+                    </div>
+                    <div class="mt-4"></div>
+
+                    <!--  미리보기 다이얼로그 -->
+                    <transition name="fade">
+                        <div v-if="isPreviewOpen"
+                            class="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-black/20">
+                            <!-- 모달 콘텐츠 -->
+                            <div
+                                class="bg-white w-full max-w-lg mx-4 rounded-xl shadow-xl p-6 relative overflow-y-auto max-h-[80vh] border border-gray-200">
+                                <!-- 닫기 버튼 -->
+                                <button @click="isPreviewOpen = false"
+                                    class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition">
+                                    ✕
+                                </button>
+
+                                <h3 class="text-lg font-semibold text-slate-700 mb-4">🧾 이력서 문항 미리보기</h3>
+
+                                <div v-if="form.coverLetterTitles.length === 0"
+                                    class="text-sm text-gray-500 text-center py-8">
+                                    등록된 문항이 없습니다.
+                                </div>
+
+                                <!-- 미리보기 항목 -->
+                                <div v-for="(q, index) in form.coverLetterTitles" :key="index"
+                                    class="border border-gray-200 rounded-lg p-4 mb-3 bg-gray-50">
+                                    <p class="font-semibold text-slate-700 text-sm mb-2">
+                                        Q{{ index + 1 }}. {{ q.title || '제목 미입력' }}
+                                    </p>
+                                    <p class="text-gray-500 text-sm mb-3">{{ q.subtitle || '부제목 미입력' }}</p>
+                                    <textarea placeholder="여기에 지원자가 답변을 작성합니다." rows="4"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-600 focus:border-transparent"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </transition>
+
+                    <!-- 문항 리스트 -->
+                    <div class="space-y-4">
+                        <div v-for="(q, index) in form.coverLetterTitles" :key="index"
+                            class="border border-gray-200 rounded-lg p-4 bg-gray-50 relative">
+                            <!-- 삭제 버튼 -->
+                            <button type="button" @click="removeQuestion(index)"
+                                class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition">
+                                ✕
+                            </button>
+
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="font-semibold text-slate-600">Q{{ index + 1 }}.</span>
+                                <input v-model="q.title" type="text" placeholder="큰 제목 (예: 지원동기)"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600 focus:border-transparent text-sm" />
+                            </div>
+
+                            <input v-model="q.subtitle" type="text" placeholder="부제목 (예: 이 직무에 지원하게 된 이유를 작성해주세요)"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600 focus:border-transparent text-sm" />
+                        </div>
+                    </div>
+
+                    <!-- 문항 추가 버튼 -->
+                    <div class="flex justify-center mt-4">
+                        <p v-if="errors.coverLetterTitles" class="text-sm text-red-500 mt-1">{{
+                            errors.coverLetterTitles
+                            }}</p>
+                    </div>
+                    <div class="mt-4"></div>
+                    <div class="flex justify-center mt-6">
+                        <button type="button" @click="addQuestion"
+                            class="flex items-center justify-center gap-2 px-5 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4" />
+                            </svg>
+                            문항 추가
+                        </button>
+                    </div>
+                </section>
 
 
                 <!-- 추가 정보 -->
@@ -742,7 +869,8 @@ onMounted(async () => {
                                     'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent',
                                     errors.contactName ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                 ]" />
-                                <p v-if="errors.contactName" class="text-sm text-red-500 mt-1">{{ errors.contactName }}
+                                <p v-if="errors.contactName" class="text-sm text-red-500 mt-1">{{ errors.contactName
+                                    }}
                                 </p>
                             </div>
                             <div>
@@ -753,7 +881,8 @@ onMounted(async () => {
                                     'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent',
                                     errors.contactEmail ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                 ]" />
-                                <p v-if="errors.contactEmail" class="text-sm text-red-500 mt-1">{{ errors.contactEmail
+                                <p v-if="errors.contactEmail" class="text-sm text-red-500 mt-1">{{
+                                    errors.contactEmail
                                     }}</p>
                             </div>
                         </div>
@@ -767,7 +896,8 @@ onMounted(async () => {
     'placeholder:text-left placeholder:whitespace-pre-line placeholder:text-gray-400',
     errors.additionalInfo ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
 ]"></textarea>
-                            <p v-if="errors.additionalInfo" class="text-sm text-red-500 mt-1">{{ errors.additionalInfo
+                            <p v-if="errors.additionalInfo" class="text-sm text-red-500 mt-1">{{
+                                errors.additionalInfo
                                 }}</p>
                         </div>
                     </div>
