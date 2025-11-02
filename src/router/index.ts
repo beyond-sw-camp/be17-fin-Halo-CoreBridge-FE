@@ -114,7 +114,6 @@ const router = createRouter({
     },
 
     // 채용생성 및 지원 리스트
-
     {
       path: '/job-posting/create',
       name: 'jobPostingCreate',
@@ -142,10 +141,12 @@ const router = createRouter({
         },
       ],
     },
+
     {
-      path: '/resume',
+      path: '/jobposts/:jobpostId/applies',
       name: 'resumelayout',
       component: () => import('@/views/layout/ResumeTopLayout.vue'),
+      props: true, //
       children: [
         {
           path: '',
@@ -154,6 +155,7 @@ const router = createRouter({
         },
       ],
     },
+
     {
       path: '/applicantlist',
       name: 'applicantlist',
