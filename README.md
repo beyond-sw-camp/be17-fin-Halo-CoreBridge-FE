@@ -72,49 +72,7 @@
 
 [피그마 주소](https://www.figma.com/design/lj1DLU2vuv1w3ZXXiXvGIx/CoreBridge?node-id=0-1&t=7ucfKIqZA5ZeHXSk-1)
 
----
-
-## 프로젝트 기획과 설계
-
-### 📑 1. 프로젝트 기획서
-
-[프로젝트기획서 바로가기](./docs/프로젝트기획서.pdf)
-
-### ✅ 2. 요구사항 명세서
-
-[요구사항명세서 바로가기](./docs/요구사항명세서.pdf)
-
-<details>
-<summary>요구사항 명세서 상세보기</summary>
-<div markdown="1">
-
-![요구사항명세서.png](./docs/assets/imgs/요구사항명세서.png)
-
-</div>
-</details>
-
-### 📅 3. WBS
-
-[일정 관리를 위한 WBS 바로가기](./docs/WBS.pdf)
-
-<details>
-<summary>WBS 상세보기</summary>
-<div markdown="1">
-
-![WBS.png](./docs/assets/imgs/WBS.png)
-
-</div>
-</details>
-
-### 🔧 4. 시스템 아키텍처
-
-![시스템아키텍쳐.png](./docs/시스템아키텍쳐.png)
-
-### 🔗 5. ERD
-
-![ERD.png](./docs/ERD.png)
-
-# 6. UI/UX 단위테스터 결과서
+# UI/UX 단위 테스트 결과서
 
 <details>
   <summary> 회원 </summary>
@@ -200,6 +158,49 @@
 ![설명 텍스트](/docs/gif/recruiter/9.%20채용프로세스%20이름%20및%20색상%20수정.gif)
 
 </details>
+
+---
+
+# 프로젝트 기획과 설계
+
+## 시스템 아키텍처
+
+![시스템아키텍쳐.png](./docs/시스템아키텍쳐.png)
+
+## ERD
+
+![ERD.png](./docs/ERD.png)
+
+## 프로젝트 기획서
+
+[프로젝트기획서 바로가기](./docs/프로젝트기획서.pdf)
+
+## 요구사항 명세서
+
+[요구사항명세서 바로가기](./docs/요구사항명세서.pdf)
+
+<details>
+<summary>요구사항 명세서 상세보기</summary>
+<div markdown="1">
+
+![요구사항명세서.png](./docs/assets/imgs/요구사항명세서.png)
+
+</div>
+</details>
+
+## WBS
+
+[일정 관리를 위한 WBS 바로가기](./docs/WBS.pdf)
+
+<details>
+<summary>WBS 상세보기</summary>
+<div markdown="1">
+
+![WBS.png](./docs/assets/imgs/WBS.png)
+
+</div>
+</details>
+
 
 # 📑 목차 (Table of Contents)
 
