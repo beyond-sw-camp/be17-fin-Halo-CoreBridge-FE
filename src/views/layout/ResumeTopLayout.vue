@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, provide } from 'vue';
+import { ref, provide, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 
 interface Tab {
   id: number;
@@ -14,7 +15,13 @@ const tabs: Tab[] = [
   { id: 4, name: '파일첨부' }
 ];
 
-const currentTab = ref(0);
+const currentTab = ref(3);
+const route = useRoute();
+
+// 🔥 FIXED: jobpostId (백엔드와 동일하게)
+const jobpostId = computed(() => {
+  return Number(route.params.jobpostId) || null;
+});
 
 const goToTab = (tabId: number) => {
   currentTab.value = tabId;
@@ -23,14 +30,54 @@ const goToTab = (tabId: number) => {
 // 자식 컴포넌트에서 사용할 수 있도록 provide
 provide('currentTab', currentTab);
 provide('goToTab', goToTab);
+
+// 🔥 채용공고 정보 조회
+const jobPostingTitle = ref('');
+
+const fetchJobPostingInfo = async () => {
+  if (!jobpostId.value) return;
+
+  try {
+    const response = await fetch(`/api/job-postings/${jobpostId.value}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.isSuccess && result.result) {
+        jobPostingTitle.value = result.result.title || '';
+      }
+    }
+  } catch (error) {
+    console.error('채용공고 정보 조회 실패:', error);
+  }
+};
+
+onMounted(() => {
+  console.log('=== ResumeTopLayout Mounted ===');
+  console.log('jobpostId:', jobpostId.value);
+  fetchJobPostingInfo();
+});
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
     <div class="max-w-6xl mx-auto pt-6 px-6 mb-8">
-      <h1 class="text-3xl font-bold text-slate-600 mb-2">입사 지원서 작성</h1>
-      <p class="text-gray-600">모든 항목을 정확하게 입력해주세요</p>
+      <h1 class="text-3xl font-bold text-slate-600 mb-2">
+        입사 지원서 작성
+      </h1>
+      <p class="text-gray-600">
+        모든 항목을 정확하게 입력해주세요
+      </p>
+      <!-- 🔥 채용공고 정보 표시 -->
+      <p v-if="jobPostingTitle" class="text-sm text-slate-500 mt-2">
+        📋 지원 공고: <strong>{{ jobPostingTitle }}</strong>
+      </p>
+      <p v-else class="text-sm text-slate-500 mt-2">
+        📋 채용공고 ID: <strong>{{ jobpostId }}</strong>
+      </p>
     </div>
 
     <!-- Notice Box -->
@@ -45,7 +92,7 @@ provide('goToTab', goToTab);
           <div class="ml-3">
             <h3 class="text-sm font-semibold text-red-800 mb-1">허위사실 기재에 주의하세요</h3>
             <ul class="text-sm text-red-700 space-y-1">
-              <li>• 적발시 고용관계 취소 및 법적 제제의 무제가 발생 할 수 있습니다.</li>
+              <li>• 적발시 고용관계 취소 및 법적 제재의 문제가 발생 할 수 있습니다.</li>
               <li>• 사실만을 적시해주실 것을 당부 드립니다.</li>
             </ul>
           </div>
@@ -62,11 +109,11 @@ provide('goToTab', goToTab);
             :key="tab.id"
             @click="goToTab(tab.id)"
             :class="[
-                            'flex-1 py-3 px-4 text-sm font-medium transition-colors',
-                            currentTab === tab.id
-                                ? 'bg-slate-600 text-white'
-                                : 'text-gray-600 hover:bg-gray-50'
-                        ]"
+              'flex-1 py-3 px-4 text-sm font-medium transition-colors',
+              currentTab === tab.id
+                ? 'bg-slate-600 text-white'
+                : 'text-gray-600 hover:bg-gray-50'
+            ]"
           >
             {{ tab.name }}
           </button>
@@ -76,7 +123,8 @@ provide('goToTab', goToTab);
 
     <!-- Content -->
     <div class="max-w-6xl mx-auto px-6 pb-8">
-      <router-view></router-view>
+      <!-- 🔥 FIXED: jobpostId를 props로 전달 -->
+      <router-view />
     </div>
   </div>
 </template>
