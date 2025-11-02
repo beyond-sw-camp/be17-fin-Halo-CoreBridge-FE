@@ -74,6 +74,133 @@
 
 ---
 
+## 프로젝트 기획과 설계
+
+### 📑 1. 프로젝트 기획서
+
+[프로젝트기획서 바로가기](./docs/프로젝트기획서.pdf)
+
+### ✅ 2. 요구사항 명세서
+
+[요구사항명세서 바로가기](./docs/요구사항명세서.pdf)
+
+<details>
+<summary>요구사항 명세서 상세보기</summary>
+<div markdown="1">
+
+![요구사항명세서.png](./docs/assets/imgs/요구사항명세서.png)
+
+</div>
+</details>
+
+### 📅 3. WBS
+
+[일정 관리를 위한 WBS 바로가기](./docs/WBS.pdf)
+
+<details>
+<summary>WBS 상세보기</summary>
+<div markdown="1">
+
+![WBS.png](./docs/assets/imgs/WBS.png)
+
+</div>
+</details>
+
+### 🔧 4. 시스템 아키텍처
+
+![시스템아키텍쳐.png](./docs/시스템아키텍쳐.png)
+
+### 🔗 5. ERD
+
+![ERD.png](./docs/ERD.png)
+
+# 6. UI/UX 단위테스터 결과서
+
+<details>
+  <summary> 회원 </summary>
+
+## 이메일 인증
+
+![이메일인증](/docs/gif/applicant/1.%20이메일인증.gif)
+
+## 회원 가입
+
+![회원가입](/docs/gif/applicant/2.%20회원가입.gif)
+
+## 로그인
+
+![로그인](/docs/gif/applicant/3.%20로그인.gif)
+
+## 로그 아웃
+
+![로그 아웃](/docs/gif/applicant/4.%20로그아웃.gif)
+
+</details>
+
+<details>
+  <summary>계정 찾기</summary>
+
+## 이메일 찾기
+
+![이메일 찾기](/docs/gif/계정찾기/이메일%20찾기.gif)
+
+## 비밀번호 찾기
+
+</details>
+
+<details>
+  <summary>지원자 </summary>
+
+## 채용 공고 상세 조회
+
+![설명 텍스트](/docs/gif/applicant/5.%20지원자용%20채용공고%20전체조회%20및%20상세조회.gif)
+
+  </details>
+<div>
+
+<details>
+  <summary> 채용 공고 등록 </summary>
+
+프로세스 생성
+![설명 텍스트](/docs/gif/recruiter/1.%20채용공고%20최초저장시%20프로세스%20설정.gif)
+
+질문지 생성
+![설명 텍스트](/docs/gif/recruiter/2.%20채용공고%20최초저장시%20질문지%20생성.gif)
+
+채용공고 저장
+![설명 텍스트](/docs/gif/recruiter/3.%20채용공고%20저장.gif)
+
+</details>
+
+<details>
+  <summary> 채용 관리 - 상세 </summary>
+
+## 채용공고 상세조회
+
+![설명 텍스트](/docs/gif/recruiter/4.%20채용공고%20전체조회%20상세조회.gif)
+
+## 지원자 채용 단계 수정
+
+![설명 텍스트](/docs/gif/recruiter/5.%20채용관리%20파이프라인%20편집기능.gif)
+
+## 채용 프로세스 추가
+
+![설명 텍스트](/docs/gif/recruiter/6.%20채용프로세스%20추가.gif)
+
+## 채용 프로세스 삭제
+
+![설명 텍스트](/docs/gif/recruiter/7.%20채용프로세스%20삭제.gif)
+
+## 채용 프로세스 순서편집
+
+![설명 텍스트](/docs/gif/recruiter/8.%20채용프로세스%20순서편집.gif)
+
+## 채용 프로세스 이름 및 색상 편집
+
+![설명 텍스트](/docs/gif/recruiter/9.%20채용프로세스%20이름%20및%20색상%20수정.gif)
+
+</details>
+
 # 📑 목차 (Table of Contents)
 
 - [프로젝트 소개](#-프로젝트-소개)
@@ -88,13 +215,7 @@
     - [6. 실시간 채용 단계 대시보드 & 파이프라인 시각화](#-6-실시간-채용-단계-대시보드--파이프라인-시각화)
     - [7. 실시간 화상 면접](#-7-실시간-화상-면접)
     - [8. 데이터 통계 및 분석 대시보드](#-8-데이터-통계-및-분석-대시보드)
-    - [9. 대규모 트래픽 대응 대기열 시스템](#-9-대규모-트래픽-대응-대기열-시스템)
-  - [4. 프로젝트 기획과 설계](#4-프로젝트-기획과-설계)
-    - [1. 프로젝트 기획서](#-1-프로젝트-기획서)
-    - [2. 요구사항 명세서](#-2-요구사항-명세서)
-    - [3. WBS](#-3-wbs)
-    - [4. 시스템 아키텍처](#-4-시스템-아키텍처)
-    - [5. ERD](#-5-erd)
+    - [9. 대규모 트래픽 대응 대기열 시스템](#-9-대규모-트래픽-대응-대기열-시스템).
 
 ---
 
@@ -186,57 +307,3 @@
 - **Kafka**와 연동되어 처리 완료 이벤트를 비동기로 발행함으로써 **안정성과 실시간성을 동시에 확보**합니다.
 
 ---
-
-## 4. 프로젝트 기획과 설계
-
-### 📑 1. 프로젝트 기획서
-
-[프로젝트기획서 바로가기](./docs/프로젝트기획서.pdf)
-
-### ✅ 2. 요구사항 명세서
-
-[요구사항명세서 바로가기](./docs/요구사항명세서.pdf)
-
-<details>
-<summary>요구사항 명세서 상세보기</summary>
-<div markdown="1">
-
-![요구사항명세서.png](./docs/assets/imgs/요구사항명세서.png)
-
-</div>
-</details>
-
-### 📅 3. WBS
-
-[일정 관리를 위한 WBS 바로가기](./docs/WBS.pdf)
-
-<details>
-<summary>WBS 상세보기</summary>
-<div markdown="1">
-
-![WBS.png](./docs/assets/imgs/WBS.png)
-
-</div>
-</details>
-
-### 🔧 4. 시스템 아키텍처
-
-<details>
-<summary>시스템 아키텍처 상세보기</summary>
-<div markdown="1">
-
-![시스템아키텍쳐.png](./docs/시스템아키텍쳐.png)
-
-</div>
-</details>
-
-### 🔗 5. ERD
-
-<details>
-<summary>ERD 상세보기</summary>
-<div markdown="1">
-
-![ERD.png](./docs/ERD.png)
-
-</div>
-</details>
