@@ -15,7 +15,7 @@ import type {
   CoverLetterDescriptionRequest,
   CoverLetterDescriptionResponse
 } from '@/types/resume/ResumeTypes';
-import { getCoverLetterTitles } from '@/api/job-posting';
+import { getCoverLetterTitles } from '@/api/jobposting';
 import { createCoverLetterDescriptions, getCoverLetterDescriptions } from '@/api/resume';
 
 // Layout에서 제공하는 탭 컨트롤
