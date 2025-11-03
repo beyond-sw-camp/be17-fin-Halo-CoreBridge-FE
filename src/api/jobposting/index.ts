@@ -1,8 +1,8 @@
-import api from '@/plugins/AxiosInterceptor'
+import api from '@/plugins/axiosInterceptor'
 import type {
   JobPostingCreateRequest,
   JobPostingPublicResponse
-} from '@/types/jobPosting/JobPostingTypes'
+} from '@/types/jobposting/JobPostingTypes'
 
 // 부서 불러오기
 export const getDepartment = async (): Promise<ApiResponse> => {
@@ -175,4 +175,37 @@ export const getJobsPublic = async (): Promise<ApiResponse<JobPostingPublicRespo
   return data
 }
 
+//  NEW: 자기소개서 질문 목록 조회
+export const getCoverLetterTitles = async (jobPostingId: number): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined
+  }
 
+  const url = `/api/jobposts/${jobPostingId}/applies/cover-letter-titles`
+
+  await api
+    .get(url)
+    .then((res) => {
+      console.log('자기소개서 질문 조회 성공:', res)
+      data = {
+        success: true,
+        code: 200,
+        message: 'success',
+        results: res.data // 🔥 백엔드에서 List를 직접 반환하므로 res.data를 그대로 사용
+      }
+    })
+    .catch((error) => {
+      console.log('자기소개서 질문 조회 실패:', error)
+      data = error.response?.data as ApiResponse || {
+        success: false,
+        code: error.response?.status || 500,
+        message: error.message,
+        results: undefined
+      }
+    })
+
+  return data
+}

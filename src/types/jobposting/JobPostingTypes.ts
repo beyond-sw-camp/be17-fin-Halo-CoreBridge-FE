@@ -5,7 +5,7 @@ import type { EnumMember, EnumType } from "typescript"
  */
 export interface RecruitProcessCreate {
   name: string
-  color: string
+  color: string 
   orderIdx: number
 }
 

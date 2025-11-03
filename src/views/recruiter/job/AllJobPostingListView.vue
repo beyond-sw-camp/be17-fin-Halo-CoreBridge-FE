@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import type { JobPostingListResponse } from '@/types/jobPosting/JobPostingTypes'
-import { getJobs } from '@/api/job-posting/index'
+import type { JobPostingListResponse } from '@/types/jobposting/JobPostingTypes'
+import { getJobs } from '@/api/jobposting/index'
 import {
     FileText,
     CheckCircle,

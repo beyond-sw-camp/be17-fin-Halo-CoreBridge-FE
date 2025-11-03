@@ -1,10 +1,10 @@
-import api from '@/plugins/AxiosInterceptor'
+import api from '@/plugins/axiosInterceptor'
 import type {
   RecruitProcessChangeOrderForm,
   RecruitProcessDeleteForm, RecruitProcessEditForm, RecruitProcessForm,
   RecruitProcessRequest,
   RecruitProcessResponse
-} from '@/types/jobPosting/RecruitProcess.ts'
+} from '@/types/jobposting/RecruitProcess'
 
 /**
  * 특정 채용의 채용 프로세스 요청 API

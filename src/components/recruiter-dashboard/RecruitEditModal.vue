@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type {  RecruitProcessEditForm } from '@/types/jobPosting/RecruitProcess.ts'
+import type {  RecruitProcessEditForm } from '@/types/jobposting/RecruitProcess'
 import ColorCode from '@/components/common/ColorCode.vue'
 
 interface Props {

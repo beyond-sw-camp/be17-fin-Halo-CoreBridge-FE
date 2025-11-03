@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { User, FileText, Download } from 'lucide-vue-next';
-import ApplicantSidebar from '@/components/Applicant/ApplicantSidebar.vue';
+import ApplicantSidebar from '@/components/applicant/ApplicantSidebar.vue';
 
 // Types
 interface ApplicantInfo {

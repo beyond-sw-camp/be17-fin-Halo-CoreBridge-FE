@@ -1,4 +1,4 @@
-import api from '@/plugins/AxiosInterceptor'
+import api from '@/plugins/axiosInterceptor'
 import type { UserForm } from '@/types/user/UserForm'
 import type { UserLogin, UserLoginResponse } from '@/types/user/UserLogin'
 

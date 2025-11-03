@@ -1,6 +1,6 @@
 <template>
   <div class="bg-gray-50 min-h-screen">
-    <!-- Main Content -->
+    <!-- Main Content -->    
     <main class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex flex-col md:flex-row md:items-start md:justify-between mb-6">
@@ -191,7 +191,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { ArrowLeft, Users, FileText, CheckCircle, Clock, Search, Filter } from 'lucide-vue-next';
-import ApplicantListCard from '@/components/Applicant/ApplicantListCard.vue';
+import ApplicantListCard from '@/components/applicant/ApplicantListCard.vue';
 
 import {
   Building2,
