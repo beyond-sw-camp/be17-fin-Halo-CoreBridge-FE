@@ -5,7 +5,6 @@ import {
   Building2,
   MapPin,
   Briefcase,
-  DollarSign,
   Clock,
   User,
   Mail,
@@ -167,7 +166,9 @@ const getStatusClass = (status?: string): string => {
 }
 
 const exit = () => router.push('/jobs')
-const handleApply = () => router.push(`/resume/${jobId}`)
+const handleApply = () => {
+  router.push(`/jobposts/${jobId}/applies`)
+}
 </script>
 
 <template>
@@ -223,7 +224,7 @@ const handleApply = () => router.push(`/resume/${jobId}`)
               </div>
               <div class="flex items-center gap-2">
                 <Briefcase :size="20" />
-                {{ basicInfo?.careerType }} 
+                {{ basicInfo?.careerType }}
                 {{ formatExperience(basicInfo?.minExperience, basicInfo?.maxExperience) }}
               </div>
             </div>
@@ -322,7 +323,7 @@ const handleApply = () => router.push(`/resume/${jobId}`)
               <div class="flex justify-between">
                 <span class="text-gray-600">접수 기간</span>
                 <span class="font-medium">{{ formatDateRange(detailInfo?.applyStartDate, detailInfo?.applyEndDate)
-                }}</span>
+                  }}</span>
               </div>
             </div>
           </section>
