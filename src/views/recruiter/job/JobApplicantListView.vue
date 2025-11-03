@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { Users, FileText, CheckCircle, Clock, Search, Filter } from 'lucide-vue-next'
 import ApplicantListCard from '@/components/applicant/ApplicantListCard.vue'
-import { getApplicantsList } from '@/api/job-posting'
+import { getApplicantsList } from '@/api/jobposting'
 import { useRoute } from 'vue-router'
 
 interface Applicant {
