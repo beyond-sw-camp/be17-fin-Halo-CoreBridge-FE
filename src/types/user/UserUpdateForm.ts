@@ -1,4 +1,5 @@
 export interface PasswordChange {
+  email: string | undefined
   password: string
   token: string | undefined
 }
