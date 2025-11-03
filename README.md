@@ -94,7 +94,7 @@
 
 ## 면접관
 
-* ID : 'interviewer01@core-bridge.co.kr`
+* ID : `interviewer01@core-bridge.co.kr`
 * PW : `qwer1234`
 
 ## 지원자
