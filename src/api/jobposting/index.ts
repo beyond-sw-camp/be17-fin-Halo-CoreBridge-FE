@@ -41,15 +41,15 @@ export const createJobPosting = async (payload: JobPostingCreateRequest): Promis
   const url = '/api/job-postings'
 
   await api
-  .post(url, payload)
-  .then((res) => {
-    console.log(res)
-    data = res.data
-  })
-  .catch((error) => {
-    console.log(error)
-    data = error.response.data as ApiResponse
-  })
+    .post(url, payload)
+    .then((res) => {
+      console.log(res)
+      data = res.data
+    })
+    .catch((error) => {
+      console.log(error)
+      data = error.response.data as ApiResponse
+    })
 
   return data
 }
@@ -65,15 +65,15 @@ export const getJobs = async (): Promise<ApiResponse> => {
   const url = '/api/job-postings'
 
   await api
-  .get(url)
-  .then((res) => {
-    console.log(res)
-    data = res.data
-  })
-  .catch((error) => {
-    console.log(error)
-    data = error.response.data as ApiResponse
-  })
+    .get(url)
+    .then((res) => {
+      console.log(res)
+      data = res.data
+    })
+    .catch((error) => {
+      console.log(error)
+      data = error.response.data as ApiResponse
+    })
 
   return data
 }
@@ -89,15 +89,15 @@ export const getHeaderById = async (id: number): Promise<ApiResponse> => {
   const url = `/api/job-postings/header/${id}`
 
   await api
-  .get(url)
-  .then((res) => {
-    console.log(res)
-    data = res.data
-  })
-  .catch((error) => {
-    console.log(error)
-    data = error.response.data as ApiResponse
-  })
+    .get(url)
+    .then((res) => {
+      console.log(res)
+      data = res.data
+    })
+    .catch((error) => {
+      console.log(error)
+      data = error.response.data as ApiResponse
+    })
 
   return data
 }
@@ -113,15 +113,38 @@ export const getJobById = async (id: number): Promise<ApiResponse> => {
   const url = `/api/job-postings/${id}`
 
   await api
-  .get(url)
-  .then((res) => {
-    console.log(res)
-    data = res.data
-  })
-  .catch((error) => {
-    console.log(error)
-    data = error.response.data as ApiResponse
-  })
+    .get(url)
+    .then((res) => {
+      console.log(res)
+      data = res.data
+    })
+    .catch((error) => {
+      console.log(error)
+      data = error.response.data as ApiResponse
+    })
+
+  return data
+}
+
+export const getApplicantsList = async (id: number): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined
+  }
+  const url = `/api/job-postings/${id}/applicants`
+
+  await api
+    .get(url)
+    .then((res) => {
+      console.log(res)
+      data = res.data
+    })
+    .catch((error) => {
+      console.log(error)
+      data = error.response.data as ApiResponse
+    })
 
   return data
 }
@@ -151,7 +174,8 @@ export const getJobsPublic = async (): Promise<ApiResponse<JobPostingPublicRespo
 
   return data
 }
-// 🔥 NEW: 자기소개서 질문 목록 조회
+
+//  NEW: 자기소개서 질문 목록 조회
 export const getCoverLetterTitles = async (jobPostingId: number): Promise<ApiResponse> => {
   let data: ApiResponse = {
     success: false,
