@@ -32,7 +32,7 @@ const requestLogin = async (req: UserLogin): Promise<ApiResponse<UserLoginRespon
     results: {} as UserLoginResponse,
   }
 
-  const url: string = 'http://localhost:8080/login'
+  const url: string = '/api/login'
 
   await api
     .post(url, req)
@@ -71,5 +71,5 @@ const requestLogout = async (): Promise<ApiResponse> => {
 export default {
   requestSignup,
   requestLogin,
-  requestLogout
+  requestLogout,
 }
