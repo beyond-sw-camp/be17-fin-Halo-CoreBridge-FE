@@ -199,6 +199,11 @@
 
 ![설명 텍스트](/docs/gif/recruiter/9.%20채용프로세스%20이름%20및%20색상%20수정.gif)
 
+## 지원서 작성
+
+![설명 텍스트](![Animation](https://github.com/user-attachments/assets/e24a9ac6-c9cb-47c1-bb85-ce0c921dee33)
+)
+
 </details>
 
 # 📑 목차 (Table of Contents)
