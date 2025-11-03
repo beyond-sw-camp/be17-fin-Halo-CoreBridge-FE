@@ -9,6 +9,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute();
 
 const formData: PasswordChange = reactive({
+    email: route.query.email?.toString(),
     password: '',
     token: route.query.token?.toString()
 })

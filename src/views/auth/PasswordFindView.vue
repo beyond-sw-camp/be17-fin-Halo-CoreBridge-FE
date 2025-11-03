@@ -95,8 +95,7 @@ const validateForm = () => {
 
                     <!-- 버튼 -->
                     <div class="flex gap-2 flex-col">
-                        <button type="submit" @click="sendPasswordResetLink"
-                            :disabled="!emailForm.email || verificationSent"
+                        <button type="submit" :disabled="!emailForm.email || verificationSent"
                             class="w-full bg-slate-600 text-white py-3 rounded-lg font-semibold hover:bg-slate-700 transform hover:scale-[1.02] transition shadow-lg hover:cursor-pointer"
                             v-if="!isSendEmail">
                             요청
@@ -105,7 +104,7 @@ const validateForm = () => {
                             <p class="text-slate-400">
                                 링크를 받지 못하셨나요?
                             </p>
-                            <button class="hover:cursor-pointer text-slate-600" @click="sendPasswordResetLink">
+                            <button class="hover:cursor-pointer text-slate-600" type="submit">
                                 재전송
                             </button>
                         </div>
