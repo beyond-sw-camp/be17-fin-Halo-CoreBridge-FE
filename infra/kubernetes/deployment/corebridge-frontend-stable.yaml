@@ -1,0 +1,35 @@
+# Canary는 Jenkins에서 생성
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: corebridge-frontend-stable
+  namespace: corebridge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: corebridge-frontend
+      version: stable
+  template:
+    metadata:
+      labels:
+        app: corebridge-frontend
+        version: stable
+    spec:
+      containers:
+        - name: frontend
+          image: halo1234/corebridge-frontend:54
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              protocol: TCP
+      restartPolicy: Always
+      dnsPolicy: ClusterFirst
+      terminationGracePeriodSeconds: 30
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600

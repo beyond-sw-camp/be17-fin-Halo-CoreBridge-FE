@@ -1,0 +1,268 @@
+pipeline {
+  agent {
+    kubernetes {
+      label "node-kaniko-${UUID.randomUUID().toString()}"
+      defaultContainer 'node'
+      yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: jenkins
+spec:
+  restartPolicy: Never
+  containers:
+    - name: node
+      image: node:22.17.1-bullseye
+      command: ['cat']
+      tty: true
+      volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:debug
+      command: ['/busybox/sh','-c','sleep infinity']
+      tty: true
+      volumeMounts:
+        - name: docker-config
+          mountPath: /kaniko/.docker
+        - name: workspace
+          mountPath: /workspace
+  volumes:
+    - name: workspace
+      emptyDir: {}
+    - name: docker-config
+      secret:
+        secretName: regcred
+        items:
+          - key: .dockerconfigjson
+            path: config.json
+"""
+    }
+  }
+
+  environment {
+    docker_name = 'halo1234'
+    NAMESPACE = 'corebridge'
+    SERVICE_NAME = 'corebridge-frontend'
+    IMAGE_NAME = "${docker_name}/corebridge-frontend"
+    IMAGE_TAG = "${env.BUILD_NUMBER}"
+    CANARY_DEPLOY = 'corebridge-frontend-canary'
+    GIT_URL = 'https://github.com/beyond-sw-camp/be17-fin-Halo-CoreBridge-FE.git'
+    DISCORD_WEBHOOK = credentials('discord-webhook')
+  }
+
+  stages {
+
+    stage('Checkout') {
+      steps {
+        container('node') {
+          checkout([$class: 'GitSCM',
+            branches: [[name: '*/dev']],
+            userRemoteConfigs: [[url: "${GIT_URL}"]]
+          ])
+        }
+      }
+    }
+
+    stage('Install & Build') {
+      steps {
+        container('node') {
+          sh '''
+            npm ci
+            npm run build
+          '''
+        }
+      }
+    }
+
+    stage('Kaniko Build & Push') {
+      steps {
+        container('kaniko') {
+          sh """
+            /kaniko/executor \
+              --context=${WORKSPACE} \
+              --dockerfile=${WORKSPACE}/Dockerfile \
+              --destination=${IMAGE_NAME}:${IMAGE_TAG} \
+              --destination=${IMAGE_NAME}:latest \
+              --cache=true
+          """
+        }
+      }
+    }
+
+    stage('Deploy Canary (20% traffic)') {
+      steps {
+        echo "🚀 Deploying Canary with 20% traffic"
+
+        sshPublisher(publishers: [
+          sshPublisherDesc(
+            configName: 'K8S_MASTER',
+            verbose: true,
+            transfers: [sshTransfer(execCommand: """
+# Canary Deployment
+cat <<K8S_CANARY_DEPLOY_EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${CANARY_DEPLOY}
+  namespace: ${NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: corebridge-frontend
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: corebridge-frontend
+        version: canary
+    spec:
+      containers:
+      - name: frontend
+        image: ${IMAGE_NAME}:${IMAGE_TAG}
+        ports:
+        - containerPort: 80
+K8S_CANARY_DEPLOY_EOF
+
+# Canary Ingress (20%)
+cat <<K8S_CANARY_ING_EOF | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: corebridge-frontend-canary
+  namespace: ${NAMESPACE}
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "20"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: core-bridge.co.kr
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ${SERVICE_NAME}
+            port:
+              number: 80
+K8S_CANARY_ING_EOF
+""")])])
+      }
+    }
+
+    stage('Increase traffic to 50%') {
+      steps {
+        script {
+          def userInput = input(
+            id: 'Increase50',
+            message: 'Canary 안정적입니까? 트래픽을 50%로 올릴까요?',
+            parameters: [
+              [$class: 'ChoiceParameterDefinition', choices: ['Yes', 'No'], name: 'Proceed']
+            ]
+          )
+          if (userInput != 'Yes') error "중단됨"
+
+          sshPublisher(publishers: [
+            sshPublisherDesc(configName: 'K8S_MASTER', verbose: true, transfers: [
+              sshTransfer(execCommand: """
+kubectl annotate ingress corebridge-frontend-canary \
+  -n ${NAMESPACE} \
+  nginx.ingress.kubernetes.io/canary-weight="50" --overwrite
+""")
+            ])
+          ])
+          echo "✅ Traffic now 50%"
+        }
+      }
+    }
+
+    stage('Increase traffic to 70%') {
+      steps {
+        script {
+          def userInput = input(
+            id: 'Increase70',
+            message: 'Canary 여전히 정상입니까? 트래픽을 70%로 올릴까요?',
+            parameters: [
+              [$class: 'ChoiceParameterDefinition', choices: ['Yes', 'No'], name: 'Proceed']
+            ]
+          )
+          if (userInput != 'Yes') error "중단됨"
+
+          sshPublisher(publishers: [
+            sshPublisherDesc(configName: 'K8S_MASTER', verbose: true, transfers: [
+              sshTransfer(execCommand: """
+kubectl annotate ingress corebridge-frontend-canary \
+  -n ${NAMESPACE} \
+  nginx.ingress.kubernetes.io/canary-weight="70" --overwrite
+""")
+            ])
+          ])
+          echo "✅ Traffic now 70%"
+        }
+      }
+    }
+
+    stage('Promote to 100% & remove canary') {
+      steps {
+        script {
+          def userInput = input(
+            id: 'PromoteFinal',
+            message: '완전 승격(100%) 할까요?',
+            parameters: [
+              [$class: 'ChoiceParameterDefinition', choices: ['Yes', 'No'], name: 'Proceed']
+            ]
+          )
+          if (userInput != 'Yes') error "중단됨"
+
+          sshPublisher(publishers: [
+            sshPublisherDesc(configName: 'K8S_MASTER', verbose: true, transfers: [
+              sshTransfer(execCommand: """
+# Stable에 새 이미지 적용
+kubectl set image deployment/corebridge-frontend-stable frontend=${IMAGE_NAME}:${IMAGE_TAG} -n ${NAMESPACE}
+
+# Canary traffic 0%
+kubectl annotate ingress corebridge-frontend-canary \
+  -n ${NAMESPACE} \
+  nginx.ingress.kubernetes.io/canary-weight="0" --overwrite
+
+# Canary 종료
+kubectl delete deployment ${CANARY_DEPLOY} -n ${NAMESPACE} --ignore-not-found=true
+""")
+            ])
+          ])
+          echo "🎯 Production: 100% Stable"
+        }
+      }
+    }
+
+    stage('Done') {
+      steps {
+        echo "✅ Canary fully promoted and cleaned up"
+      }
+    }
+  }
+  
+  post {
+    success {
+      sh """
+      curl -H 'Content-Type: application/json' \
+      -X POST \
+      -d '{"content": "✅ Success! Job: ${JOB_NAME}, Build: #${BUILD_NUMBER}\\n<${BUILD_URL}>"}' \
+      $DISCORD_WEBHOOK
+      """
+    }
+
+    failure {
+      sh """
+      curl -H 'Content-Type: application/json' \
+      -X POST \
+      -d '{"content": "❌ Failed! Job: ${JOB_NAME}, Build: #${BUILD_NUMBER}\\n<${BUILD_URL}>"}' \
+      $DISCORD_WEBHOOK
+      """
+    }
+  }
+  
+}

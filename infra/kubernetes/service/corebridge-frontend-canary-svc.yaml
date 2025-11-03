@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: corebridge-frontend-canary
+  namespace: corebridge
+spec:
+  selector:
+    app: corebridge-frontend
+    version: canary
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+  
