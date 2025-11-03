@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: corebridge-frontend-canary
+  namespace: corebridge
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "20"
+spec:
+  ingressClassName: nginx
+
+  tls:
+    - hosts:
+        - www.core-bridge.co.kr
+      secretName: corebridge-tls
+
+  rules:
+    - host: www.core-bridge.co.kr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: corebridge-frontend
+                port:
+                  number: 80
