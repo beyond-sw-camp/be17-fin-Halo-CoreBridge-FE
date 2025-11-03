@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/store/useUserStore'
+import { ROLES } from '@/constants/roles'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -6,7 +8,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      redirect: '/jobs'
+      component: () => import('@/views/HomeView.vue'),
     },
     {
       path: '/signup',
@@ -40,6 +42,10 @@ const router = createRouter({
       path: '/recruiter',
       name: 'main',
       component: () => import('@/views/layout/DashboardLayout.vue'),
+      meta: {
+        requiresAuth: true,
+        role: [ROLES.RECRUITER, ROLES.ADMIN],
+      },
       children: [
         {
           path: '',
@@ -96,20 +102,20 @@ const router = createRouter({
             {
               path: '',
               name: 'recruiter-interviews',
-              component: () =>  import('@/views/recruiter/interview/InterviewsView.vue')
+              component: () => import('@/views/recruiter/interview/InterviewsView.vue'),
             },
             {
               path: 'interviewers',
               name: 'recruiter-interview-interviewers',
-              component: () => import('@/views/recruiter/interview/InterviewerManagementView.vue')
+              component: () => import('@/views/recruiter/interview/InterviewerManagementView.vue'),
             },
             {
               path: 'rooms',
               name: 'recruiter-interview-rooms',
-              component: () => import('@/views/recruiter/interview/RoomManagementView.vue')
-            }
-          ]
-        }
+              component: () => import('@/views/recruiter/interview/RoomManagementView.vue'),
+            },
+          ],
+        },
       ],
     },
 
@@ -118,6 +124,9 @@ const router = createRouter({
       path: '/job-posting/create',
       name: 'jobPostingCreate',
       component: () => import('@/views/jobposting/JobPostingCreateView.vue'),
+      meta: {
+        role: [ROLES.RECRUITER, ROLES.ADMIN],
+      },
     },
     {
       path: '/jobs',
@@ -133,6 +142,10 @@ const router = createRouter({
       path: '/admin',
       name: 'admin',
       component: () => import('@/views/layout/DashboardLayout.vue'),
+      meta: {
+        requiresAuth: true,
+        role: [ROLES.ADMIN],
+      },
       children: [
         {
           path: '',
@@ -141,11 +154,13 @@ const router = createRouter({
         },
       ],
     },
-
     {
       path: '/jobposts/:jobpostId/applies',
       name: 'resumelayout',
       component: () => import('@/views/layout/ResumeTopLayout.vue'),
+      meta: {
+        requiresAuth: true,
+      },
       props: true, //
       children: [
         {
@@ -155,16 +170,14 @@ const router = createRouter({
         },
       ],
     },
-
-    {
-      path: '/applicantlist',
-      name: 'applicantlist',
-      component: () => import('@/views/applicantlist/ApplicantListView.vue'),
-    },
     {
       path: '/applicantdetail',
       name: 'applicantdetail',
       component: () => import('@/views/applicantdetail/ApplicantDetailView.vue'),
+      meta: {
+        requiresAuth: true,
+        role: [ROLES.ADMIN, ROLES.RECRUITER, ROLES.INTERVIEWER],
+      },
       children: [
         {
           path: '',
@@ -177,7 +190,19 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
   const requiresToken = to.matched.some((record) => record.meta.requiresToken)
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+  const roles = to.matched.find((r) => r.meta.role)?.meta.role
+
+  const userRole = userStore.userInfo.role
+  const isLogin = userStore.isLogin
+
+  // 로그인 필요한 페이지인데 로그인 안 된 경우
+  if (requiresAuth && !isLogin) {
+    alert('로그인이 필요합니다.')
+    return next('/login')
+  }
 
   // 비밀번호 재설정 페이지에서는 토큰이 필요
   if (requiresToken) {
@@ -185,6 +210,34 @@ router.beforeEach((to, from, next) => {
     if (!token) {
       next('/login')
     }
+  }
+
+  // 라우터 주소의 권한이 로그인한 사용자의 권한에 맞는 지 체크
+  if (roles) {
+    const allowedRoles = Array.isArray(roles) ? roles : [roles]
+
+    if (!allowedRoles.includes(userRole)) {
+      alert('접근 권한이 없습니다.')
+      return next('/')
+    }
+  }
+
+  // '/' 접근 시 역할별 리다이렉트
+  if (to.path === '/') {
+    if (userRole === ROLES.ADMIN) {
+      return next('/admin')
+    }
+
+    if (userRole === ROLES.RECRUITER) {
+      return next('/recruiter')
+    }
+
+    if (userRole === ROLES.INTERVIEWER) {
+      return next('/interviewer')
+    }
+
+    // 지원자 or 비로그인
+    return next('/jobs')
   }
 
   next()
