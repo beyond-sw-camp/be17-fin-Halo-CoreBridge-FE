@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { useRoute, RouterLink, useRouter } from 'vue-router'
 import { getHeaderById } from '@/api/jobposting/index'
 import { Building2, MapPin, Briefcase, DollarSign, Share2 } from 'lucide-vue-next'
 
@@ -32,6 +32,7 @@ const jobId = Number(route.params.id)
 const jobPosting = ref<headerResponse | null>(null)
 const isLoading = ref(true)
 const errorMessage = ref('')
+const router = useRouter()
 
 // -----------------------------
 // API 호출
@@ -108,6 +109,14 @@ const tabs = ref<Tab[]>([
 ])
 
 const isActive = (tab: Tab) => route.path === tab.path
+
+const goToEditPage = () => {
+  if (!jobPosting.value) return
+  router.push({
+    path: `/job-posting/${jobId}/edit`,
+    query: { mode: 'edit' },
+  })
+}
 </script>
 
 <template>
@@ -176,7 +185,7 @@ const isActive = (tab: Tab) => route.path === tab.path
         <!-- 오른쪽: 액션 버튼 -->
         <section>
           <div class="space-y-3">
-            <button
+            <button @click="goToEditPage"
               class="w-full px-4 py-3 bg-white text-slate-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
               공고 수정
             </button>
