@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import { reactive, ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import type { JobPostingCreateRequest } from '@/types/jobposting/JobPostingTypes'
-import { createJobPosting, getDepartment } from '@/api/jobposting/index'
+import type { JobPostingCreateRequest, JobPostingDetailResponse } from '@/types/jobposting/JobPostingTypes'
+import { createJobPosting, updateJobPosting, getDepartment } from '@/api/jobposting/index' // ✅ (NEW) updateJobPosting 추가
 import draggable from 'vuedraggable'
 import { GripVertical, Pencil, Trash2, Plus } from 'lucide-vue-next'
 
-const router = useRouter()
+// ===========================
+//  (NEW) Props & Emits 추가
+// ===========================
+const props = defineProps<{
+  mode: 'create' | 'edit'
+  initialData?: JobPostingDetailResponse
+}>()
+
+const emit = defineEmits(['completed'])
 
 // ===========================
 // Types
@@ -50,9 +58,7 @@ const form = reactive<JobPostingCreateRequest>({
         { name: '2차 면접', color: 'PURPLE', orderIdx: 4 },
         { name: '최종 합격', color: 'RED', orderIdx: 5 },
     ],
-    coverLetterTitles: [
-        { title: '', subtitle: '' }
-    ],
+    coverLetterTitles: [{ title: '', subtitle: '' }],
     salaryType: null,
     salaryMin: undefined,
     salaryMax: undefined,
@@ -65,6 +71,7 @@ const form = reactive<JobPostingCreateRequest>({
     additionalInfo: '',
 })
 
+const router = useRouter()
 const department = ref<Department[]>([])
 const errors = reactive<Record<string, string>>({})
 const isSubmitting = ref(false)
@@ -76,7 +83,7 @@ const fixedStart = reactive({ name: '지원 완료', color: 'BLUE', orderIdx: ''
 const fixedEnd = reactive({ name: '최종 합격', color: 'RED', orderIdx: '' })
 
 // ===========================
-// Tech Stack Management
+// Tech Stack Management 
 // ===========================
 const techInput = ref('')
 const addTech = () => {
@@ -90,7 +97,7 @@ const addTech = () => {
 const removeTech = (i: number) => form.techStack.splice(i, 1)
 
 // ===========================
-// Recruitment Process
+// Recruitment Process 
 // ===========================
 const baseColors = ['BLUE', 'ORANGE', 'PINK', 'PURPLE', 'RED']
 const maxStages = ref(10)
@@ -101,17 +108,13 @@ const stages = ref<StageEdit[]>([
     { id: 3, name: '2차 면접', color: 'PURPLE', edit: false },
 ])
 
-//  객체 기반 동기화
 const syncRecruitProcess = () => {
-    // 중간단계 순서에 맞춰 orderIdx 재계산
     const middle = stages.value.map((s, idx) => ({
-        id: idx + 1, // id는 순서대로 다시 매기기
+        id: idx + 1,
         name: s.name,
         color: s.color,
-        orderIdx: idx + 2, // 2부터 시작 (지원 완료가 1)
+        orderIdx: idx + 2,
     }))
-
-    // 전체 조합
     form.recruitProcess = [
         { name: fixedStart.name, color: fixedStart.color, orderIdx: 1 },
         ...middle,
@@ -130,56 +133,39 @@ const addStage = () => {
     })
     syncRecruitProcess()
 }
-
 const editStage = (s: StageEdit) => {
     s.edit = !s.edit
     if (!s.edit) syncRecruitProcess()
 }
-
-// 중간단계 삭제
 const deleteStage = (id: number) => {
     stages.value = stages.value.filter(s => s.id !== id)
-    // id 다시 정렬 후 동기화
+    stages.value = stages.value.map((s, idx) => ({ ...s, id: idx + 1 }))
+    syncRecruitProcess()
+}
+const onDragEnd = () => {
     stages.value = stages.value.map((s, idx) => ({ ...s, id: idx + 1 }))
     syncRecruitProcess()
 }
 
-const onDragEnd = () => {
-    // 드래그 후 순서가 바뀌면 id와 orderIdx도 다시 세팅
-    stages.value = stages.value.map((s, idx) => ({
-        ...s,
-        id: idx + 1,
-    }))
-    syncRecruitProcess()
-}
 // ===========================
-// 질문지 문항 관련 메소드
+// 질문지 문항 관련 메소드 
 // ===========================
-const addQuestion = () => {
-    form.coverLetterTitles.push({ title: '', subtitle: '' })
-}
-
-const removeQuestion = (index: number) => {
-    form.coverLetterTitles.splice(index, 1)
-}
-
+const addQuestion = () => form.coverLetterTitles.push({ title: '', subtitle: '' })
+const removeQuestion = (index: number) => form.coverLetterTitles.splice(index, 1)
 const isPreviewOpen = ref(false)
 
 // ===========================
-// Navigation & Actions
+// Navigation & Actions 
 // ===========================
 const exit = () => {
     if (confirm('작성 중인 내용이 저장되지 않습니다. 정말 나가시겠습니까?')) {
         window.history.length > 1 ? router.back() : router.push({ name: 'recruiter-jobs' })
     }
 }
-
-const saveDraft = () => {
-    console.log('임시 저장:', form)
-}
+const saveDraft = () => console.log('임시 저장:', form)
 
 // ===========================
-// Form Submission
+//  (CHANGED) 수정/등록 공통 submitForm
 // ===========================
 const toDateTime = (d?: string | null, end = false): string | null =>
     !d || d.trim() === '' ? null : `${d} ${end ? '23:59:59' : '00:00:00'}`
@@ -196,21 +182,26 @@ const submitForm = async () => {
             applyStartDate: toDateTime(form.applyStartDate, false) as any,
             applyEndDate: toDateTime(form.applyEndDate, true) as any,
             hireEndDate: toDateTime(form.hireEndDate, true) as any,
-            recruitProcess: form.recruitProcess, // 
         }
 
         Object.keys(errors).forEach(k => (errors[k] = ''))
 
-        const res = await createJobPosting(payload)
-
-        if (res.success) {
-            alert('채용공고 등록이 완료되었습니다!')
-            router.push('/recruiter/jobs')
+        // ✅ (CHANGED) 모드에 따라 API 분기
+        if (props.mode === 'create') {
+            const res = await createJobPosting(payload)
+            if (res.success) {
+                alert('채용공고 등록이 완료되었습니다!')
+                emit('completed')
+            } else Object.assign(errors, res.results || {})
         } else {
-            Object.assign(errors, res.results || {})
+            const res = await updateJobPosting(props.initialData!.id, payload)
+            if (res.success) {
+                alert('채용공고 수정이 완료되었습니다!')
+                emit('completed')
+            } else Object.assign(errors, res.results || {})
         }
     } catch (err) {
-        console.error('등록 오류:', err)
+        console.error('요청 오류:', err)
         alert('서버 오류가 발생했습니다.')
     } finally {
         isSubmitting.value = false
@@ -218,7 +209,7 @@ const submitForm = async () => {
 }
 
 // ===========================
-// Auto Clear Error
+// Auto Clear Error 🧱 (UNCHANGED)
 // ===========================
 watch(
     () => ({ ...form }),
@@ -235,28 +226,68 @@ watch(
 )
 
 // ===========================
-// Computed
+// Computed 🧱 (UNCHANGED)
 // ===========================
 const isExperienced = computed(() => form.careerType === '경력')
 const isExperienceInvalid = computed(() => form.careerType === '경력' && (!form.minExperience || !form.maxExperience))
 const isSalaryInvalid = computed(() => form.salaryType === '고정급여' && (!form.salaryMin || !form.salaryMax))
 
 // ===========================
-// Load Departments
+// ✅ (NEW) 수정 모드일 경우 데이터 주입
 // ===========================
 onMounted(async () => {
-    try {
-        const res = await getDepartment()
-        if (res.success) department.value = res.results
-        else errorMessage.value = res.message || '데이터를 불러오지 못했습니다.'
-    } catch (err: any) {
-        console.error(err)
-        errorMessage.value = '서버오류 발생'
-    } finally {
-        isLoading.value = false
+  try {
+    const res = await getDepartment()
+    if (res.success) department.value = res.results
+
+    if (props.mode === 'edit' && props.initialData) {
+      // 1️⃣ form 변환
+      const transformed = {
+        ...props.initialData,
+        recruitProcess: props.initialData.recruitProcess.map(proc => ({
+          id: proc.id,
+          name: proc.name,
+          color: proc.colorCode?.name || 'BLUE',
+          orderIdx: proc.orderIdx,
+        })),
+        coverLetterTitles: props.initialData.coverLetterTitles.map(q => ({
+          id: q.id,
+          title: q.title,
+          subtitle: q.subtitle,
+        })),
+      }
+
+      // 2️⃣ form 데이터 반영
+      Object.assign(form, transformed)
+
+      // 3️⃣ stages 반영 (여기 추가!)
+      stages.value = transformed.recruitProcess
+        .filter(p => p.name !== '지원 완료' && p.name !== '최종 합격')
+        .map((p, idx) => ({
+          id: idx + 1,
+          name: p.name,
+          color: p.color,
+          edit: false,
+        }))
+
+      // 4️⃣ fixed 색상도 반영 (선택적으로)
+      const start = transformed.recruitProcess.find(p => p.name === '지원 완료')
+      const end = transformed.recruitProcess.find(p => p.name === '최종 합격')
+      if (start) fixedStart.color = start.color
+      if (end) fixedEnd.color = end.color
+
+      // 5️⃣ form.recruitProcess 최신화
+      syncRecruitProcess()
     }
+  } catch (err: any) {
+    console.error(err)
+    errorMessage.value = '서버오류 발생'
+  } finally {
+    isLoading.value = false
+  }
 })
 </script>
+
 
 
 <template>
@@ -265,7 +296,9 @@ onMounted(async () => {
         <header class="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-200 h-20 z-10">
             <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex justify-between items-center">
-                    <h1 class="text-2xl font-bold text-slate-600">채용 공고 작성</h1>
+                    <h1 class="text-2xl font-bold text-slate-600">
+                        {{ props.mode === 'edit' ? '채용 공고 수정' : '채용 공고 작성' }}
+                    </h1>
                     <button
                         class="px-4 py-2 text-slate-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
                         @click="exit">
@@ -911,9 +944,13 @@ onMounted(async () => {
                         임시 저장
                     </button>
                     <button
-                        class="px-6 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition font-medium "
+                        class="px-6 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition font-medium"
                         type="submit" :disabled="isSubmitting">
-                        {{ isSubmitting ? '등록 중...' : '공고 등록' }}
+                        <!-- ⚙️ (CHANGED) 등록 / 수정 버튼 문구 변경 -->
+                        {{ isSubmitting
+                            ? (props.mode === 'edit' ? '수정 중...' : '등록 중...')
+                            : (props.mode === 'edit' ? '공고 수정' : '공고 등록')
+                        }}
                     </button>
                 </div>
             </form>

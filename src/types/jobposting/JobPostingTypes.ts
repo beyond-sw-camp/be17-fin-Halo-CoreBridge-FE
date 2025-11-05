@@ -46,6 +46,90 @@ export interface JobPostingCreateRequest {
   additionalInfo?: string
 }
 
+export interface JobPostingDetailResponse {
+    id: number
+  title: string
+
+  // 기본 정보
+  employmentType: string            // "정규직" | "계약직" | "인턴" 등
+  careerType: string                // "신입" | "경력" | "무관"
+  minExperience: number | null
+  maxExperience: number | null
+  positionLevel: string | null
+  location: string
+
+  // 날짜
+  applyStartDate: string            // "yyyy-MM-dd HH:mm:ss"
+  applyEndDate: string              // "yyyy-MM-dd HH:mm:ss"
+  hireEndDate: string               // "yyyy-MM-dd HH:mm:ss"
+
+  // 모집 인원
+  headcount: number
+
+  // 직무 관련
+  summary: string
+  responsibilities: string
+  requirements: string
+  preferred: string
+
+  // 기술 스택
+  techStack: string[]
+
+  // 채용 프로세스
+  recruitProcess: RecruitProcessEdit[]
+
+  // 자기소개서 질문
+  coverLetterTitles: CoverLetterTitleEdit[]
+
+  // 급여 정보
+  salaryType: string                // "연봉" | "시급" 등
+  salaryMin: number | null
+  salaryMax: number | null
+  salaryNegotiable: boolean
+
+  // 근무 조건
+  workingHours: string
+  benefits: string
+
+  // 부서/담당자 정보
+  departmentName: string
+  contactName: string
+  contactEmail: string
+
+  // 기타
+  additionalInfo: string | null
+}
+
+// ================================
+// 🎯 채용 프로세스 타입
+// ================================
+export interface RecruitProcessEdit {
+  id: number
+  name: string
+  colorCode: ColorCode              // 색상 정보 객체
+  orderIdx: number
+}
+
+// ================================
+// 🎯 색상 정보 타입
+// ================================
+export interface ColorCode {
+  name: string                      // "BLUE" | "ORANGE" | ...
+  label: string                     // "파랑" | "주황" | ...
+  code: string                      // "blue-500"
+}
+
+// ================================
+// 🎯 자기소개서 질문 타입
+// ================================
+export interface CoverLetterTitleEdit {
+  id: number
+  title: string
+  subtitle: string
+  jobPostingId: number
+}
+
+
 /**
  * 특정 채용공고에 대한 프로세스 정리
  * 전체 응답 데이터 정보
