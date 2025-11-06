@@ -3,7 +3,7 @@ import axios from 'axios'
 axios.defaults.withCredentials = true
 
 const api = axios.create({
-  baseURL: '',
+  baseURL: 'http://localhost:8080',
   timeout: 5000,
 })
 

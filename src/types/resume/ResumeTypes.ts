@@ -1,17 +1,18 @@
-// 🔥 백엔드와 일치하도록 날짜 타입을 string으로 통일
+// src/types/resume/index.ts
+// 백엔드와 완벽하게 일치하는 타입 정의 (2025-04-05 기준)
 
 export interface Career {
   id?: number;
   companyName: string;
   position: string;
-  startDate: string;  // 🔥 FIXED: YYYY-MM-DD 형식
-  endDate: string | null;  // 🔥 FIXED: YYYY-MM-DD 형식 또는 null
+  startDate: string;  // YYYY-MM-DD
+  endDate: string | null;  // YYYY-MM-DD 또는 null
 }
 
 export interface Certificate {
   id?: number;
   name: string;
-  acquiredDate: string;  // 🔥 FIXED: YYYY-MM-DD 형식
+  acquiredDate: string;  // YYYY-MM-DD
 }
 
 export interface Education {
@@ -28,15 +29,15 @@ export interface Language {
   languageName: string;
   grade: string;
   speakingLevel: string;
-  testDate: string;  // 🔥 FIXED: YYYY-MM-DD 형식
+  testDate: string;  // YYYY-MM-DD
 }
 
 export interface OverseasExperience {
   id?: number;
   type: string;
   country: string;
-  startDate: string;  // 🔥 FIXED: YYYY-MM-DD 형식
-  endDate: string;  // 🔥 FIXED: YYYY-MM-DD 형식
+  startDate: string;  // YYYY-MM-DD
+  endDate: string;  // YYYY-MM-DD
   note: string;
 }
 
@@ -45,7 +46,6 @@ export interface ResumeSkill {
   name: string;
 }
 
-// 🔥 NEW: 자기소개서 항목별 DTO
 export interface CoverLetterDescriptionRequest {
   description: string;
   resumeId: number;
@@ -57,9 +57,9 @@ export interface CoverLetterDescriptionResponse {
   description: string;
   resumeId: number;
   coverLetterId: number;
+  coverLetterTitle: string;
 }
 
-// 🔥 이력서 생성 요청 DTO
 export interface ResumeCreateRequest {
   description: string;
   jobPostingId: number;
@@ -71,7 +71,6 @@ export interface ResumeCreateRequest {
   resumeSkills?: ResumeSkill[];
 }
 
-// 🔥 이력서 수정 요청 DTO
 export interface ResumeUpdateRequest {
   description: string;
   careers?: Career[];
@@ -82,13 +81,16 @@ export interface ResumeUpdateRequest {
   resumeSkills?: ResumeSkill[];
 }
 
-// 🔥 이력서 조회 응답 DTO
 export interface ResumeResponse {
   id: number;
   appliedAt: string;
   description: string;
   jobPostingId: number;
   userId: number;
+  name: string;
+  email: string;
+  phone: string;
+  pdf: PdfResponse | null;
   careers: Career[];
   certificates: Certificate[];
   educations: Education[];
@@ -97,7 +99,16 @@ export interface ResumeResponse {
   resumeSkills: ResumeSkill[];
 }
 
-// 🔥 NEW: BaseResponse 타입 정의
+export interface PdfResponse {
+  id: number;
+  originalFilename: string;
+  savedPath: string;
+  contentType: string;
+  fileSize: number;
+  resumeId: number;
+  fileUrl: string;
+}
+
 export interface BaseResponse<T> {
   isSuccess: boolean;
   code: string;
@@ -105,17 +116,23 @@ export interface BaseResponse<T> {
   result: T;
 }
 
-// 🔥 NEW: 유저 정보 응답 타입
 export interface UserResumeInfo {
   name: string;
   email: string;
   gender: string;
   phone: string;
-  birth: string;  // YYYY-MM-DD 형식
+  birth: string;  // YYYY-MM-DD
 }
 
 export interface CoverLetterTitle {
   id: number;
   title: string;
-  subTitle: string;  // 🔥 이 속성 추가!
+  subTitle: string;
+}
+
+export interface CoverLetterTitleResponse {
+  id: number;
+  jobPostingId: number;
+  title: string;
+  displayOrder: number;
 }

@@ -21,6 +21,7 @@
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.12.2",
     "lucide-vue-next": "^0.545.0",
+    "pdfjs-dist": "^5.4.394",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.5.0",
     "tailwindcss": "^4.1.13",
