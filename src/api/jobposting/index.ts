@@ -125,21 +125,46 @@ export const getJobById = async (id: number): Promise<ApiResponse> => {
 
   return data
 }
-
-export const getApplicantsList = async (id: number): Promise<ApiResponse> => {
+export const getEditResponse = async (id: number): Promise<ApiResponse> => {
   let data: ApiResponse = {
     success: false,
     code: 0,
     message: '',
-    results: undefined
+    results: undefined,
   }
-  const url = `/api/job-postings/${id}/applicants`
+
+  const url = `/api/job-postings/${id}/edit`
 
   await api
     .get(url)
     .then((res) => {
       console.log(res)
       data = res.data
+    })
+    .catch((error) => {
+      console.log(error)
+      data = error.response.data as ApiResponse
+    })
+
+  return data
+}
+
+
+export const updateJobPosting = async (id: number, payload: any): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined
+  }
+
+  const url = `/api/job-postings/${id}`
+
+  await api
+    .patch(url, payload)
+    .then((res) => {
+      console.log(res)
+      data = res.data as ApiResponse
     })
     .catch((error) => {
       console.log(error)

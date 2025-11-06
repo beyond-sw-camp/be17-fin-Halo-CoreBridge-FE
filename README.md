@@ -197,6 +197,10 @@
 
 </details>
 
+# CI / CD 계획서 & 통합 테스트 결과서
+
+[CI / CD 계획서 & 통합 테스트 결과서 바로가기](https://github.com/beyond-sw-camp/be17-fin-Halo-CoreBridge-FE/wiki/4.-%EC%8B%9C%EC%8A%A4%ED%85%9C-%ED%86%B5%ED%95%A9)
+
 ---
 
 # 프로젝트 기획과 설계

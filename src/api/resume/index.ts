@@ -12,6 +12,30 @@ import type {
 // Resume API (기존 - 하위 호환성 유지)
 // ============================================
 
+export const getApplicantsList = async (id: number): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined
+  }
+  const url = `/api/jobposts/${id}/applies`
+
+  await api
+    .get(url)
+    .then((res) => {
+      console.log(res)
+      data = res.data
+    })
+    .catch((error) => {
+      console.log(error)
+      data = error.response.data as ApiResponse
+    })
+
+  return data
+}
+
+
 export const createResume = async (
   resumeData: ResumeCreateRequest,
   jobpostId: number,

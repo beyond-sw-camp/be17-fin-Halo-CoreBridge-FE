@@ -123,7 +123,15 @@ const router = createRouter({
     {
       path: '/job-posting/create',
       name: 'jobPostingCreate',
-      component: () => import('@/views/jobposting/JobPostingCreateView.vue'),
+      component: () => import('@/views/jobposting/JobCreateView.vue'),
+      meta: {
+        role: [ROLES.RECRUITER, ROLES.ADMIN],
+      },
+    },
+    {
+      path: '/job-posting/:id/edit',
+      name: 'jobPostingEdit',
+      component: () => import('@/views/jobposting/JobEditView.vue'),
       meta: {
         role: [ROLES.RECRUITER, ROLES.ADMIN],
       },
