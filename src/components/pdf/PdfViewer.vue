@@ -45,10 +45,7 @@ import * as pdfjsLib from 'pdfjs-dist'
 import { downloadPdfV2, viewPdfV2 } from '@/api/resume'
 
 // PDF.js Worker 설정
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.mjs',
-  import.meta.url
-).toString()
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/assets/pdf.worker.mjs'
 
 interface Props {
   resumeId: number
@@ -269,8 +266,13 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
