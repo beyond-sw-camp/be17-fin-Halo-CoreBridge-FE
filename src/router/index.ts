@@ -179,13 +179,14 @@ const router = createRouter({
       ],
     },
     {
-      path: '/applicantdetail',
+      path: '/jobposts/:jobpostId/applies/:resumeId',
       name: 'applicantdetail',
       component: () => import('@/views/applicantdetail/ApplicantDetailView.vue'),
       meta: {
         requiresAuth: true,
         role: [ROLES.ADMIN, ROLES.RECRUITER, ROLES.INTERVIEWER],
       },
+      props: true,
       children: [
         {
           path: '',
