@@ -104,7 +104,7 @@ const tabs = ref<Tab[]>([
   { id: 1, path: url + route.params.id, name: '공고 정보' },
   { id: 2, path: url + route.params.id + '/manage', name: '지원자 관리' },
   { id: 3, path: url + route.params.id + '/applicants', name: '지원자 목록' },
-  { id: 4, path: url + route.params.id + '/schedule', name: '채용 일정' },
+  { id: 4, path: url + route.params.id + '/schedules', name: '채용 일정' },
   { id: 5, path: url + route.params.id + '/process', name: '프로세스 설정' },
 ])
 

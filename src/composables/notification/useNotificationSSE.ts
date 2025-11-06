@@ -3,8 +3,8 @@ import { ref } from 'vue'
 import type { NotificationItem } from '../../types/notification/notification'
 
 // 설정
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-const SSE_URL = `${API_BASE_URL}/notifications/subscribe`
+// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+const SSE_URL = `/api/notifications/subscribe`
 const LS_KEY = 'halo_notifications'
 const MAX_ITEMS = 30
 

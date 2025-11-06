@@ -445,7 +445,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { CalendarPlus, X, Check, Repeat, Calendar, Info } from 'lucide-vue-next'
+import { CalendarPlus, X, Check, Repeat, Calendar, Info, CalendarDays } from 'lucide-vue-next'
 
 // Props
 interface TeamMember {
@@ -501,6 +501,7 @@ const timeOptions = computed(() => {
 
 // Form data
 const formData = ref({
+  id: null as number | null,
   type: '',
   title: '',
   position: '',
@@ -641,7 +642,7 @@ const saveSchedule = () => {
   
   emit('save', {
     ...formData.value,
-    id: props.editingId
+    id: props.editingId || formData.value.id || null
   })
   
   resetForm()
@@ -649,6 +650,7 @@ const saveSchedule = () => {
 
 const resetForm = () => {
   formData.value = {
+    id: null,
     type: '',
     title: '',
     position: '',
@@ -693,6 +695,9 @@ const getScheduleTypeLabel = (type: string) => {
 // Watch for initial data (edit mode)
 watch(() => props.initialData, (data) => {
   if (data) {
+    console.log('🟨 initialData loaded:', data)
+console.log('🟨 editingId:', props.editingId)
+
     formData.value = { 
       ...formData.value,
       ...data 

@@ -1,31 +1,186 @@
-import type { Schedule, NewSchedule, TeamMember } from '../../../types/schedules/process/process'
+import api from '@/plugins/axiosInterceptor'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+const BASE_URL = (jobPostingId: number) => `/api/recruiter/jobs/${jobPostingId}/schedules`
 
-async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  })
-  if (!response.ok) throw new Error(`API Error: ${response.statusText}`)
-  return response.json()
+// ===== 기본 CRUD =====
+
+/** 일정 목록 조회 */
+export const getJobProcesses = async (
+  jobPostingId: number,
+  params?: Record<string, any>
+): Promise<ApiResponse<any[]>> => {
+  try {
+    const res = await api.get(BASE_URL(jobPostingId), { params: params || {} })
+
+    return res.data
+  } catch (err: any) {
+    return {
+      success: false,
+      code: err.response?.status || 500,
+      message: '일정 목록을 불러오는데 실패했습니다.',
+      results: []
+    }
+  }
 }
 
-// Schedule API
-export const getSchedules = (params?: any): Promise<Schedule[]> => {
-  const queryParams = new URLSearchParams()
-  if (params) Object.entries(params).forEach(([key, value]) => { if (value) queryParams.append(key, String(value)) })
-  const query = queryParams.toString()
-  return fetchAPI<Schedule[]>(`/schedules${query ? `?${query}` : ''}`)
+/** 일정 상세 조회 */
+export const getJobProcessById = async (
+  jobPostingId: number,
+  id: number
+): Promise<ApiResponse<any>> => {
+  try {
+    const res = await api.get(`${BASE_URL(jobPostingId)}/${id}`)
+    return res.data
+  } catch (err: any) {
+    return {
+      success: false,
+      code: err.response?.status || 500,
+      message: '일정을 불러오는데 실패했습니다.',
+      results: null
+    }
+  }
 }
 
-export const getScheduleById = (id: number): Promise<Schedule> => fetchAPI<Schedule>(`/schedules/${id}`)
-export const createSchedule = (schedule: NewSchedule): Promise<Schedule> => fetchAPI<Schedule>('/schedules', { method: 'POST', body: JSON.stringify(schedule) })
-export const updateSchedule = (id: number, schedule: Partial<NewSchedule>): Promise<Schedule> => fetchAPI<Schedule>(`/schedules/${id}`, { method: 'PUT', body: JSON.stringify(schedule) })
-export const deleteSchedule = (id: number): Promise<void> => fetchAPI<void>(`/schedules/${id}`, { method: 'DELETE' })
-export const shareSchedule = (scheduleId: number, memberIds: number[], permission: 'view' | 'edit'): Promise<void> => fetchAPI<void>(`/schedules/${scheduleId}/share`, { method: 'POST', body: JSON.stringify({ memberIds, permission }) })
-export const shareMultipleSchedules = (scheduleIds: number[], memberIds: number[], permission: 'view' | 'edit', message?: string): Promise<void> => fetchAPI<void>('/schedules/share/bulk', { method: 'POST', body: JSON.stringify({ scheduleIds, memberIds, permission, message }) })
+/** 일정 생성 */
+export const createJobProcess = async (
+  jobPostingId: number,
+  payload: {
+    scheduleType: string
+    title: string
+    candidateName?: string
+    position?: string
+    startDate: string
+    endDate: string
+    startTime: string
+    endTime: string
+    location?: string
+    priority: string
+    interviewer?: string
+    notes?: string
+    status?: string
+    assignedTo: number
+  }
+): Promise<ApiResponse<any>> => {
+  try {
+    const res = await api.post(BASE_URL(jobPostingId), payload)
+    return res.data
+  } catch (err: any) {
+    return {
+      success: false,
+      code: err.response?.status || 500,
+      message: '일정 생성에 실패했습니다.',
+      results: null
+    }
+  }
+}
 
-// Team API
-export const getTeamMembers = (): Promise<TeamMember[]> => fetchAPI<TeamMember[]>('/team/members')
-export const getTeamMemberById = (id: number): Promise<TeamMember> => fetchAPI<TeamMember>(`/team/members/${id}`)
+/** 일정 수정 */
+export const updateJobProcess = async (
+  jobPostingId: number,
+  id: number,
+  payload: Partial<{
+    scheduleType: string
+    title: string
+    candidateName: string
+    position: string
+    startDate: string
+    endDate: string
+    startTime: string
+    endTime: string
+    location: string
+    priority: string
+    interviewer: string
+    notes: string
+    status: string
+    assignedTo: number
+  }>
+): Promise<ApiResponse<any>> => {
+  try {
+    const res = await api.put(`${BASE_URL(jobPostingId)}/${id}`, payload)
+    return res.data
+  } catch (err: any) {
+    return {
+      success: false,
+      code: err.response?.status || 500,
+      message: '일정 수정에 실패했습니다.',
+      results: null
+    }
+  }
+}
+
+/** 일정 삭제 */
+export const deleteJobProcess = async (
+  jobPostingId: number,
+  id: number
+): Promise<ApiResponse<void>> => {
+  try {
+    const res = await api.delete(`${BASE_URL(jobPostingId)}/${id}`)
+    return res.data
+  } catch (err: any) {
+    return {
+      success: false,
+      code: err.response?.status || 500,
+      message: '일정 삭제에 실패했습니다.',
+      results: undefined
+    }
+  }
+}
+
+// ===== 공유 기능 =====
+
+/** 단건 일정 공유 */
+export const shareJobProcess = async (
+  jobPostingId: number,
+  scheduleId: number,
+  userIds: number[]
+): Promise<ApiResponse<void>> => {
+  try {
+    const res = await api.post(`${BASE_URL(jobPostingId)}/${scheduleId}/share`, { userIds })
+    return res.data
+  } catch (err: any) {
+    return {
+      success: false,
+      code: err.response?.status || 500,
+      message: '일정 공유에 실패했습니다.',
+      results: undefined
+    }
+  }
+}
+
+/** 일정 상태 변경 */
+export const updateJobProcessStatus = async (
+  jobPostingId: number,
+  id: number,
+  status: string
+): Promise<ApiResponse<any>> => {
+  try {
+    const res = await api.patch(`${BASE_URL(jobPostingId)}/${id}/status`, { status })
+    return res.data
+  } catch (err: any) {
+    return {
+      success: false,
+      code: err.response?.status || 500,
+      message: '상태 변경에 실패했습니다.',
+      results: null
+    }
+  }
+}
+
+/** 여러 일정 공유 */
+export const bulkShareJobProcess = async (
+  jobPostingId: number,
+  scheduleIds: number[],
+  userIds: number[]
+): Promise<ApiResponse<void>> => {
+  try {
+    const res = await api.post(`${BASE_URL(jobPostingId)}/bulk/share`, { scheduleIds, userIds })
+    return res.data
+  } catch (err: any) {
+    return {
+      success: false,
+      code: err.response?.status || 500,
+      message: '일정 일괄 공유에 실패했습니다.',
+      results: undefined
+    }
+  }
+}
