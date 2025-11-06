@@ -222,21 +222,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Plus, Share2, ChevronLeft, ChevronRight, CalendarDays, Calendar, Clock, AlertCircle, Users, Check, UserCheck, MapPin, FileText, Briefcase, UserCircle2, Handshake, Rocket, Activity, FileCheck,  GraduationCap, Heart, UsersRound, PartyPopper } from 'lucide-vue-next'
+import { useRoute } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { Plus, Share2, ChevronLeft, ChevronRight, CalendarDays, Calendar, Clock, AlertCircle, Users, Check, UserCheck, MapPin, FileText, Briefcase, UserCircle2, Handshake, Rocket, Activity, FileCheck, GraduationCap, Heart, UsersRound, PartyPopper } from 'lucide-vue-next'
 import JobProcessScheduleCreate from './JobProcessSchedule_Create.vue'
 import JobProcessScheduleShare from './JobProcessSchedule_Share.vue'
 import ScheduleDetailModal from './JobProcessSchedule_Detail.vue'
+import { getJobProcesses, createJobProcess, updateJobProcess, deleteJobProcess as deleteJobProcessApi, bulkShareJobProcess } from '@/api/schedules/process/process'
+
+const route = useRoute()
+const jobPostingId = Number(route.params.id)
 
 const weekDays = ['일', '월', '화', '수', '목', '금', '토']
 const searchQuery = ref('')
 const filters = ref({ type: '', position: '', status: '', date: '', sharedWith: '' })
+const isLoading = ref(false)
 
-const schedules = ref([
-  { id: 1, type: 'document_review', candidateId: 1001, candidateName: '김지원', position: '프론트엔드 개발자', date: '2025-10-18', endDate: '2025-10-20', time: '10:00 - 12:00', location: '온라인 검토', priority: 'medium', status: 'scheduled', interviewer: '인사팀', stage: '서류 전형', notes: '5년차 경력, React 전문가', sharedWith: [1, 2, 5] },
-  { id: 2, type: 'interview_1', candidateId: 1003, candidateName: '이민호', position: '백엔드 개발자', date: '2025-10-16', endDate: '2025-10-16', time: '10:00 - 11:00', location: 'Zoom', priority: 'medium', status: 'scheduled', interviewer: '개발팀 리드', stage: '1차 기술 면접', notes: 'Node.js, AWS 경험 보유', sharedWith: [1, 2] },
-  { id: 3, type: 'interview_1', candidateId: 1004, candidateName: '정수아', position: '프론트엔드 개발자', date: '2025-10-16', endDate: '2025-10-18', time: '14:00 - 15:00', location: '3층 회의실 A', priority: 'high', status: 'scheduled', interviewer: 'CTO, 개발팀 리드', stage: '1차 기술 면접', notes: '대기업 출신, Vue.js 전문', sharedWith: [1, 2, 3] }
-])
+const schedules = ref<any[]>([])
 
 const teamMembers = ref([
   { id: 1, name: '김현수', role: 'CTO', department: '개발팀', email: 'kim@company.com' },
@@ -284,9 +286,40 @@ const selectedDateRange = ref<{ start: string | null; end: string | null }>({ st
 const currentDate = ref(new Date())
 const selectedDate = ref(new Date())
 
-// 더블클릭 방지를 위한 타이머
-let clickTimer: number | null = null
-const clickDelay = 250 // 밀리초
+// API: 일정 목록 불러오기
+const fetchSchedules = async () => {
+  isLoading.value = true
+  try {
+    const response = await getJobProcesses(jobPostingId)
+    if (response.success && response.results) {
+      // API 응답 데이터를 프론트엔드 형식으로 변환
+      schedules.value = response.results.map((item: any) => ({
+        id: item.id,
+        type: item.scheduleType,
+        candidateId: item.candidateId,
+        candidateName: item.candidateName || item.title,
+        title: item.title,
+        position: item.position || '',
+        date: item.startDate,
+        endDate: item.endDate || item.startDate,
+        time: `${item.startTime || '00:00'} - ${item.endTime || '23:59'}`,
+        location: item.location || '',
+        priority: item.priority || 'medium',
+        status: item.status || 'scheduled',
+        interviewer: item.interviewer || '',
+        stage: item.stage || getScheduleTypeLabel(item.scheduleType),
+        notes: item.notes || '',
+        sharedWith: item.sharedUserIds || []
+      }))
+    }
+
+  } catch (error) {
+    console.error('일정 불러오기 실패:', error)
+    alert('일정을 불러오는데 실패했습니다.')
+  } finally {
+    isLoading.value = false
+  }
+}
 
 // Computed
 const currentYearMonth = computed(() => {
@@ -548,6 +581,8 @@ const editSchedule = (scheduleId: number) => {
   const schedule = schedules.value.find(s => s.id === scheduleId)
   if (schedule) {
     editingScheduleId.value = scheduleId
+    console.log('🧩 editScheduleId set to:', editingScheduleId.value)
+
     editingScheduleData.value = { 
       type: schedule.type,
       title: schedule.candidateName || schedule.title,
@@ -571,14 +606,25 @@ const editScheduleFromDetail = (scheduleId: number) => {
   editSchedule(scheduleId)
 }
 
-const deleteSchedule = (scheduleId: number) => {
+const deleteSchedule = async (scheduleId: number) => {
   const confirmed = confirm('정말 이 일정을 삭제하시겠습니까?')
   if (confirmed) {
-    const index = schedules.value.findIndex(s => s.id === scheduleId)
-    if (index !== -1) {
-      schedules.value.splice(index, 1)
-      closeDetailModal()
-      alert('일정이 삭제되었습니다.')
+    try {
+      const response = await deleteJobProcess(jobPostingId, scheduleId)
+
+      if (response.success) {
+        const index = schedules.value.findIndex(s => s.id === scheduleId)
+        if (index !== -1) {
+          schedules.value.splice(index, 1)
+        }
+        closeDetailModal()
+        alert('일정이 삭제되었습니다.')
+      } else {
+        alert(response.message || '일정 삭제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('일정 삭제 실패:', error)
+      alert('일정 삭제 중 오류가 발생했습니다.')
     }
   }
 }
@@ -594,66 +640,78 @@ const viewScheduleDetail = (scheduleId: number) => {
   }
 }
 
-const handleSaveSchedule = (scheduleData: any) => {
-  console.log('저장할 일정:', scheduleData)
+const handleSaveSchedule = async (scheduleData: any) => {
+  try {
+    const id = scheduleData.id || editingScheduleId.value
+    const makePayload = (d: any) => ({
+      scheduleType: d.type,
+      title: d.title,
+      candidateName: d.title,
+      position: d.position ?? '',
+      startDate: d.startDate,
+      endDate: d.endDate,
+      startTime: d.startTime ?? '00:00',
+      endTime: d.endTime ?? '23:59',
+      location: d.location ?? '',
+      priority: d.priority,
+      interviewer: d.interviewer ?? '',
+      notes: d.notes ?? '',
+      status: d.status ?? 'scheduled',
+      assignedTo: 1
+    })
 
-  if (scheduleData.isRecurring) {
-    // 반복 일정 생성 로직
-    const recurringSchedules = generateRecurringSchedules(scheduleData)
-    schedules.value.push(...recurringSchedules)
-    alert(`${recurringSchedules.length}개의 반복 일정이 생성되었습니다!`)
-  } else {
-    if (scheduleData.id) {
-      // 수정
-      const index = schedules.value.findIndex(s => s.id === scheduleData.id)
-      if (index !== -1) {
-        schedules.value[index] = {
-          ...schedules.value[index],
-          type: scheduleData.type,
-          candidateName: scheduleData.title,
-          title: scheduleData.title,
-          position: scheduleData.position || '',
-          date: scheduleData.startDate,
-          endDate: scheduleData.endDate,
-          time: `${scheduleData.startTime || '00:00'} - ${scheduleData.endTime || '23:59'}`,
-          location: scheduleData.location || '',
-          priority: scheduleData.priority,
-          interviewer: scheduleData.interviewer || '',
-          notes: scheduleData.notes || '',
-          status: scheduleData.status
-        }
-        alert('일정이 수정되었습니다!')
+    // ✅ 반복 일정 처리
+    if (scheduleData.isRecurring) {
+      const recurringSchedules = generateRecurringSchedules(scheduleData)
+      for (const recur of recurringSchedules) {
+        const payload = makePayload({
+          ...recur,
+          startDate: recur.date,
+          endDate: recur.endDate,
+          startTime: recur.time.split(' - ')[0],
+          endTime: recur.time.split(' - ')[1],
+        })
+        await createJobProcess(jobPostingId, payload)
       }
-    } else {
-      // 새로 생성
-      const newId = Math.max(...schedules.value.map(s => s.id), 0) + 1
-      const newSchedule = {
-        id: newId,
-        type: scheduleData.type,
-        candidateId: newId + 1000,
-        candidateName: scheduleData.title,
-        title: scheduleData.title,
-        position: scheduleData.position || '',
-        date: scheduleData.startDate,
-        endDate: scheduleData.endDate,
-        time: `${scheduleData.startTime || '00:00'} - ${scheduleData.endTime || '23:59'}`,
-        location: scheduleData.location || '',
-        priority: scheduleData.priority,
-        status: 'scheduled',
-        interviewer: scheduleData.interviewer || '',
-        stage: getScheduleTypeLabel(scheduleData.type),
-        notes: scheduleData.notes || '',
-        sharedWith: []
-      }
-
-      schedules.value.push(newSchedule)
-      alert('일정이 생성되었습니다!')
+      alert(`${recurringSchedules.length}개의 반복 일정이 생성되었습니다!`)
+      await fetchSchedules()
+      closeAddModal()
+      return
     }
-  }
 
-  editingScheduleData.value = null
-  closeAddModal()
+    // ✅ 수정 (id 존재 시)
+    if (id) {
+      const payload = makePayload(scheduleData)
+      console.log('🟦 UPDATE MODE:', id, payload)
+      const response = await updateJobProcess(jobPostingId, id, payload)
+      if (!response.success) {
+        alert(response.message ?? '일정 수정 실패')
+        return
+      }
+      alert('일정이 수정되었습니다!')
+      await fetchSchedules()
+      closeAddModal()
+      return
+    }
+
+    // ✅ 신규 등록 (id 없음)
+    const payload = makePayload(scheduleData)
+    const response = await createJobProcess(jobPostingId, payload) // ✅ 수정 포인트!!
+    if (!response.success) {
+      alert(response.message ?? '일정 생성 실패')
+      return
+    }
+
+    alert('일정이 생성되었습니다!')
+    await fetchSchedules()
+    closeAddModal()
+  } catch (err) {
+    console.error(err)
+    alert('일정 저장 중 오류 발생')
+  }
 }
+
+
 
 // 반복 일정 생성 함수
 const generateRecurringSchedules = (scheduleData: any) => {
@@ -667,10 +725,8 @@ const generateRecurringSchedules = (scheduleData: any) => {
   const endDate = pattern.endType === 'date' ? new Date(pattern.endDate) : null
   
   while (count < maxOccurrences) {
-    // 종료일 체크
     if (endDate && currentDate > endDate) break
     
-    // 요일 체크 (주간 반복일 때)
     let shouldInclude = true
     if (pattern.frequency === 'weekly' && pattern.daysOfWeek.length > 0) {
       shouldInclude = pattern.daysOfWeek.includes(currentDate.getDay())
@@ -678,12 +734,9 @@ const generateRecurringSchedules = (scheduleData: any) => {
     
     if (shouldInclude) {
       const dateStr = currentDate.toISOString().split('T')[0]
-      const newId = Math.max(...schedules.value.map(s => s.id), 0) + generatedSchedules.length + 1
       
       generatedSchedules.push({
-        id: newId,
         type: scheduleData.type,
-        candidateId: newId + 1000,
         candidateName: scheduleData.title,
         title: scheduleData.title,
         position: scheduleData.position || '',
@@ -702,7 +755,6 @@ const generateRecurringSchedules = (scheduleData: any) => {
       count++
     }
     
-    // 다음 날짜 계산
     if (pattern.frequency === 'daily') {
       currentDate.setDate(currentDate.getDate() + pattern.interval)
     } else if (pattern.frequency === 'weekly') {
@@ -713,26 +765,34 @@ const generateRecurringSchedules = (scheduleData: any) => {
       currentDate.setFullYear(currentDate.getFullYear() + pattern.interval)
     }
     
-    // 무한루프 방지
     if (count > 1000) break
   }
   
   return generatedSchedules
 }
 
-const handleConfirmShare = (data: any) => {
-  console.log('공유 데이터:', data)
-
-  data.schedules.forEach((scheduleId: number) => {
-    const schedule = schedules.value.find(s => s.id === scheduleId)
-    if (schedule) {
-      const existingShares = schedule.sharedWith || []
-      schedule.sharedWith = [...new Set([...existingShares, ...data.members])]
+const handleConfirmShare = async (data: any) => {
+  try {
+    const response = await bulkShareJobProcess(data.schedules, data.members)
+    
+    if (response.success) {
+      data.schedules.forEach((scheduleId: number) => {
+        const schedule = schedules.value.find(s => s.id === scheduleId)
+        if (schedule) {
+          const existingShares = schedule.sharedWith || []
+          schedule.sharedWith = [...new Set([...existingShares, ...data.members])]
+        }
+      })
+      
+      alert(`${data.schedules.length}개 일정을 ${data.members.length}명에게 공유했습니다!`)
+      closeShareModal()
+    } else {
+      alert(response.message || '일정 공유에 실패했습니다.')
     }
-  })
-
-  alert(`${data.schedules.length}개 일정을 ${data.members.length}명에게 공유했습니다!`)
-  closeShareModal()
+  } catch (error) {
+    console.error('일정 공유 실패:', error)
+    alert('일정 공유 중 오류가 발생했습니다.')
+  }
 }
 
 // Helper functions
@@ -783,13 +843,6 @@ const SCHEDULE_TYPE_BORDER_COLORS: Record<ScheduleType, string> = {
   meeting: 'border-yellow-500 bg-yellow-50', event: 'border-emerald-500 bg-emerald-50'
 }
 
-const POSITION_MAP: Record<string, string> = {
-  frontend: '프론트엔드 개발자', backend: '백엔드 개발자', fullstack: '풀스택 개발자',
-  designer: 'UX/UI 디자이너', pm: '프로덕트 매니저', marketing: '마케팅', sales: '영업'
-}
-
-const WEEK_DAYS = ['일', '월', '화', '수', '목', '금', '토']
-
 // 유틸리티 함수들
 const getScheduleColorClass = (schedule: any) => {
   if (schedule.priority === 'high') return 'bg-red-100 text-red-700 font-semibold'
@@ -820,4 +873,8 @@ const getValueColorClass = (color: string, isAlert: boolean) => {
   return classes[color] || 'text-gray-900'
 }
 
+// 초기 데이터 로드
+onMounted(() => {
+  fetchSchedules()
+})
 </script>

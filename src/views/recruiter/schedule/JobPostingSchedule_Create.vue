@@ -414,6 +414,7 @@ const timeOptions = computed(() => {
 
 // Form data
 const formData = ref({
+  id: null as number | null,
   title: '',
   position: '',
   department: '',
@@ -497,30 +498,32 @@ const closeModal = () => {
 
 const saveJob = () => {
   showValidation.value = true
-  
-  if (!isFormValid.value) {
-    return
-  }
-  
-  // Calculate days left and urgent status
+
+  if (!isFormValid.value) return
+
   const calculatedDaysLeft = daysLeft.value || 0
   const isUrgent = formData.value.isUrgent || calculatedDaysLeft <= 7
-  
-  emit('save', {
+
+  // ✅ id를 명시적으로 props에서 우선 가져오고, 로그로 확인
+  const payload = {
     ...formData.value,
-    id: props.editingId,
+    id: props.editingId ?? formData.value.id ?? null,
     daysLeft: calculatedDaysLeft,
     isUrgent,
-    applicants: props.editingId ? undefined : 0, // 새 공고는 지원자 0명
+    applicants: props.editingId ? undefined : 0,
     progress: props.editingId ? undefined : 0,
     screening: props.editingId ? undefined : 0,
     interview1: props.editingId ? undefined : 0,
     interview2: props.editingId ? undefined : 0,
     final: props.editingId ? undefined : 0
-  })
-  
+  }
+
+  console.log('🟦 [saveJob] payload before emit:', payload) // ✅ 디버깅용 로그
+
+  emit('save', payload)
   resetForm()
 }
+
 
 const resetForm = () => {
   formData.value = {
@@ -557,15 +560,23 @@ const calculateDaysDifference = (postedDate: string, deadline: string): number =
 }
 
 // Watch for initial data (edit mode)
-watch(() => props.initialData, (data) => {
-  if (data) {
-    // 기존 데이터가 있으면 모든 필드 업데이트
-    formData.value = { 
-      ...formData.value,
-      ...data 
+// Watch for both initial data and editingId (edit mode)
+watch(
+  () => [props.initialData, props.editingId],
+  ([data, id]) => {
+    if (data) {
+      console.log('🟨 initialData loaded:', data)
+      console.log('🟨 editingId:', id)
+      formData.value = { 
+        ...formData.value,
+        ...data,
+        id: id ?? data.id ?? null   // ✅ id도 같이 세팅
+      }
     }
-  }
-}, { immediate: true, deep: true })
+  },
+  { immediate: true, deep: true }
+)
+
 
 // Watch showModal to reset or apply initial data
 watch(() => props.showModal, (isOpen) => {

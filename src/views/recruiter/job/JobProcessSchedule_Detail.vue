@@ -214,8 +214,7 @@
 import { computed } from 'vue'
 import { 
   X, Calendar, Clock, MapPin, UserCircle2, Share2, UserCheck, FileText, 
-  Briefcase, Activity, Info, Edit, Trash2, CheckSquare,
-  FileCheck, Users, Handshake, Rocket, Check
+  Briefcase, Activity, Info, Edit, Trash2, CheckSquare
 } from 'lucide-vue-next'
 
 // Props
@@ -308,15 +307,15 @@ const getTeamMemberName = (memberId: number) => {
 
 const getScheduleIcon = (type: string) => {
   const iconMap: Record<string, any> = {
-    document_review: FileCheck,
+    document_review: FileText,
     interview_1: UserCircle2,
-    interview_2: Users,
+    interview_2: UserCircle2,
     interview_final: Briefcase,
-    negotiation: Handshake,
-    onboarding_prep: Rocket,
+    negotiation: UserCircle2,
+    onboarding_prep: FileText,
     onboarding: Activity,
-    follow_up: Check,
-    meeting: Users,
+    follow_up: UserCircle2,
+    meeting: UserCircle2,
     event: Calendar
   }
   return iconMap[type] || Calendar

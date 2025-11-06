@@ -390,6 +390,7 @@
                     <Calendar class="w-3 h-3" />
                     {{ job.postedDate }} ~ {{ job.deadline }}
                   </p>
+                  <p class="flex items-center gap-1"><Clock class="w-3 h-3" />{{ job.time }}</p>
                   <p class="flex items-center gap-1">
                     <Users class="w-3 h-3" />
                     지원자: {{ job.applicants }}명
@@ -411,6 +412,7 @@
                 </div>
               </div>
             </div>
+
             <div v-else class="text-center py-6 text-gray-500 text-sm">
               선택한 날짜에 공고가 없습니다
             </div>
@@ -469,7 +471,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { 
   Plus, Share2, ChevronLeft, ChevronRight, CalendarDays, Calendar, Clock, 
   AlertCircle, Users, Check, Briefcase, FileText, Filter, X, Search, 
@@ -558,9 +560,9 @@ const handleSaveJob = async (jobData: any) => {
 //   }
 // }
 
-// onMounted(() => {
-//   fetchJobPostings()
-// })
+onMounted(() => {
+  fetchJobPostings()
+})
 
 
 // Constants
@@ -762,6 +764,7 @@ const availableJobs = computed(() => {
     experience: j.experience,
     daysLeft: j.daysLeft,
     applicants: j.applicants,
+    time: j.time,
     isUrgent: j.isUrgent
   }))
 })
@@ -917,9 +920,11 @@ const resetFilters = () => {
   searchQuery.value = ''
 }
 
-const openAddJobModal = () => {
-  editingJobId.value = null
-  // editingJobData는 초기화하지 않음 (endDrag에서 설정한 값 유지)
+const openAddJobModal = (opts?: { mode?: 'create' | 'edit' }) => {
+  if (opts?.mode !== 'edit') {
+    editingJobId.value = null
+    editingJobData.value = null
+  }
   showAddJobModal.value = true
 }
 
@@ -946,7 +951,7 @@ const shareJob = (jobId: number) => {
   }
 }
 
-const editSchedule = (jobId: number) => {
+const editSchedule = async (jobId: number) => {
   // jobs 목록에서 해당 공고 찾기
   const job = jobs.value.find(j => j.id === jobId)
   if (job) {
@@ -963,6 +968,15 @@ const editSchedule = (jobId: number) => {
       assignedTo: job.assignedTo || null,
       description: job.description || '',
     }
+
+      console.log('🧩 [editSchedule] 호출됨 - jobId:', jobId)
+      console.log('🧩 [editSchedule] editingJobId.value:', editingJobId.value)
+      console.log('🧩 [editSchedule] editingJobData.value:', editingJobData.value)
+
+
+      await nextTick() // ✅ props 전달 보장
+
+
     showAddJobModal.value = true // ✅ 생성/수정 모달 열기
   }
 }
@@ -1063,9 +1077,11 @@ const handleEditFromDetail = (jobId: number) => {
   const job = jobs.value.find(j => j.id === jobId)
   if (job) {
     editingJobId.value = jobId
-    editingJobData.value = { ...job }
+    editingJobData.value = { 
+      id: job.id, 
+      ...job }
     closeDetailModal()
-    openAddJobModal()
+    openAddJobModal({ mode: 'edit' })
   }
 }
 
