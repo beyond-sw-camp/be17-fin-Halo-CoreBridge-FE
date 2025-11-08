@@ -116,6 +116,18 @@ const router = createRouter({
             },
           ],
         },
+        {
+          path: 'accounts',
+          name: 'recruiter-account-layout',
+          component: () => import('@/views/layout/AccountManageLayout.vue'),
+          children: [
+            {
+              path: '',
+              name: 'recruiter-account-management',
+              component: () => import('@/views/recruiter/admin/AccountManageView.vue'),
+            },
+          ],
+        },
       ],
     },
 
