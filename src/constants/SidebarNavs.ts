@@ -1,63 +1,35 @@
 import type { SidebarNavItem } from '@/types/common/SidebarNavItem'
-import {
-  Home,
-  Users,
-  Calendar,
-  MessagesSquare,
-  UserRoundSearch,
-  LayoutList,
-  Building2
-} from 'lucide-vue-next'
+import { Home, Calendar, MessagesSquare, UserRoundSearch, UserRoundCog } from 'lucide-vue-next'
 
-export const recruiterNavs: SidebarNavItem[] = [
+export const navs: SidebarNavItem[] = [
   {
-    path: '/recruiter',
+    path: '/admin',
     label: '대시보드',
-    icon: Home
+    icon: Home,
+    role: ['관리자', '채용 담당자'],
   },
   {
-    path: '/recruiter/jobs',
+    path: '/admin/jobs',
     label: '채용 관리',
-    icon: UserRoundSearch
+    icon: UserRoundSearch,
+    role: ['관리자', '채용 담당자'],
   },
   {
-    path: '/recruiter/interviews',
+    path: '/admin/interviews',
     label: '면접 관리',
     icon: MessagesSquare,
-    children: [
-      {
-        path: '/recruiter/interviews',
-        label: '면접 목록',
-        icon: LayoutList
-      },
-      {
-        path: '/recruiter/interviews/interviewers',
-        label: '면접관 관리',
-        icon: Users
-      },
-      {
-        path: '/recruiter/interviews/rooms',
-        label: '면접실 관리',
-        icon: Building2
-      }
-    ]
+    role: ['관리자', '채용 담당자'],
   },
   {
-    path: '/recruiter/schedules',
+    path: '/admin/schedules',
     label: '일정 관리',
-    icon: Calendar
-  }
-]
-
-export const adminNavs: SidebarNavItem[] = [
-  {
-    path: '/admin/dashboard',
-    label: '대시보드',
-    icon: Home
+    icon: Calendar,
+    role: ['관리자', '채용 담당자'],
   },
   {
-    path: '/admin/users',
-    label: '회원 관리',
-    icon: Users
-  }
+    path: '/admin/accounts',
+    label: '계정 관리',
+    icon: UserRoundCog,
+    role: ['관리자'],
+  },
 ]

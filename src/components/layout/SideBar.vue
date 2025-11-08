@@ -1,28 +1,24 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { adminNavs, recruiterNavs } from '@/constants/SidebarNavs'
+import { navs } from '@/constants/SidebarNavs'
 import { useRoute, useRouter } from 'vue-router'
 import { useSidebarStore } from '@/store/useSidebarStore'
+import { useUserStore } from '@/store/useUserStore'
 
-const sidebarOpen = ref(true)
+const userStore = useUserStore()
 const currentPath = ref('')
 const expandedMenus = ref<Set<string>>(new Set())
 
-const roleTitle = computed(() => (route.path.startsWith('/admin') ? 'Admin' : 'Recruiter'))
-const roleSubtitle = computed(() => (route.path.startsWith('/admin') ? '시스템 관리' : '채용 관리'))
-const roleInitial = computed(() => (route.path.startsWith('/admin') ? 'A' : 'R'))
+const roleTitle = computed(() => (userStore.userInfo.role === '관리자' ? 'Admin' : 'Recruiter'))
+const roleSubtitle = computed(() => (userStore.userInfo.role === '관리자' ? '시스템 관리' : '채용 관리'))
+const roleInitial = computed(() => (userStore.userInfo.role === '관리자' ? 'A' : 'R'))
 
 const route = useRoute()
 const router = useRouter()
 
 const sidebar = useSidebarStore()
 
-// URL 기준으로 메뉴 자동 선택
-const currentNavs = computed(() => {
-  if (route.path.startsWith('/admin')) return adminNavs
-  if (route.path.startsWith('/recruiter')) return recruiterNavs
-  return []
-})
+const currentNavs = ref(navs)
 
 const clickTap = (path: string) => {
   currentPath.value = path
@@ -30,27 +26,13 @@ const clickTap = (path: string) => {
   router.push(path)
 }
 
-// 메뉴 확장/축소
-const toggleMenu = (itemPath: string) => {
-  if (expandedMenus.value.has(itemPath)) {
-    expandedMenus.value.delete(itemPath)
-  } else {
-    expandedMenus.value.add(itemPath)
-  }
-}
-
 // 활성화 확인 (부모 메뉴도 포함)
 const isActive = (navPath: string) => {
   return navPath === sidebar.currentPath
 }
 
-const isParentActive = (item: any) => {
-  if (!item.children) return false
-  return item.children.some((child: any) => child.path === sidebar.currentPath)
-}
-
 onMounted(() => {
-  if (route.path === '/recruiter') {
+  if (route.path === '/admin') {
     sidebar.setPath(route.path)
   }
 
@@ -67,20 +49,17 @@ onMounted(() => {
 </script>
 
 <template>
-  <aside
-    :class="['transition-all h-screen duration-300 ease-in-out bg-white border-slate-200 flex flex-col', sidebarOpen ? 'w-52' : 'w-20']">
+  <aside class="transition-all h-screen duration-300 ease-in-out bg-white border-slate-200 flex flex-col w-52">
     <div class="h-16 flex items-center justify-between px-4 shadow-md">
       <div class="flex items-center space-x-3">
         <div
           class="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center shadow-lg">
           <span class="text-white font-bold text-lg">{{ roleInitial }}</span>
         </div>
-        <transition name="fade">
-          <div v-if="sidebarOpen">
-            <h1 class="text-slate-800 font-bold text-lg">{{ roleTitle }}</h1>
-            <p class="text-slate-500 text-xs">{{ roleSubtitle }}</p>
-          </div>
-        </transition>
+        <div>
+          <h1 class="text-slate-800 font-bold text-lg">{{ roleTitle }}</h1>
+          <p class="text-slate-500 text-xs">{{ roleSubtitle }}</p>
+        </div>
       </div>
     </div>
 
@@ -91,9 +70,9 @@ onMounted(() => {
             isActive(item.path)
               ? 'bg-slate-600 text-white shadow-lg'
               : 'text-slate-700 hover:text-slate-900 hover:bg-slate-200 hover:cursor-pointer'
-          ]">
+          ]" v-if="item.role.includes(userStore.userInfo.role)">
           <component :is="item.icon" size="20" class="flex-shrink-0" />
-          <span v-if="sidebarOpen" class="ml-3 font-medium text-sm">{{ item.label }}</span>
+          <span class="ml-3 font-medium text-sm">{{ item.label }}</span>
         </button>
 
       </div>
