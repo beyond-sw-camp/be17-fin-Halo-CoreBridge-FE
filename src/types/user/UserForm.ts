@@ -18,3 +18,16 @@ export interface UserFormErrors {
   verificationCode: string
   terms: string
 }
+
+export interface UserForSystemForm {
+  email: string
+  name: string
+  roleType: string
+}
+
+export interface UserForSystemFormErrors {
+  email: string
+  name: string
+  roleType: string
+  global: string
+}

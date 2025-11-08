@@ -9,7 +9,7 @@ const userStore = useUserStore()
 <template>
     <!-- Header -->
     <header
-        class="h-16 bg-white backdrop-blur-sm  flex items-center justify-end px-6 shadow-md fixed top-0 right-0 z-50 left-52">
+        class="h-16 bg-white backdrop-blur-sm  flex items-center justify-end px-6 shadow-md fixed top-0 right-0 z-40 left-52">
         <!-- <div class="flex items-center flex-1 max-w-xl">
             <div class="relative w-full">
                 <Search size="20" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
