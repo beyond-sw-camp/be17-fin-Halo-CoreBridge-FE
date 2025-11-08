@@ -66,41 +66,40 @@
 
 # 실제 배포 접속 주소
 
-## 프론트 
+## 프론트
 
-* [www.core-bridge.co.kr](https://www.core-bridge.co.kr/jobs)
+- [www.core-bridge.co.kr](https://www.core-bridge.co.kr/jobs)
 
 ## 백엔드
 
-* [api.core-bridge.co.kr](https://api.core-bridge.co.kr)
+- [api.core-bridge.co.kr](https://api.core-bridge.co.kr)
 
 ## URL 정리
 
-* `https://www.core-bridge.co.kr/jobs~` : 모든 권한의 사용자
-* `https://www.core-bridge.co.kr/recruiter/~` : 채용 담당자, 면접관
-* `https://www.core-bridge.co.kr/admin/~` : 관리자
+- `https://www.core-bridge.co.kr/jobs~` : 모든 권한의 사용자
+- `https://www.core-bridge.co.kr/admin/~` : 채용 담당자, 면접관, 관리자
 
 # 테스트 계정
 
 ## 관리자
 
-* ID : `admin01@core-bridge.co.kr`
-* PW : `qwer1234`
+- ID : `admin01@core-bridge.co.kr`
+- PW : `qwer1234`
 
 ## 채용 담당자
 
-* ID : `recruiter01@core-bridge.co.kr`
-* PW : `qwer1234`
+- ID : `recruiter01@core-bridge.co.kr`
+- PW : `qwer1234`
 
 ## 면접관
 
-* ID : `interviewer01@core-bridge.co.kr`
-* PW : `qwer1234`
+- ID : `interviewer01@core-bridge.co.kr`
+- PW : `qwer1234`
 
 ## 지원자
 
-* ID : `lesw1216@gmail.com`
-* PW : `qwer1234`
+- ID : `lesw1216@gmail.com`
+- PW : `qwer1234`
 
 # Back-end
 
@@ -242,7 +241,6 @@
 
 </div>
 </details>
-
 
 # 📑 목차 (Table of Contents)
 
