@@ -99,7 +99,7 @@ interface Tab {
   name: string
 }
 
-const url = '/recruiter/jobs/'
+const url = '/admin/jobs/'
 const tabs = ref<Tab[]>([
   { id: 1, path: url + route.params.id, name: '공고 정보' },
   { id: 2, path: url + route.params.id + '/manage', name: '지원자 관리' },
@@ -139,8 +139,7 @@ const goToEditPage = () => {
               <!-- 제목 / 상태 -->
               <div class="flex items-center gap-3 mb-2">
                 <h2 class="text-2xl font-bold text-slate-800">{{ jobPosting.title }}</h2>
-                <span
-                  :class="[getStatusClass(jobPosting.status), 'px-3 py-1 text-sm rounded-full font-medium']">
+                <span :class="[getStatusClass(jobPosting.status), 'px-3 py-1 text-sm rounded-full font-medium']">
                   {{ jobPosting.status }}
                 </span>
               </div>
@@ -159,21 +158,18 @@ const goToEditPage = () => {
 
                 <div class="flex items-center gap-2">
                   <Briefcase :size="18" />
-                  {{ jobPosting.careerType }} 
+                  {{ jobPosting.careerType }}
                   {{ formatExperience(jobPosting.minExperience, jobPosting.maxExperience) }}
                 </div>
               </div>
 
               <!-- 기술 스택 -->
               <div class="flex gap-2 flex-wrap">
-                <span
-                  v-for="(tech, index) in jobPosting.skills.slice(0, 3)"
-                  :key="index"
+                <span v-for="(tech, index) in jobPosting.skills.slice(0, 3)" :key="index"
                   class="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
                   {{ tech }}
                 </span>
-                <span
-                  v-if="jobPosting.skills.length > 3"
+                <span v-if="jobPosting.skills.length > 3"
                   class="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
                   +{{ jobPosting.skills.length - 3 }}
                 </span>
@@ -223,23 +219,17 @@ const goToEditPage = () => {
       <div class="border-b border-gray-200">
         <div class="flex items-center justify-between w-full h-10">
           <nav class="flex gap-8">
-            <RouterLink
-              v-for="tab in tabs"
-              :key="tab.id"
-              :to="tab.path"
-              :class="[
-                'pb-4 px-1 border-b-2 font-medium transition-colors',
-                isActive(tab)
-                  ? 'border-slate-600 text-slate-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              ]"
-            >
+            <RouterLink v-for="tab in tabs" :key="tab.id" :to="tab.path" :class="[
+              'pb-4 px-1 border-b-2 font-medium transition-colors',
+              isActive(tab)
+                ? 'border-slate-600 text-slate-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            ]">
               {{ tab.name }}
             </RouterLink>
           </nav>
 
-          <button
-            v-if="route.path.includes('/schedule')"
+          <button v-if="route.path.includes('/schedule')"
             class="mb-5 flex-shrink-0 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-sm">
             <Share2 class="w-5 h-5" />
             일정 공유
