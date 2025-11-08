@@ -1,26 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { onMounted, ref } from 'vue'
+import { Search, Plus } from 'lucide-vue-next'
 import AccountDropdown from '@/components/recruiter-dashboard/accounts/AccountDropdown.vue'
 import AccountCreateModal from '@/components/recruiter-dashboard/accounts/AccountCreateModal.vue'
+import adminAPI from '@/api/admin'
+import type { AccountListResponse, AccountParam } from '@/types/user/Account'
+import PaginationComp from '@/components/common/PaginationComp.vue'
 
-interface Account {
-    id: number
-    name: string
-    email: string
-    createAt: string
-    roleType: string
-}
 
-const accounts = ref<Account[]>([])
+const accounts = ref<AccountListResponse>({
+    accounts: [],
+    totalElements: 0,
+    totalPages: 0,
+    currentPage: 0,
+})
 
 const extractInitial = (name: string) => {
-    const names = name.split('')
-    let initials = ''
-    names.forEach(n => {
-        initials += n.charAt(0).toUpperCase()
-    })
-    return initials
+    return name.charAt(0).toUpperCase()
 }
 
 const isOpenModal = ref(false)
@@ -35,10 +31,105 @@ const closeModal = () => {
 const deleteAccount = (id: number) => {
 }
 
+const initAccounts = () => {
+    accounts.value.accounts = []
+    accounts.value.totalElements = 0
+    accounts.value.totalPages = 0
+    accounts.value.currentPage = 0
+}
+
+const setAccounts = (data: AccountListResponse) => {
+    accounts.value.accounts = data.accounts
+    accounts.value.totalElements = data.totalElements
+    accounts.value.totalPages = data.totalPages
+    accounts.value.currentPage = data.currentPage
+}
+
+onMounted(async () => {
+
+    const response = await adminAPI.requestAccounts(req.value)
+    if (response.success) {
+        setAccounts(response.results)
+    } else {
+        initAccounts()
+    }
+})
+
+
+/**
+ * ============================================
+ * 권한 옵션
+ * ============================================
+ */
+
+const roleOptions = ['전체', '채용 담당자', '면접관']
+const selectedRole = ref<string>(roleOptions[0])
+
+const onRoleChange = async (event: Event) => {
+    const target = event.target as HTMLSelectElement
+    selectedRole.value = target.value
+
+    req.value.type = selectedRole.value
+
+    const response = await adminAPI.requestAccounts(req.value)
+
+    if (response.success) {
+        setAccounts(response.results)
+    } else {
+        initAccounts()
+    }
+}
+
+/**
+ * ============================================
+ * 페이지네이션
+ * ============================================
+ */
+const onUpdatePage = async (newPage: number) => {
+
+    req.value.page = newPage - 1
+
+    const response = await adminAPI.requestAccounts(req.value)
+
+    if (response.success) {
+        setAccounts(response.results)
+    } else {
+        initAccounts()
+    }
+}
+
+/**
+ * ============================================
+ * 검색
+ * ============================================
+ */
+
+const searchQuery = ref('')
+
+const onSearch = async () => {
+
+    req.value.search = searchQuery.value
+    req.value.page = 0
+
+    const response = await adminAPI.requestAccounts(req.value)
+
+    if (response.success) {
+        setAccounts(response.results)
+    } else {
+        initAccounts()
+    }
+}
+
+const req = ref<AccountParam>({
+    type: selectedRole.value,
+    page: accounts.value.currentPage,
+    search: searchQuery.value,
+})
+
 </script>
 <template>
     <AccountCreateModal @close="closeModal" :open-modal="isOpenModal" />
-    <div class="min-h-screen ">
+    <div class="min-h-screen flex flex-col">
         <!-- Header -->
         <header class="mb-3">
             <div class="flex items-center justify-between">
@@ -55,32 +146,33 @@ const deleteAccount = (id: number) => {
         </header>
 
         <!-- Content -->
-        <main>
+        <main class="flex-1 flex flex-col">
             <!-- Filters -->
             <div class="bg-white rounded-2xl p-6 border border-slate-200 mb-6">
                 <div class="flex gap-4">
-                    <div class="relative flex-1">
+                    <form class="relative flex-1" @submit.prevent="onSearch">
                         <Search :size="20" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" />
-                        <input type="text" placeholder="이름 또는 이메일로 검색"
+                        <input type="text" placeholder="이름 또는 이메일로 검색" v-model="searchQuery"
                             class="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600 focus:border-transparent transition-all" />
-                    </div>
-                    <select
-                        class="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600 transition-all">
-                        <option>전체</option>
-                        <option>채용 담당자</option>
-                        <option>면접관</option>
+                    </form>
+                    <select v-model="selectedRole" @change="onRoleChange"
+                        class="hover:cursor-pointer px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600 transition-all">
+                        <option v-for="role in roleOptions" :key="role" :value="role">
+                            {{ role }}
+                        </option>
                     </select>
                 </div>
                 <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
                     <p class="text-sm text-slate-600">
-                        총 <span class="font-bold text-slate-800">156</span>개의 계정
+                        총 <span class="font-bold text-slate-800">{{ accounts.totalElements }}</span>개의 계정
                     </p>
                 </div>
             </div>
 
             <!-- account Cards -->
             <div class="flex flex-col space-y-4 mb-8">
-                <div v-for="account in accounts" :key="account.id"
+                <div v-if="accounts.totalElements == 0" class="text-center text-slate-500">등록된 계정이 없습니다.</div>
+                <div v-for="account in accounts.accounts" :key="account.id"
                     class="bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-all ">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-6 flex-1 justify-between">
@@ -92,17 +184,18 @@ const deleteAccount = (id: number) => {
                                     <span class="text-white font-semibold">{{ extractInitial(account.name) }}</span>
                                 </div>
                                 <div>
-                                    <h3 class="font-semibold text-slate-800 mb-1">{{ account.name }} |
-                                        admin01@core-bridge.co.kr</h3>
+                                    <h3 class="font-semibold text-slate-800 mb-1">
+                                        {{ account.name }} | {{ account.email }}
+                                    </h3>
                                     <p class="text-sm text-slate-500">{{ account.roleType }}</p>
                                 </div>
                             </div>
 
                             <!-- account Info -->
-                            <div class="w-44">
-                                <p class="text-sm font-medium text-slate-800 mb-1">등록일</p>
+                            <div>
+                                <p class="font-sm text-slate-800 mb-1">등록일</p>
                                 <!-- Date & Time -->
-                                <p class="text-lg font-bold text-slate-800">{{ account.createAt }}</p>
+                                <p class="text-xs font-bold text-slate-800">{{ account.createdAt }}</p>
                             </div>
                         </div>
 
@@ -114,21 +207,12 @@ const deleteAccount = (id: number) => {
                 </div>
             </div>
 
-            <!-- Pagination -->
-            <div class="mt-8 flex items-center justify-center">
-                <div class="flex items-center space-x-2">
-                    <button class="p-2 hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50" disabled>
-                        <ChevronLeft :size="20" />
-                    </button>
-                    <button class="px-4 py-2 bg-slate-600 text-white rounded-xl font-medium">1</button>
-                    <button class="px-4 py-2 hover:bg-slate-100 rounded-xl font-medium transition-all">2</button>
-                    <button class="px-4 py-2 hover:bg-slate-100 rounded-xl font-medium transition-all">3</button>
-                    <button class="px-4 py-2 hover:bg-slate-100 rounded-xl font-medium transition-all">4</button>
-                    <button class="p-2 hover:bg-slate-100 rounded-xl transition-all">
-                        <ChevronRight :size="20" />
-                    </button>
-                </div>
+            <div class="mt-auto pt-6 mb-3">
+                <!-- Pagination -->
+                <PaginationComp v-if="accounts.totalPages > 1" :total-pages="accounts.totalPages"
+                    :current-page="accounts.currentPage + 1" :group-size="10" @update:current-page="onUpdatePage" />
             </div>
+
         </main>
     </div>
 </template>
