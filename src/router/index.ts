@@ -39,7 +39,7 @@ const router = createRouter({
       component: () => import('@/views/auth/EmailFindView.vue'),
     },
     {
-      path: '/recruiter',
+      path: '/admin',
       name: 'main',
       component: () => import('@/views/layout/DashboardLayout.vue'),
       meta: {
@@ -49,7 +49,7 @@ const router = createRouter({
       children: [
         {
           path: '',
-          name: 'recruiter-dashboard',
+          name: 'admin-dashboard',
           component: () => import('@/views/recruiter/dashboard/RecruiterDashboardView.vue'),
         },
         {
@@ -147,22 +147,6 @@ const router = createRouter({
       component: () => import('@/views/jobposting/JobDetailForApplicant.vue'),
     },
     {
-      path: '/admin',
-      name: 'admin',
-      component: () => import('@/views/layout/DashboardLayout.vue'),
-      meta: {
-        requiresAuth: true,
-        role: [ROLES.ADMIN],
-      },
-      children: [
-        {
-          path: '',
-          name: 'admin-dashboard',
-          component: () => import('@/views/admin/AdminMainView.vue'),
-        },
-      ],
-    },
-    {
       path: '/jobposts/:jobpostId/applies',
       name: 'resumelayout',
       component: () => import('@/views/layout/ResumeTopLayout.vue'),
@@ -233,12 +217,8 @@ router.beforeEach((to, from, next) => {
 
   // '/' 접근 시 역할별 리다이렉트
   if (to.path === '/') {
-    if (userRole === ROLES.ADMIN) {
+    if (userRole === ROLES.ADMIN || userRole === ROLES.RECRUITER) {
       return next('/admin')
-    }
-
-    if (userRole === ROLES.RECRUITER) {
-      return next('/recruiter')
     }
 
     if (userRole === ROLES.INTERVIEWER) {
