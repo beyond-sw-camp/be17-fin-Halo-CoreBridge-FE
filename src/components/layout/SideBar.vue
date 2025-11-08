@@ -4,7 +4,7 @@ import { adminNavs, recruiterNavs } from '@/constants/SidebarNavs'
 import { useRoute, useRouter } from 'vue-router'
 import { useSidebarStore } from '@/store/useSidebarStore'
 
-const sidebarOpen = ref(true) 
+const sidebarOpen = ref(true)
 const currentPath = ref('')
 const expandedMenus = ref<Set<string>>(new Set())
 
@@ -86,8 +86,7 @@ onMounted(() => {
 
     <nav class="flex-1 py-6 px-3 gap-3 flex flex-col border-r border-slate-200 shadow-sm overflow-y-auto">
       <div v-for="item in currentNavs" :key="item.path" class="space-y-1">
-        <!-- 자식이 없는 메뉴 -->
-        <button v-if="!item.children" @click="clickTap(item.path)"
+        <button @click="clickTap(item.path)"
           class="w-full flex items-center px-3 py-3 rounded-lg transition-all duration-200" :class="[
             isActive(item.path)
               ? 'bg-slate-600 text-white shadow-lg'
@@ -97,33 +96,6 @@ onMounted(() => {
           <span v-if="sidebarOpen" class="ml-3 font-medium text-sm">{{ item.label }}</span>
         </button>
 
-        <!-- 자식이 있는 메뉴 (드롭다운) -->
-        <div v-else>
-          <button @click="toggleMenu(item.path)"
-            class="w-full flex items-center justify-between px-3 py-3 rounded-lg transition-all duration-200" :class="[
-              isParentActive(item)
-                ? 'bg-slate-100 text-slate-900'
-                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-200 hover:cursor-pointer'
-            ]">
-            <div class="flex items-center">
-              <component :is="item.icon" size="20" class="flex-shrink-0" />
-              <span v-if="sidebarOpen" class="ml-3 font-medium text-sm">{{ item.label }}</span>
-            </div>
-          </button>
-
-          <!-- 자식 메뉴 -->
-          <div class="ml-4 mt-3 space-y-3 border-l-2 border-slate-200 pl-2">
-            <button v-for="child in item.children" :key="child.path" @click="clickTap(child.path)"
-              class="w-full flex items-center px-3 py-2 rounded-lg transition-all duration-200 text-sm" :class="[
-                isActive(child.path)
-                  ? 'bg-slate-600 text-white shadow-md'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 hover:cursor-pointer'
-              ]">
-              <component :is="child.icon" size="16" class="flex-shrink-0" />
-              <span class="ml-2 font-medium">{{ child.label }}</span>
-            </button>
-          </div>
-        </div>
       </div>
     </nav>
   </aside>
