@@ -32,7 +32,7 @@ const isActive = (navPath: string) => {
 }
 
 onMounted(() => {
-  if (route.path === '/recruiter') {
+  if (route.path === '/admin') {
     sidebar.setPath(route.path)
   }
 
