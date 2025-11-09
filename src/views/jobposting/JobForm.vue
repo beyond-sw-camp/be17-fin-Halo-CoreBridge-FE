@@ -946,7 +946,7 @@ const deleteInterviewer = (accountId: number) => {
                     <div class="mt-4"></div>
 
                     <!-- 추가한 면접관 목록 -->
-                    <div class="flex flex-col space-y-4 mb-8 overflow-y-auto max-h-96">
+                    <div class="flex flex-col space-y-4 mb-8 overflow-y-auto max-h-96 justify-center">
                         <div v-if="form.interviewers.length == 0" class="text-center text-slate-500">
                             등록된 면접관이 없습니다.
                         </div>
@@ -979,6 +979,8 @@ const deleteInterviewer = (accountId: number) => {
                                 </div>
                             </div>
                         </div>
+                        <p v-if="errors.interviewers" class="text-sm text-center text-red-500 mt-1">{{
+                            errors.interviewers }}</p>
                     </div>
                 </section>
 
