@@ -1,11 +1,11 @@
-import type { EnumMember, EnumType } from "typescript"
+import type { EnumMember, EnumType } from 'typescript'
 
 /**
  * 채용공고 생성 폼 (POST /api/jobPostings)
  */
 export interface RecruitProcessCreate {
   name: string
-  color: string 
+  color: string
   orderIdx: number
 }
 
@@ -13,7 +13,6 @@ export interface questionaryCreateForm {
   title: string
   subtitle: string
 }
-
 
 export interface JobPostingCreateRequest {
   title: string
@@ -44,24 +43,25 @@ export interface JobPostingCreateRequest {
   contactName: string
   contactEmail: string
   additionalInfo?: string
+  interviewers: number[]
 }
 
 export interface JobPostingDetailResponse {
-    id: number
+  id: number
   title: string
 
   // 기본 정보
-  employmentType: string            // "정규직" | "계약직" | "인턴" 등
-  careerType: string                // "신입" | "경력" | "무관"
+  employmentType: string // "정규직" | "계약직" | "인턴" 등
+  careerType: string // "신입" | "경력" | "무관"
   minExperience: number | null
   maxExperience: number | null
   positionLevel: string | null
   location: string
 
   // 날짜
-  applyStartDate: string            // "yyyy-MM-dd HH:mm:ss"
-  applyEndDate: string              // "yyyy-MM-dd HH:mm:ss"
-  hireEndDate: string               // "yyyy-MM-dd HH:mm:ss"
+  applyStartDate: string // "yyyy-MM-dd HH:mm:ss"
+  applyEndDate: string // "yyyy-MM-dd HH:mm:ss"
+  hireEndDate: string // "yyyy-MM-dd HH:mm:ss"
 
   // 모집 인원
   headcount: number
@@ -82,7 +82,7 @@ export interface JobPostingDetailResponse {
   coverLetterTitles: CoverLetterTitleEdit[]
 
   // 급여 정보
-  salaryType: string                // "연봉" | "시급" 등
+  salaryType: string // "연봉" | "시급" 등
   salaryMin: number | null
   salaryMax: number | null
   salaryNegotiable: boolean
@@ -106,7 +106,7 @@ export interface JobPostingDetailResponse {
 export interface RecruitProcessEdit {
   id: number
   name: string
-  colorCode: ColorCode              // 색상 정보 객체
+  colorCode: ColorCode // 색상 정보 객체
   orderIdx: number
 }
 
@@ -114,9 +114,9 @@ export interface RecruitProcessEdit {
 // 🎯 색상 정보 타입
 // ================================
 export interface ColorCode {
-  name: string                      // "BLUE" | "ORANGE" | ...
-  label: string                     // "파랑" | "주황" | ...
-  code: string                      // "blue-500"
+  name: string // "BLUE" | "ORANGE" | ...
+  label: string // "파랑" | "주황" | ...
+  code: string // "blue-500"
 }
 
 // ================================
@@ -128,7 +128,6 @@ export interface CoverLetterTitleEdit {
   subtitle: string
   jobPostingId: number
 }
-
 
 /**
  * 특정 채용공고에 대한 프로세스 정리
@@ -156,7 +155,6 @@ export interface JobPostingListResponse {
   processSummaries: ProcessSummary[]
 }
 
-
 /**
  * 채용공고 상세 정보 (상세 조회용)
  */
@@ -176,8 +174,8 @@ export interface JobPostingPublic {
   title: string
   summary: string
   experience: string
-  location: string,
-  deadline: string,
+  location: string
+  deadline: string
   department: string
   views: number
 }
