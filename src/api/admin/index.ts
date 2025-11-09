@@ -63,7 +63,30 @@ const requestAccounts = async (req: AccountParam): Promise<ApiResponse<AccountLi
   return data
 }
 
+const requestDeleteAccount = async (id: number): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined,
+  }
+
+  const url: string = '/api/admin/users/' + id
+
+  await api
+    .delete(url)
+    .then((res) => {
+      data = res.data as ApiResponse
+    })
+    .catch((error) => {
+      data = error.response.data as ApiResponse
+    })
+
+  return data
+}
+
 export default {
   requestAccountAdd,
   requestAccounts,
+  requestDeleteAccount,
 }

@@ -28,7 +28,18 @@ const closeModal = () => {
     isOpenModal.value = false
 }
 
-const deleteAccount = (id: number) => {
+const deleteAccount = async (id: number) => {
+
+    if (confirm('계정을 삭제하시겠습니까?')) {
+        const response = await adminAPI.requestDeleteAccount(id)
+        if (response.success) {
+            alert('계정이 성공적으로 삭제되었습니다.')
+            // 계정 삭제 후 목록 갱신
+            await loadAccounts()
+        } else {
+            alert('계정 삭제에 실패했습니다. 다시 시도해주세요.')
+        }
+    }
 }
 
 const initAccounts = () => {
@@ -46,14 +57,18 @@ const setAccounts = (data: AccountListResponse) => {
 }
 
 onMounted(async () => {
+    await loadAccounts()
+})
 
+const loadAccounts = async () => {
     const response = await adminAPI.requestAccounts(req.value)
+
     if (response.success) {
         setAccounts(response.results)
     } else {
         initAccounts()
     }
-})
+}
 
 
 /**
