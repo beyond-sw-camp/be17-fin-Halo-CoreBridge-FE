@@ -5,13 +5,15 @@ import type { JobPostingCreateRequest, JobPostingDetailResponse } from '@/types/
 import { createJobPosting, updateJobPosting, getDepartment } from '@/api/jobposting/index' // ✅ (NEW) updateJobPosting 추가
 import draggable from 'vuedraggable'
 import { GripVertical, Pencil, Trash2, Plus } from 'lucide-vue-next'
+import type { Account } from '@/types/user/Account'
+import AccountAddInterviewerModal from '@/components/recruiter-dashboard/accounts/AccountAddInterviewerModal.vue'
 
 // ===========================
 //  (NEW) Props & Emits 추가
 // ===========================
 const props = defineProps<{
-  mode: 'create' | 'edit'
-  initialData?: JobPostingDetailResponse
+    mode: 'create' | 'edit'
+    initialData?: JobPostingDetailResponse
 }>()
 
 const emit = defineEmits(['completed'])
@@ -69,6 +71,7 @@ const form = reactive<JobPostingCreateRequest>({
     contactName: '',
     contactEmail: '',
     additionalInfo: '',
+    interviewers: [] as number[],
 })
 
 const router = useRouter()
@@ -236,62 +239,101 @@ const isSalaryInvalid = computed(() => form.salaryType === '고정급여' && (!f
 // ✅ (NEW) 수정 모드일 경우 데이터 주입
 // ===========================
 onMounted(async () => {
-  try {
-    const res = await getDepartment()
-    if (res.success) department.value = res.results
+    try {
+        const res = await getDepartment()
+        if (res.success) department.value = res.results
 
-    if (props.mode === 'edit' && props.initialData) {
-      // 1️⃣ form 변환
-      const transformed = {
-        ...props.initialData,
-        recruitProcess: props.initialData.recruitProcess.map(proc => ({
-          id: proc.id,
-          name: proc.name,
-          color: proc.colorCode?.name || 'BLUE',
-          orderIdx: proc.orderIdx,
-        })),
-        coverLetterTitles: props.initialData.coverLetterTitles.map(q => ({
-          id: q.id,
-          title: q.title,
-          subtitle: q.subtitle,
-        })),
-      }
+        if (props.mode === 'edit' && props.initialData) {
+            // 1️⃣ form 변환
+            const transformed = {
+                ...props.initialData,
+                recruitProcess: props.initialData.recruitProcess.map(proc => ({
+                    id: proc.id,
+                    name: proc.name,
+                    color: proc.colorCode?.name || 'BLUE',
+                    orderIdx: proc.orderIdx,
+                })),
+                coverLetterTitles: props.initialData.coverLetterTitles.map(q => ({
+                    id: q.id,
+                    title: q.title,
+                    subtitle: q.subtitle,
+                })),
+            }
 
-      // 2️⃣ form 데이터 반영
-      Object.assign(form, transformed)
+            // 2️⃣ form 데이터 반영
+            Object.assign(form, transformed)
 
-      // 3️⃣ stages 반영 (여기 추가!)
-      stages.value = transformed.recruitProcess
-        .filter(p => p.name !== '지원 완료' && p.name !== '최종 합격')
-        .map((p, idx) => ({
-          id: idx + 1,
-          name: p.name,
-          color: p.color,
-          edit: false,
-        }))
+            // 3️⃣ stages 반영 (여기 추가!)
+            stages.value = transformed.recruitProcess
+                .filter(p => p.name !== '지원 완료' && p.name !== '최종 합격')
+                .map((p, idx) => ({
+                    id: idx + 1,
+                    name: p.name,
+                    color: p.color,
+                    edit: false,
+                }))
 
-      // 4️⃣ fixed 색상도 반영 (선택적으로)
-      const start = transformed.recruitProcess.find(p => p.name === '지원 완료')
-      const end = transformed.recruitProcess.find(p => p.name === '최종 합격')
-      if (start) fixedStart.color = start.color
-      if (end) fixedEnd.color = end.color
+            // 4️⃣ fixed 색상도 반영 (선택적으로)
+            const start = transformed.recruitProcess.find(p => p.name === '지원 완료')
+            const end = transformed.recruitProcess.find(p => p.name === '최종 합격')
+            if (start) fixedStart.color = start.color
+            if (end) fixedEnd.color = end.color
 
-      // 5️⃣ form.recruitProcess 최신화
-      syncRecruitProcess()
+            // 5️⃣ form.recruitProcess 최신화
+            syncRecruitProcess()
+        }
+    } catch (err: any) {
+        console.error(err)
+        errorMessage.value = '서버오류 발생'
+    } finally {
+        isLoading.value = false
     }
-  } catch (err: any) {
-    console.error(err)
-    errorMessage.value = '서버오류 발생'
-  } finally {
-    isLoading.value = false
-  }
 })
+
+/**
+ * ============================================
+ * 면접관 추가
+ * ===========================================
+ */
+const addInterviewers = ref<Account[]>([])
+
+const extractInitial = (name: string) => {
+    return name.charAt(0).toUpperCase()
+}
+
+const isOpenInterviewerAddModal = ref(false)
+const openInterviewerAddModal = () => {
+    isOpenInterviewerAddModal.value = true
+}
+
+const closeInterviewerAddModal = () => {
+    isOpenInterviewerAddModal.value = false
+}
+
+const addInterviewersToForm = (accounts: Account[]) => {
+
+    addInterviewers.value = accounts
+    const newIds = accounts.map(acc => acc.id)
+    const existingIds = form.interviewers
+    // 중복 제거 후 추가
+    form.interviewers = Array.from(new Set([...existingIds, ...newIds]))
+
+}
+
+const deleteInterviewer = (accountId: number) => {
+    form.interviewers = form.interviewers.filter(id => id !== accountId)
+    addInterviewers.value = addInterviewers.value.filter(acc => acc.id !== accountId)
+}
+
 </script>
 
 
 
 <template>
     <div class="bg-gray-50 min-h-screen">
+        <AccountAddInterviewerModal @close="closeInterviewerAddModal" :open-modal="isOpenInterviewerAddModal"
+            @add="addInterviewersToForm" />
+
         <!-- Header -->
         <header class="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-200 h-20 z-10">
             <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -344,7 +386,7 @@ onMounted(async () => {
                                     </option>
                                 </select>
                                 <p v-if="errors.departmentId" class="text-sm text-red-500 mt-1">{{ errors.departmentId
-                                }}</p>
+                                    }}</p>
                             </div>
 
                             <!-- 고용 형태 -->
@@ -465,7 +507,7 @@ onMounted(async () => {
                                     errors.applyEndDate ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                 ]" />
                                 <p v-if="errors.applyEndDate" class="text-sm text-red-500 mt-1">{{ errors.applyEndDate
-                                }}</p>
+                                    }}</p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -884,6 +926,61 @@ onMounted(async () => {
                             </svg>
                             문항 추가
                         </button>
+                    </div>
+                </section>
+
+                <!-- 면접관 배정 -->
+                <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
+                    <h2 class="text-xl font-bold text-slate-700 mb-6">면접관 배정</h2>
+
+                    <!-- 안내 문구 -->
+                    <p class="text-sm text-gray-500 mb-4">
+                        해당 채용 공고에 지원한 지원자들의 면접을 담당할 면접관을 배정해주세요.
+                    </p>
+                    <button @click="openInterviewerAddModal" type="button"
+                        class="ml-auto w-38 hover:cursor-pointer px-4 py-2 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white rounded-xl font-medium flex items-center space-x-2 shadow-sm transition-all">
+                        <Plus :size="16" />
+                        <span>면접관 추가</span>
+                    </button>
+
+                    <div class="mt-4"></div>
+
+                    <!-- 추가한 면접관 목록 -->
+                    <div class="flex flex-col space-y-4 mb-8 overflow-y-auto max-h-96 justify-center">
+                        <div v-if="form.interviewers.length == 0" class="text-center text-slate-500">
+                            등록된 면접관이 없습니다.
+                        </div>
+                        <div v-for="account in addInterviewers" :key="account.id"
+                            class="bg-white rounded-2xl p-4 border border-slate-200 hover:shadow-lg transition-all ">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-6 flex-1 justify-between">
+
+                                    <!-- Applicant Info -->
+                                    <div class="flex items-center space-x-4">
+                                        <div
+                                            class="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl flex items-center justify-center">
+                                            <span class="text-white font-semibold">{{ extractInitial(account.name)
+                                                }}</span>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-semibold text-slate-800 mb-1">
+                                                {{ account.name }}
+                                            </h3>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex items-center space-x-3">
+                                    <button @click="deleteInterviewer(account.id)" type="button"
+                                        class="transition hover:cursor-pointer">
+                                        <Trash2 :size="20" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <p v-if="errors.interviewers" class="text-sm text-center text-red-500 mt-1">{{
+                            errors.interviewers }}</p>
                     </div>
                 </section>
 

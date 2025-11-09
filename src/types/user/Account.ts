@@ -14,7 +14,13 @@ export interface AccountListResponse {
 }
 
 export interface AccountParam {
-  type: string
+  type: string | undefined
   page: number
-  search: string
+  search: string | undefined
+}
+
+export interface AccountInifiniteScrollResponse {
+  accounts: Account[]
+  currentPage: number
+  hasNext: boolean
 }

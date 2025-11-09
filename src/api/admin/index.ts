@@ -1,7 +1,11 @@
 import api from '@/plugins/axiosInterceptor'
 import type { UserForSystemForm } from '@/types/user/UserForm'
 import { useLoadingStore } from '@/store/useLoadingStore'
-import type { AccountListResponse, AccountParam } from '@/types/user/Account'
+import type {
+  AccountListResponse,
+  AccountParam,
+  AccountInifiniteScrollResponse,
+} from '@/types/user/Account'
 
 const loadingStore = useLoadingStore()
 
@@ -85,8 +89,43 @@ const requestDeleteAccount = async (id: number): Promise<ApiResponse> => {
   return data
 }
 
+const requestInterviewerAccounts = async (
+  req: AccountParam,
+): Promise<ApiResponse<AccountInifiniteScrollResponse>> => {
+  let data: ApiResponse<AccountInifiniteScrollResponse> = {
+    success: false,
+    code: 0,
+    message: '',
+    results: {
+      accounts: [],
+      currentPage: 0,
+      hasNext: false,
+    },
+  }
+
+  const url: string = '/api/recruiter/interviews'
+
+  await api
+    .get(url, {
+      params: {
+        type: undefined,
+        page: req.page,
+        search: req.search ? req.search : undefined,
+      },
+    })
+    .then((res) => {
+      data = res.data as ApiResponse<AccountInifiniteScrollResponse>
+    })
+    .catch((error) => {
+      data = error.response.data as ApiResponse<AccountInifiniteScrollResponse>
+    })
+
+  return data
+}
+
 export default {
   requestAccountAdd,
   requestAccounts,
   requestDeleteAccount,
+  requestInterviewerAccounts,
 }
