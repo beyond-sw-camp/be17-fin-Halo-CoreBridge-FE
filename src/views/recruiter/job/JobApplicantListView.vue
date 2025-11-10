@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Users, FileText, CheckCircle, Clock, Search, Filter } from 'lucide-vue-next'
 import ApplicantListCard from '@/components/applicant/ApplicantListCard.vue'
 import { getApplicantsList } from '@/api/resume'
-import { useRoute } from 'vue-router'
+import { useRoute,useRouter } from 'vue-router'
 
 interface Applicant {
     id: number
@@ -21,6 +21,7 @@ interface Applicant {
 // 상태 변수
 // --------------------------------------
 const route = useRoute()
+const router = useRouter()
 const jobId = Number(route.params.id)
 
 const applicants = ref<Applicant[]>([])
@@ -102,9 +103,8 @@ const stats = computed(() => {
 // --------------------------------------
 // 이벤트 핸들러
 // --------------------------------------
-const viewApplicantDetail = (id: number) => {
-    console.log('지원자 상세 보기:', id)
-    // router.push(`/recruiter/applicant/${id}`)
+const viewApplicantDetail = (applicantId: number): void => {
+  router.push(`/jobposts/${jobId}/applies/${applicantId}`)
 }
 </script>
 

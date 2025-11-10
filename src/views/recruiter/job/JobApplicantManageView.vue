@@ -161,9 +161,10 @@ const onMove = async (event: any): Promise<void> => {
 }
 
 
-const viewApplicant = (applicantId: string): void => {
-  router.push(`/recruiter/applicants/${applicantId}`)
+const viewApplicant = (applicantId: number): void => {
+  router.push(`/jobposts/${jobPostingId.value}/applies/${applicantId}`)
 }
+
 
 const toggleFilter = (): void => {
   // TODO: 필터 기능 구현
