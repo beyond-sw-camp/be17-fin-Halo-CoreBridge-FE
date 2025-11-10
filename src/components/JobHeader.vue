@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, RouterLink, useRouter } from 'vue-router'
-import { getHeaderById } from '@/api/jobposting/index'
+import { getHeaderById, deleteJobPosting } from '@/api/jobposting/index'
 import { Building2, MapPin, Briefcase, DollarSign, Share2 } from 'lucide-vue-next'
 
 // -----------------------------
@@ -52,6 +52,21 @@ onMounted(async () => {
     isLoading.value = false
   }
 })
+
+const deleteJobPostingHandler = async () => {
+  try {
+    const response = await deleteJobPosting(jobId)
+
+    if (response.success) {
+      alert('공고가 삭제되었습니다')
+      router.push('/admin/jobs')
+    } else {
+      alert(response.message)
+    }
+  } catch (error) {
+    alert('서버 오류')
+  }
+}
 
 // -----------------------------
 // UI 관련 유틸
@@ -189,7 +204,7 @@ const goToEditPage = () => {
               class="w-full px-4 py-3 bg-white text-slate-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
               모집 중단
             </button>
-            <button
+            <button @click="deleteJobPostingHandler"
               class="w-full px-4 py-3 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition text-sm font-medium">
               공고 삭제
             </button>
