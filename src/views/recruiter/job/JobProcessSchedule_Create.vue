@@ -507,8 +507,8 @@ const formData = ref({
   position: '',
   startDate: '',
   endDate: '',
-  startTime: '',
-  endTime: '',
+  startTime: '09:00',
+  endTime: '18:00',
   location: '',
   priority: 'medium',
   interviewer: '',
@@ -528,7 +528,7 @@ const formData = ref({
 
 // Computed
 const isInterviewType = computed(() => {
-  return ['document_review', 'interview_1', 'interview_2', 'interview_final', 'negotiation'].includes(formData.value.type)
+  return ['interview_1', 'interview_2', 'interview_final', 'negotiation'].includes(formData.value.type)
 })
 
 const daysDifference = computed(() => {
@@ -656,8 +656,8 @@ const resetForm = () => {
     position: '',
     startDate: '',
     endDate: '',
-    startTime: '',
-    endTime: '',
+    startTime: '09:00',
+    endTime: '18:00',
     location: '',
     priority: 'medium',
     interviewer: '',

@@ -610,7 +610,7 @@ const deleteSchedule = async (scheduleId: number) => {
   const confirmed = confirm('정말 이 일정을 삭제하시겠습니까?')
   if (confirmed) {
     try {
-      const response = await deleteJobProcess(jobPostingId, scheduleId)
+      const response = await deleteJobProcessApi(jobPostingId, scheduleId)
 
       if (response.success) {
         const index = schedules.value.findIndex(s => s.id === scheduleId)
@@ -773,7 +773,11 @@ const generateRecurringSchedules = (scheduleData: any) => {
 
 const handleConfirmShare = async (data: any) => {
   try {
-    const response = await bulkShareJobProcess(data.schedules, data.members)
+    const response = await bulkShareJobProcess(
+      jobPostingId,
+      data.schedules,
+      data.members
+    )
     
     if (response.success) {
       data.schedules.forEach((scheduleId: number) => {

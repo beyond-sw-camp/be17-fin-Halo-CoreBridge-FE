@@ -60,6 +60,11 @@
                   >
                     긴급
                   </span>
+                  <UserCheck 
+                    v-if="job.sharedWith && job.sharedWith.length > 0" 
+                    class="w-4 h-4 text-blue-500 flex-shrink-0" 
+                    title="이미 공유된 공고"
+                  />
                 </div>
                 <div class="flex items-center gap-2 text-xs text-gray-500">
                   <span>{{ job.department }}</span>
@@ -108,8 +113,11 @@
             <div 
               v-for="member in teamMembers" 
               :key="member.id" 
-              class="flex items-center gap-3 p-3 border-2 rounded-lg transition cursor-pointer" 
-              :class="selectedMembers.includes(member.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'" 
+              class="flex items-center gap-3 p-3 border-2 rounded-lg transition cursor-pointer relative" 
+              :class="[
+                selectedMembers.includes(member.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300',
+                isAlreadyShared(member.id) ? 'bg-green-50 border-green-300' : ''
+              ]" 
               @click="toggleMember(member.id)"
             >
               <input 
@@ -119,7 +127,14 @@
                 @click.stop 
               />
               <div class="flex-1 min-w-0">
-                <p class="font-medium text-sm text-gray-900">{{ member.name }}</p>
+                <div class="flex items-center gap-2">
+                  <p class="font-medium text-sm text-gray-900">{{ member.name }}</p>
+                  <UserCheck 
+                    v-if="isAlreadyShared(member.id)" 
+                    class="w-4 h-4 text-green-600 flex-shrink-0" 
+                    title="이미 공유됨"
+                  />
+                </div>
                 <p class="text-xs text-gray-500 truncate">{{ member.role }} · {{ member.department }}</p>
               </div>
             </div>
@@ -245,7 +260,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Share2, X, Mail, Eye, Edit, Info } from 'lucide-vue-next'
+import { Share2, X, Mail, Eye, Edit, Info, UserCheck } from 'lucide-vue-next'
 
 // Props
 interface Job {
@@ -256,6 +271,7 @@ interface Job {
   daysLeft: number
   applicants: number
   isUrgent?: boolean
+  sharedWith?: number[]  // 이미 공유된 멤버 ID 목록
 }
 
 interface TeamMember {
@@ -270,7 +286,7 @@ interface Props {
   showModal?: boolean
   availableJobs?: Job[]
   teamMembers?: TeamMember[]
-  initialSelectedMembers?: number[] 
+  initialSelectedMembers?: number[]  // 더 이상 사용하지 않음 (각 공고의 sharedWith 사용)
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -295,7 +311,7 @@ const emit = defineEmits<{
 }>()
 
 // State
-const selectedMembers = ref<number[]>([...props.initialSelectedMembers])
+const selectedMembers = ref<number[]>([])
 const selectedJobs = ref<number[]>([])
 const shareSettings = ref({
   permission: 'view',
@@ -312,6 +328,25 @@ const urgentJobsCount = computed(() => {
   return props.availableJobs.filter(job => 
     job.isUrgent && selectedJobs.value.includes(job.id)
   ).length
+})
+
+// ✅ 선택된 공고들에 이미 공유된 모든 멤버 ID를 계산
+const currentSharedMembers = computed(() => {
+  const sharedMemberIds = new Set<number>()
+  
+  // ✅ 선택된 공고들에 대해 이미 공유된 멤버 수집
+  selectedJobs.value.forEach(jobId => {
+    const job = props.availableJobs.find(j => j.id === jobId)
+    if (job?.sharedWith && Array.isArray(job.sharedWith)) {
+      job.sharedWith.forEach(memberId => {
+        if (typeof memberId === 'number') {
+          sharedMemberIds.add(memberId)
+        }
+      })
+    }
+  })
+  
+  return Array.from(sharedMemberIds)
 })
 
 // Methods
@@ -382,12 +417,56 @@ const resetState = () => {
   }
 }
 
+// Helper functions
+const isAlreadyShared = (memberId: number) => {
+  return currentSharedMembers.value.includes(memberId)
+}
+
+// ✅ 선택된 공고가 변경될 때마다 해당 공고에 이미 공유된 멤버들을 자동으로 선택
 watch(
-  () => props.initialSelectedMembers,
-  (newVal) => {
-    selectedMembers.value = [...newVal]  // ✅ 기존 공유된 사람 체크
+  () => [...selectedJobs.value], // 배열 복사로 깊은 감지
+  (newSelectedJobs, oldSelectedJobs) => {
+    console.log('🔍 공고 선택 변경됨:', { 
+      new: newSelectedJobs, 
+      old: oldSelectedJobs 
+    })
+    
+    if (newSelectedJobs.length === 0) {
+      // 공고가 모두 해제되면 멤버도 초기화
+      console.log('❌ 공고 선택 없음 - 멤버 초기화')
+      selectedMembers.value = []
+      return
+    }
+    
+    // 현재 선택된 공고들에 이미 공유된 멤버들을 수집
+    const alreadySharedMembers = currentSharedMembers.value
+    
+    console.log('👥 공유된 멤버 목록:', alreadySharedMembers)
+    console.log('📋 선택된 공고 데이터:', 
+      newSelectedJobs.map(jobId => {
+        const job = props.availableJobs.find(j => j.id === jobId)
+        return { id: jobId, sharedWith: job?.sharedWith }
+      })
+    )
+    
+    if (alreadySharedMembers.length > 0) {
+      // 이미 공유된 멤버들을 자동으로 체크
+      selectedMembers.value = [...alreadySharedMembers]
+      console.log('✅ 멤버 자동 선택:', selectedMembers.value)
+    } else {
+      console.log('ℹ️ 공유된 멤버 없음')
+    }
   },
-  { immediate: true } // 열리자마자 적용
+  { deep: true }
 )
 
+// 모달이 열릴 때 초기화
+watch(() => props.showModal, (isOpen) => {
+  if (isOpen) {
+    console.log('🚪 공유 모달 열림')
+    // 모달이 열릴 때 상태 초기화
+    selectedMembers.value = []
+    selectedJobs.value = []
+  }
+})
 </script>
