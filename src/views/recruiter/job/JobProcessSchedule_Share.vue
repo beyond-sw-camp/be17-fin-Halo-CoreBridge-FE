@@ -89,8 +89,11 @@
             <div 
               v-for="member in teamMembers" 
               :key="member.id" 
-              class="flex items-center gap-3 p-3 border-2 rounded-lg transition cursor-pointer" 
-              :class="selectedMembers.includes(member.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'" 
+              class="flex items-center gap-3 p-3 border-2 rounded-lg transition cursor-pointer relative" 
+              :class="[
+                selectedMembers.includes(member.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300',
+                isAlreadyShared(member.id) ? 'bg-green-50 border-green-300' : ''
+              ]" 
               @click="toggleMember(member.id)"
             >
               <input 
@@ -100,7 +103,14 @@
                 @click.stop 
               />
               <div class="flex-1 min-w-0">
-                <p class="font-medium text-sm text-gray-900">{{ member.name }}</p>
+                <div class="flex items-center gap-2">
+                  <p class="font-medium text-sm text-gray-900">{{ member.name }}</p>
+                  <UserCheck 
+                    v-if="isAlreadyShared(member.id)" 
+                    class="w-4 h-4 text-green-600 flex-shrink-0" 
+                    title="이미 공유됨"
+                  />
+                </div>
                 <p class="text-xs text-gray-500 truncate">{{ member.role }} · {{ member.department }}</p>
               </div>
             </div>
@@ -222,7 +232,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Share2, X, Mail, Eye, Edit, UserCheck, Info } from 'lucide-vue-next'
 
 // Props
@@ -248,12 +258,14 @@ interface Props {
   showModal?: boolean
   availableSchedules?: Schedule[]
   teamMembers?: TeamMember[]
+  sharedMembers?: number[]  // 이미 공유된 멤버 ID 목록 (사용하지 않음 - 각 일정의 sharedWith 사용)
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showModal: false,
   availableSchedules: () => [],
-  teamMembers: () => []
+  teamMembers: () => [],
+  sharedMembers: () => []
 })
 
 // Emits
@@ -282,6 +294,21 @@ const shareSettings = ref({
 // Computed
 const canShare = computed(() => {
   return selectedMembers.value.length > 0 && selectedSchedules.value.length > 0
+})
+
+// 선택된 일정들에 이미 공유된 모든 멤버 ID를 계산
+const currentSharedMembers = computed(() => {
+  const sharedMemberIds = new Set<number>()
+  
+  // 선택된 일정들에 대해 이미 공유된 멤버 수집
+  selectedSchedules.value.forEach(scheduleId => {
+    const schedule = props.availableSchedules.find(s => s.id === scheduleId)
+    if (schedule?.sharedWith) {
+      schedule.sharedWith.forEach(memberId => sharedMemberIds.add(memberId))
+    }
+  })
+  
+  return Array.from(sharedMemberIds)
 })
 
 // Methods
@@ -347,6 +374,10 @@ const resetState = () => {
 }
 
 // Helper functions
+const isAlreadyShared = (memberId: number) => {
+  return currentSharedMembers.value.includes(memberId)
+}
+
 const getScheduleColorClass = (schedule: Schedule) => {
   const typeColors: Record<string, string> = {
     document_review: 'bg-orange-100 text-orange-700',
@@ -378,4 +409,23 @@ const getScheduleTypeLabel = (type: string) => {
   }
   return labels[type] || type
 }
+
+// 선택된 일정이 변경될 때마다 해당 일정에 이미 공유된 멤버들을 자동으로 선택
+watch(() => selectedSchedules.value, () => {
+  // 현재 선택된 일정들에 이미 공유된 멤버들을 자동으로 체크
+  const alreadySharedMembers = currentSharedMembers.value
+  
+  // 이미 선택된 멤버는 유지하고, 새로운 공유 멤버 추가
+  const updatedMembers = new Set([...selectedMembers.value, ...alreadySharedMembers])
+  selectedMembers.value = Array.from(updatedMembers)
+}, { deep: true })
+
+// 모달이 열릴 때 초기화
+watch(() => props.showModal, (isOpen) => {
+  if (isOpen) {
+    // 모달이 열릴 때 상태 초기화
+    selectedMembers.value = []
+    selectedSchedules.value = []
+  }
+})
 </script>

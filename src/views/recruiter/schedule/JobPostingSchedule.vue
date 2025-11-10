@@ -756,6 +756,7 @@ const selectedDateJobs = computed(() => {
   )
 })
 
+// ✅ 수정 후 (sharedWith 추가)
 const availableJobs = computed(() => {
   return jobs.value.map(j => ({
     id: j.id,
@@ -765,7 +766,8 @@ const availableJobs = computed(() => {
     daysLeft: j.daysLeft,
     applicants: j.applicants,
     time: j.time,
-    isUrgent: j.isUrgent
+    isUrgent: j.isUrgent,
+    sharedWith: j.sharedWith || []  // ✅ 공유된 멤버 ID 배열 추가
   }))
 })
 
@@ -877,7 +879,7 @@ const endDrag = () => {
     const startDate = selectedDateRange.value.start
     const endDate = selectedDateRange.value.end
 
-        // 하나의 셀만 선택된 경우 더블클릭 처리를 기다림
+    // 하나의 셀만 선택된 경우 더블클릭 처리를 기다림
     if (startDate === endDate) {
       isDragging.value = false
       dragStartIndex.value = null
@@ -894,18 +896,23 @@ const endDrag = () => {
         postedDate: startDate,
         deadline: endDate
       }
-      openAddJobModal()
+      
+      console.log('🔵 드래그 선택 완료 - 설정된 날짜:', {
+        postedDate: startDate,
+        deadline: endDate,
+        editingJobData: editingJobData.value
+      })
+      
+      showAddJobModal.value = true
+    } else {
+      // 취소 시 초기화
+      selectedDateRange.value = { start: null, end: null }
     }
   }
   
   isDragging.value = false
   dragStartIndex.value = null
   dragEndIndex.value = null
-  
-  // 확인 취소 시에도 드래그 범위 초기화
-  if (!showAddJobModal.value) {
-    selectedDateRange.value = { start: null, end: null }
-  }
 }
 
 const isDateInDragRange = (index: number) => {
@@ -931,7 +938,10 @@ const openAddJobModal = (opts?: { mode?: 'create' | 'edit' }) => {
 const closeAddJobModal = () => {
   showAddJobModal.value = false
   editingJobData.value = null
+  editingJobId.value = null
   selectedDateRange.value = { start: null, end: null }
+  
+  console.log('🔵 모달 닫기 - 데이터 초기화')
 }
 
 const openShareModal = () => {

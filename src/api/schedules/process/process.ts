@@ -2,6 +2,14 @@ import api from '@/plugins/axiosInterceptor'
 
 const BASE_URL = (jobPostingId: number) => `/api/recruiter/jobs/${jobPostingId}/schedules`
 
+// API 응답 타입 정의
+interface ApiResponse<T> {
+  success: boolean
+  code: number
+  message: string
+  results: T
+}
+
 // ===== 기본 CRUD =====
 
 /** 일정 목록 조회 */
@@ -11,7 +19,6 @@ export const getJobProcesses = async (
 ): Promise<ApiResponse<any[]>> => {
   try {
     const res = await api.get(BASE_URL(jobPostingId), { params: params || {} })
-
     return res.data
   } catch (err: any) {
     return {
@@ -41,7 +48,7 @@ export const getJobProcessById = async (
   }
 }
 
-/** 일정 생성 */
+/** 일정 생성 (Recurring 지원) */
 export const createJobProcess = async (
   jobPostingId: number,
   payload: {
@@ -59,6 +66,10 @@ export const createJobProcess = async (
     notes?: string
     status?: string
     assignedTo: number
+    // ✨ Recurring 필드 추가
+    recurrenceType?: 'NONE' | 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY'
+    recurrenceInterval?: number
+    recurrenceEndDate?: string
   }
 ): Promise<ApiResponse<any>> => {
   try {
@@ -74,7 +85,7 @@ export const createJobProcess = async (
   }
 }
 
-/** 일정 수정 */
+/** 일정 수정 (Recurring 지원) */
 export const updateJobProcess = async (
   jobPostingId: number,
   id: number,
@@ -93,6 +104,10 @@ export const updateJobProcess = async (
     notes: string
     status: string
     assignedTo: number
+    // ✨ Recurring 필드 추가
+    recurrenceType: 'NONE' | 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY'
+    recurrenceInterval: number
+    recurrenceEndDate: string
   }>
 ): Promise<ApiResponse<any>> => {
   try {
@@ -108,7 +123,7 @@ export const updateJobProcess = async (
   }
 }
 
-/** 일정 삭제 */
+/** 일정 삭제 (단일) */
 export const deleteJobProcess = async (
   jobPostingId: number,
   id: number
@@ -121,6 +136,24 @@ export const deleteJobProcess = async (
       success: false,
       code: err.response?.status || 500,
       message: '일정 삭제에 실패했습니다.',
+      results: undefined
+    }
+  }
+}
+
+/** ✨ 반복 일정 시리즈 전체 삭제 (NEW) */
+export const deleteJobProcessSeries = async (
+  jobPostingId: number,
+  id: number
+): Promise<ApiResponse<void>> => {
+  try {
+    const res = await api.delete(`${BASE_URL(jobPostingId)}/${id}/series`)
+    return res.data
+  } catch (err: any) {
+    return {
+      success: false,
+      code: err.response?.status || 500,
+      message: '반복 일정 시리즈 삭제에 실패했습니다.',
       results: undefined
     }
   }
@@ -147,6 +180,31 @@ export const shareJobProcess = async (
   }
 }
 
+/** ✨ 여러 일정 일괄 공유 (경로 수정) */
+export const bulkShareJobProcess = async (
+  jobPostingId: number,
+  scheduleIds: number[],
+  userIds: number[]
+): Promise<ApiResponse<void>> => {
+  try {
+    // ⚠️ 경로 수정: /bulk/share → /share/bulk
+    const res = await api.post(`${BASE_URL(jobPostingId)}/share/bulk`, {
+      schedules: scheduleIds,  // 백엔드 DTO 필드명에 맞춤
+      members: userIds         // 백엔드 DTO 필드명에 맞춤
+    })
+    return res.data
+  } catch (err: any) {
+    return {
+      success: false,
+      code: err.response?.status || 500,
+      message: '일정 일괄 공유에 실패했습니다.',
+      results: undefined
+    }
+  }
+}
+
+// ===== 기타 =====
+
 /** 일정 상태 변경 */
 export const updateJobProcessStatus = async (
   jobPostingId: number,
@@ -162,25 +220,6 @@ export const updateJobProcessStatus = async (
       code: err.response?.status || 500,
       message: '상태 변경에 실패했습니다.',
       results: null
-    }
-  }
-}
-
-/** 여러 일정 공유 */
-export const bulkShareJobProcess = async (
-  jobPostingId: number,
-  scheduleIds: number[],
-  userIds: number[]
-): Promise<ApiResponse<void>> => {
-  try {
-    const res = await api.post(`${BASE_URL(jobPostingId)}/bulk/share`, { scheduleIds, userIds })
-    return res.data
-  } catch (err: any) {
-    return {
-      success: false,
-      code: err.response?.status || 500,
-      message: '일정 일괄 공유에 실패했습니다.',
-      results: undefined
     }
   }
 }

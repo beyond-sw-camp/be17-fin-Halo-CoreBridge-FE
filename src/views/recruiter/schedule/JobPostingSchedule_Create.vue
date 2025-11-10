@@ -288,7 +288,7 @@
 
         <!-- 옵션 -->
         <div class="mt-6 space-y-3">
-          <!-- 긴급 공고 -->
+          <!-- 긴급 공고 - ✅ 활성화 -->
           <label class="flex items-center gap-3 p-4 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition">
             <input 
               v-model="formData.isUrgent" 
@@ -351,7 +351,6 @@
         >
           삭제
         </button>
-
       </div>
     </div>
   </div>
@@ -359,31 +358,24 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Briefcase, X, Check, Clock, AlertCircle, CalendarDays } from 'lucide-vue-next'
-
-// API
-import { getJobPostingSchedules, deleteJobPostingSchedule } from '@/api/schedules/jobposting/jobposting'
+import { 
+  X, Briefcase, Clock, CalendarDays, 
+  AlertCircle, Check 
+} from 'lucide-vue-next'
+import { deleteJobPostingSchedule } from '@/api/schedules/jobposting/jobposting'
 
 // Props
-interface TeamMember {
-  id: number
-  name: string
-  role: string
-  department: string
-  email: string
-}
-
 interface Props {
   showModal?: boolean
   editingId?: number | null
-  initialData?: any
-  teamMembers?: TeamMember[]
+  initialData?: any  // ✅ editingData → initialData로 변경
+  teamMembers?: Array<{ id: number; name: string; department: string }>
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showModal: false,
   editingId: null,
-  initialData: null,
+  initialData: null,  // ✅ 변경
   teamMembers: () => []
 })
 
@@ -391,37 +383,18 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'close': []
   'save': [data: any]
-  'delete': [id: number]
+  'deleted': [id: number]
 }>()
 
-const jobs = ref<any[]>([])  // ✅ 더미 데이터 삭제
-
-const isLoading = ref(false)
-const errorMessage = ref('')
-
-// 30분 단위 시간 옵션 생성
-const timeOptions = computed(() => {
-  const options: string[] = []
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      const h = String(hour).padStart(2, '0')
-      const m = String(minute).padStart(2, '0')
-      options.push(`${h}:${m}`)
-    }
-  }
-  return options
-})
-
-// Form data
+// ✅ 긴급 공고 isUrgent 포함한 폼 데이터
 const formData = ref({
-  id: null as number | null,
   title: '',
   position: '',
   department: '',
   experience: '',
   type: '',
-  assignedTo: null as number | null,
-  postedDate: new Date().toISOString().split('T')[0],
+  assignedTo: '',
+  postedDate: '',
   deadline: '',
   startTime: '09:00',
   endTime: '18:00',
@@ -431,64 +404,45 @@ const formData = ref({
   requirements: '',
   preferences: '',
   benefits: '',
-  isUrgent: false
+  isUrgent: false  // ✅ 긴급 공고 플래그
 })
 
 const showValidation = ref(false)
 
 // Computed
+const isFormValid = computed(() => {
+  return formData.value.title.trim() !== '' &&
+         formData.value.position !== '' &&
+         formData.value.department !== '' &&
+         formData.value.experience !== '' &&
+         formData.value.type !== '' &&
+         formData.value.assignedTo !== '' &&
+         formData.value.postedDate !== '' &&
+         formData.value.deadline !== ''
+})
+
 const daysLeft = computed(() => {
   if (!formData.value.deadline) return null
   const today = new Date()
+  today.setHours(0, 0, 0, 0)
   const deadline = new Date(formData.value.deadline)
-  const diff = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  return diff
+  deadline.setHours(0, 0, 0, 0)
+  const diff = deadline.getTime() - today.getTime()
+  return Math.ceil(diff / (1000 * 60 * 60 * 24))
 })
 
-const isFormValid = computed(() => {
-  return formData.value.title && 
-         formData.value.position && 
-         formData.value.department && 
-         formData.value.experience && 
-         formData.value.type && 
-         formData.value.assignedTo &&
-         formData.value.postedDate && 
-         formData.value.deadline
+// Time options (30분 단위)
+const timeOptions = computed(() => {
+  const options = []
+  for (let h = 0; h < 24; h++) {
+    for (let m of [0, 30]) {
+      const hour = String(h).padStart(2, '0')
+      const minute = String(m).padStart(2, '0')
+      options.push(`${hour}:${minute}`)
+    }
+  }
+  return options
 })
-
-const fetchJobPostings = async () => {
-  try {
-    isLoading.value = true
-
-    const result = await getJobPostingSchedules()  // ✅ 배열 자체 반환됨
-    console.log('📌 서버 응답:', result)
-
-    jobs.value = Array.isArray(result) ? result : []
-
-  } catch (error) {
-    console.error('❌ 공고 목록 오류:', error)
-    errorMessage.value = '공고 목록을 불러오는데 실패했습니다.'
-    jobs.value = []
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const deleteSchedule = async (jobId: number) => {
-  if (!confirm('정말 삭제하시겠습니까?')) return;
-
-  try {
-    await deleteJobPostingSchedule(jobId)
-    alert('✅ 공고가 삭제되었습니다.')
-
-    emit('delete', jobId)   // ✅ 부모에게 삭제 알림
-    closeModal()            // ✅ 모달 닫기만 수행
-  } catch (error) {
-    console.error('❌ 삭제 실패:', error)
-    alert('삭제 중 오류가 발생했습니다.')
-  }
-}
-
 
 // Methods
 const closeModal = () => {
@@ -497,33 +451,20 @@ const closeModal = () => {
 }
 
 const saveJob = () => {
-  showValidation.value = true
-
-  if (!isFormValid.value) return
-
-  const calculatedDaysLeft = daysLeft.value || 0
-  const isUrgent = formData.value.isUrgent || calculatedDaysLeft <= 7
-
-  // ✅ id를 명시적으로 props에서 우선 가져오고, 로그로 확인
-  const payload = {
-    ...formData.value,
-    id: props.editingId ?? formData.value.id ?? null,
-    daysLeft: calculatedDaysLeft,
-    isUrgent,
-    applicants: props.editingId ? undefined : 0,
-    progress: props.editingId ? undefined : 0,
-    screening: props.editingId ? undefined : 0,
-    interview1: props.editingId ? undefined : 0,
-    interview2: props.editingId ? undefined : 0,
-    final: props.editingId ? undefined : 0
+  if (!isFormValid.value) {
+    showValidation.value = true
+    return
   }
 
-  console.log('🟦 [saveJob] payload before emit:', payload) // ✅ 디버깅용 로그
+  const jobData = {
+    ...(props.editingId ? { id: props.editingId } : {}),
+    ...formData.value,
+    isUrgent: formData.value.isUrgent  // ✅ isUrgent 전달
+  }
 
-  emit('save', payload)
+  emit('save', jobData)
   resetForm()
 }
-
 
 const resetForm = () => {
   formData.value = {
@@ -532,8 +473,8 @@ const resetForm = () => {
     department: '',
     experience: '',
     type: '',
-    assignedTo: null,
-    postedDate: new Date().toISOString().split('T')[0],
+    assignedTo: '',
+    postedDate: '',
     deadline: '',
     startTime: '09:00',
     endTime: '18:00',
@@ -549,56 +490,56 @@ const resetForm = () => {
 }
 
 const getDaysDifference = () => {
-  if (!formData.value.postedDate || !formData.value.deadline) return 1
-  return calculateDaysDifference(formData.value.postedDate, formData.value.deadline)
+  if (!formData.value.postedDate || !formData.value.deadline) return 0
+  const start = new Date(formData.value.postedDate)
+  const end = new Date(formData.value.deadline)
+  const diff = end.getTime() - start.getTime()
+  return Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1
 }
 
-const calculateDaysDifference = (postedDate: string, deadline: string): number => {
-  const start = new Date(postedDate)
-  const end = new Date(deadline)
-  return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-}
+const deleteSchedule = async (id: number) => {
+  if (!confirm('정말 삭제하시겠습니까?')) return
 
-// Watch for initial data (edit mode)
-// Watch for both initial data and editingId (edit mode)
-watch(
-  () => [props.initialData, props.editingId],
-  ([data, id]) => {
-    if (data) {
-      console.log('🟨 initialData loaded:', data)
-      console.log('🟨 editingId:', id)
-      formData.value = { 
-        ...formData.value,
-        ...data,
-        id: id ?? data.id ?? null   // ✅ id도 같이 세팅
-      }
-    }
-  },
-  { immediate: true, deep: true }
-)
-
-
-// Watch showModal to reset or apply initial data
-watch(() => props.showModal, (isOpen) => {
-  if (isOpen && props.initialData) {
-    // 모달이 열릴 때 initial data 적용
-    formData.value = { 
-      ...formData.value,
-      ...props.initialData 
-    }
+  try {
+    await deleteJobPostingSchedule(id)
+    emit('deleted', id)
+    alert('공고가 삭제되었습니다.')
+    closeModal()
+  } catch (error) {
+    console.error('삭제 실패:', error)
+    alert('삭제 중 오류가 발생했습니다.')
   }
-})
+}
 
-// Validate deadline is after posted date
-watch(() => formData.value.deadline, (newDeadline) => {
-  if (newDeadline && formData.value.postedDate) {
-    const posted = new Date(formData.value.postedDate)
-    const deadline = new Date(newDeadline)
+// Watch initial data (드래그로 선택한 날짜 또는 수정할 데이터)
+watch(() => props.initialData, (data) => {
+  console.log('🔍 [JobPostingSchedule_Create] initialData 변경됨:', data)
+  
+  if (data) {
+    formData.value = {
+      title: data.title || '',
+      position: data.position || '',
+      department: data.department || '',
+      experience: data.experience || '',
+      type: data.type || '',
+      assignedTo: data.assignedTo || '',
+      postedDate: data.postedDate || '',
+      deadline: data.deadline || '',
+      startTime: data.startTime || '09:00',
+      endTime: data.endTime || '18:00',
+      status: data.status || 'recruiting',
+      description: data.description || '',
+      responsibilities: data.responsibilities || '',
+      requirements: data.requirements || '',
+      preferences: data.preferences || '',
+      benefits: data.benefits || '',
+      isUrgent: data.isUrgent || false
+    }
     
-    if (deadline < posted) {
-      alert('마감일은 게시일 이후여야 합니다.')
-      formData.value.deadline = formData.value.postedDate
-    }
+    console.log('✅ [JobPostingSchedule_Create] formData 업데이트 완료:', {
+      postedDate: formData.value.postedDate,
+      deadline: formData.value.deadline
+    })
   }
-})
+}, { immediate: true, deep: true })
 </script>

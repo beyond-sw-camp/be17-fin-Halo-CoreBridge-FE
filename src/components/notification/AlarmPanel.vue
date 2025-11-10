@@ -4,15 +4,28 @@
     <div class="fixed bottom-6 right-6 z-50">
       <button
         @click="togglePanel"
-        class="relative p-4 bg-slate-600 text-white rounded-full shadow-lg hover:bg-slate-700 transition-all hover:scale-110 active:scale-95"
+        :class="[
+          'relative p-4 text-white rounded-full shadow-lg transition-all hover:scale-110 active:scale-95',
+          isConnected ? 'bg-slate-600 hover:bg-slate-700' : 'bg-gray-400 hover:bg-gray-500'
+        ]"
       >
         <Bell class="w-6 h-6" />
+        
+        <!-- 읽지 않은 알림 배지 -->
         <span
           v-if="unreadCount > 0"
           class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 animate-pulse"
         >
           {{ unreadCount > 99 ? '99+' : unreadCount }}
         </span>
+
+        <!-- 연결 상태 표시 -->
+        <span
+          :class="[
+            'absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white',
+            isConnected ? 'bg-green-500' : 'bg-red-500'
+          ]"
+        />
       </button>
     </div>
 
@@ -31,7 +44,18 @@
               </div>
               <div>
                 <h3 class="text-white font-bold text-lg">알림</h3>
-                <p class="text-white/80 text-xs">{{ unreadCount }}개의 새 알림</p>
+                <div class="flex items-center gap-2">
+                  <p class="text-white/80 text-xs">{{ unreadCount }}개의 새 알림</p>
+                  <span
+                    :class="[
+                      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs',
+                      isConnected ? 'bg-green-500/20 text-green-100' : 'bg-red-500/20 text-red-100'
+                    ]"
+                  >
+                    <span :class="['w-1.5 h-1.5 rounded-full', isConnected ? 'bg-green-300' : 'bg-red-300']" />
+                    {{ isConnected ? '연결됨' : '연결 끊김' }}
+                  </span>
+                </div>
               </div>
             </div>
             <button @click="togglePanel" class="p-2 hover:bg-white/10 rounded-lg transition">
@@ -64,18 +88,46 @@
           </div>
         </div>
 
+        <!-- 연결 끊김 경고 -->
+        <div v-if="!isConnected" class="px-6 py-3 bg-red-50 border-b border-red-100 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <AlertCircle class="w-4 h-4 text-red-600" />
+            <span class="text-sm text-red-700 font-medium">서버 연결이 끊어졌습니다</span>
+          </div>
+          <button
+            @click="reconnect"
+            class="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition"
+          >
+            재연결
+          </button>
+        </div>
+
         <!-- 액션 -->
         <div class="px-6 py-3 bg-gray-50 border-b flex items-center justify-between">
           <button
             @click="markAllAsRead"
             :disabled="unreadCount === 0"
-            class="text-sm text-slate-600 hover:text-slate-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="text-sm text-slate-600 hover:text-slate-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             모두 읽음 처리
           </button>
-          <button @click="clearAll" class="text-sm text-red-600 hover:text-red-800 font-medium">
-            전체 삭제
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              @click="refreshNotifications"
+              class="p-1.5 text-slate-600 hover:text-slate-800 hover:bg-gray-200 rounded-lg transition"
+              title="새로고침"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+            <button
+              @click="clearAll"
+              class="text-sm text-red-600 hover:text-red-800 font-medium transition"
+            >
+              전체 삭제
+            </button>
+          </div>
         </div>
 
         <!-- 목록 -->
@@ -147,6 +199,7 @@
             </div>
           </TransitionGroup>
 
+          <!-- 빈 상태 -->
           <div v-if="filteredNotifications.length === 0" class="py-12 text-center">
             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Bell class="w-8 h-8 text-gray-400" />
@@ -160,7 +213,7 @@
         <div v-if="filteredNotifications.length > 0" class="px-6 py-3 bg-gray-50 border-t">
           <button
             @click="viewAllNotifications"
-            class="w-full text-center text-sm text-slate-600 hover:text-slate-800 font-medium"
+            class="w-full text-center text-sm text-slate-600 hover:text-slate-800 font-medium transition"
           >
             모든 알림 보기
           </button>
@@ -180,118 +233,175 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import {
   Bell, X, Clock, Briefcase, UserPlus,
   AlertCircle, CheckCircle, Calendar, TrendingUp
 } from 'lucide-vue-next'
 import { useNotificationSSE } from '@/composables/notification/useNotificationSSE'
-import type { NotificationItem } from '../../types/notification/notification'
+import type { NotificationItem } from '@/types/notification/notification'
 
+// ========== LocalStorage 키 ==========
+const LS_KEY = 'halo_notifications'
 
-// ✅ SSE 연결 훅
-const { notifications, connect, close } = useNotificationSSE()
+// ========== LocalStorage 저장 함수 ==========
+function saveToStorage(list: NotificationItem[]) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(list.slice(0, 30)))
+  } catch (err) {
+    console.warn('LocalStorage 저장 실패:', err)
+  }
+}
 
-// 컴포넌트 마운트 시 연결, 언마운트 시 종료
-onMounted(() => connect())
-onUnmounted(() => close())
+// ========== SSE 연결 훅 ==========
+const {
+  notifications,
+  isConnected,
+  connect,
+  close,
+  requestNotificationPermission,
+  refreshNotifications: refresh
+} = useNotificationSSE()
 
-// 상태
+// 컴포넌트 마운트 시 연결
+onMounted(() => {
+  connect()
+  requestNotificationPermission()
+})
+
+// 컴포넌트 언마운트 시 종료
+onUnmounted(() => {
+  close()
+})
+
+// ========== 상태 ==========
 const isOpen = ref(false)
 const activeTab = ref<'all' | 'unread'>('all')
 
-// 탭
-const tabs = ref([
-  { id: 'all', label: '전체', count: 0 },
-  { id: 'unread', label: '읽지 않음', count: 0 },
+// ========== 탭 ==========
+const tabs = computed(() => [
+  { id: 'all', label: '전체', count: notifications.value.length },
+  { id: 'unread', label: '읽지 않음', count: unreadCount.value },
 ])
 
-// 숫자/목록
+// ========== 계산된 값 ==========
 const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
 
 const filteredNotifications = computed(() => {
   const list = activeTab.value === 'unread'
     ? notifications.value.filter(n => !n.read)
     : notifications.value
-  // 이미 composable에서 최신순 정렬 보장하지만, 안전하게 재정렬
-  return [...list].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+  
+  // 최신순 정렬 (이미 composable에서 정렬되지만 안전하게)
+  return [...list].sort((a, b) => 
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  )
 })
 
-// 탭 카운트 반영
-const syncTabCounts = () => {
-  tabs.value[0].count = notifications.value.length
-  tabs.value[1].count = unreadCount.value
+// ========== 메서드 ==========
+const togglePanel = () => {
+  isOpen.value = !isOpen.value
 }
-syncTabCounts()
 
-// 패널 토글
-const togglePanel = () => { isOpen.value = !isOpen.value }
+const reconnect = () => {
+  close()
+  setTimeout(() => connect(), 500)
+}
 
-// 클릭 시 읽음(A 확정)
+const refreshNotifications = () => {
+  refresh()
+}
+
+// ✅ 수정: 클릭 시 읽음 처리 + LocalStorage 저장
 const handleNotificationClick = (n: NotificationItem) => {
-  n.read = true
+  if (!n.read) {
+    n.read = true
+    // LocalStorage에 저장
+    saveToStorage(notifications.value)
+  }
   if (n.action) handleAction(n)
 }
 
 // 액션 처리
 const handleAction = (n: NotificationItem) => {
   if (!n.action) return
+  
   switch (n.action.type) {
     case 'open_link':
       if (n.link) window.open(n.link, '_blank', 'noopener,noreferrer')
       break
     case 'view_application':
-      alert(`지원서를 확인합니다: ${n.jobTitle ?? ''}`)
+      console.log('지원서 확인:', n.jobTitle)
+      // TODO: 라우터로 이동
       break
     case 'view_job':
-      alert(`공고를 확인합니다: ${n.jobTitle ?? ''}`)
+      console.log('공고 확인:', n.jobTitle)
+      // TODO: 라우터로 이동
       break
     case 'view_schedule':
-      alert(`면접 일정을 확인합니다: ${n.jobTitle ?? ''}`)
+      console.log('일정 확인:', n.jobTitle)
+      // TODO: 라우터로 이동
       break
     case 'view_applicants':
-      alert(`지원자 목록을 확인합니다: ${n.jobTitle ?? ''}`)
+      console.log('지원자 목록 확인:', n.jobTitle)
+      // TODO: 라우터로 이동
       break
   }
 }
 
-// 개별 삭제
+// ✅ 수정: 개별 삭제 + LocalStorage 저장
 const deleteNotification = (id: number) => {
   const idx = notifications.value.findIndex(n => n.id === id)
-  if (idx > -1) notifications.value.splice(idx, 1)
-  syncTabCounts()
-}
-
-// 모두 읽음
-const markAllAsRead = () => {
-  notifications.value.forEach(n => (n.read = true))
-  syncTabCounts()
-}
-
-// 전체 삭제
-const clearAll = () => {
-  if (confirm('모든 알림을 삭제하시겠습니까?')) {
-    notifications.value = []
-    syncTabCounts()
+  if (idx > -1) {
+    notifications.value.splice(idx, 1)
+    // LocalStorage에 저장
+    saveToStorage(notifications.value)
   }
 }
 
-// time ago
+// ✅ 수정: 모두 읽음 + LocalStorage 저장
+const markAllAsRead = () => {
+  notifications.value.forEach(n => {
+    n.read = true
+  })
+  // LocalStorage에 저장
+  saveToStorage(notifications.value)
+}
+
+// ✅ 수정: 전체 삭제 + LocalStorage 저장
+const clearAll = () => {
+  if (confirm('모든 알림을 삭제하시겠습니까?')) {
+    notifications.value.splice(0, notifications.value.length)
+    // LocalStorage에 저장
+    saveToStorage(notifications.value)
+  }
+}
+
+// 모든 알림 보기
+const viewAllNotifications = () => {
+  console.log('모든 알림 페이지로 이동')
+  // TODO: 라우터로 이동
+}
+
+// ========== 시간 표시 ==========
 const getTimeAgo = (timestamp?: string) => {
   if (!timestamp) return ''
+  
   const now = new Date()
   const time = new Date(timestamp)
   const diff = Math.floor((now.getTime() - time.getTime()) / 1000)
+  
   if (diff < 60) return '방금 전'
   if (diff < 3600) return `${Math.floor(diff / 60)}분 전`
   if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`
   if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`
+  
   return time.toLocaleDateString('ko-KR')
 }
 
-// 아이콘/색상
+// ========== 아이콘 & 색상 ==========
 const getNotificationIcon = (type: string) => {
-  const icons = {
+  const icons: Record<string, any> = {
     application: UserPlus,
     deadline: AlertCircle,
     interview: Calendar,
@@ -299,11 +409,11 @@ const getNotificationIcon = (type: string) => {
     update: TrendingUp,
     success: CheckCircle
   }
-  return (icons as any)[type] || Bell
+  return icons[type] || Bell
 }
 
 const getNotificationColor = (type: string) => {
-  const colors = {
+  const colors: Record<string, string> = {
     application: 'bg-blue-100 text-blue-600',
     deadline: 'bg-red-100 text-red-600',
     interview: 'bg-purple-100 text-purple-600',
@@ -311,38 +421,76 @@ const getNotificationColor = (type: string) => {
     update: 'bg-green-100 text-green-600',
     success: 'bg-emerald-100 text-emerald-600'
   }
-  return (colors as any)[type] || 'bg-gray-100 text-gray-600'
+  return colors[type] || 'bg-gray-100 text-gray-600'
 }
 
-// 탭 카운트 반응형 유지를 위해 notifications 변화에 맞춰 주기적으로 동기화 (간단 대응)
-setInterval(syncTabCounts, 1000)
+// ========== 연결 상태 모니터링 ==========
+watch(isConnected, (connected) => {
+  console.log('SSE 연결 상태:', connected ? '연결됨' : '끊김')
+})
 </script>
 
 <style scoped>
 /* 슬라이드 페이드 */
-.slide-fade-enter-active { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-.slide-fade-leave-active { transition: all 0.2s cubic-bezier(0.4, 0, 1, 1); }
-.slide-fade-enter-from { transform: translateY(20px); opacity: 0; }
-.slide-fade-leave-to { transform: translateY(10px); opacity: 0; }
+.slide-fade-enter-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 1, 1);
+}
+.slide-fade-enter-from {
+  transform: translateY(20px);
+  opacity: 0;
+}
+.slide-fade-leave-to {
+  transform: translateY(10px);
+  opacity: 0;
+}
 
 /* 페이드 */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
 
 /* 리스트 애니메이션 */
-.list-enter-active, .list-leave-active { transition: all 0.3s ease; }
-.list-enter-from { opacity: 0; transform: translateX(30px); }
-.list-leave-to { opacity: 0; transform: translateX(-30px); }
-.list-move { transition: transform 0.3s ease; }
+.list-enter-active, .list-leave-active {
+  transition: all 0.3s ease;
+}
+.list-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+.list-move {
+  transition: transform 0.3s ease;
+}
 
-/* 스크롤바 */
-.overflow-y-auto::-webkit-scrollbar { width: 6px; }
-.overflow-y-auto::-webkit-scrollbar-track { background: #f1f1f1; }
-.overflow-y-auto::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-.overflow-y-auto::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+/* 스크롤바 스타일 */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
 
 /* 말줄임 */
 .line-clamp-2 {
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>
