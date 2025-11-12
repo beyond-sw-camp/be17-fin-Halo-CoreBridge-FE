@@ -98,6 +98,8 @@ const stages = ref<StageEdit[]>([
   { id: 3, name: '2차 면접', color: 'PURPLE', edit: false },
 ])
 
+const baseColors = ['BLUE', 'ORANGE', 'PINK', 'PURPLE', 'RED']
+
 const syncRecruitProcess = () => {
   const middle = stages.value.map((s, idx) => ({
     id: idx + 1,
