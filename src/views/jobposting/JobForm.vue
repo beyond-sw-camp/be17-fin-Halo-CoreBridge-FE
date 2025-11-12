@@ -1,331 +1,314 @@
 <script setup lang="ts">
 import { reactive, ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import type { JobPostingCreateRequest, JobPostingDetailResponse } from '@/types/jobposting/JobPostingTypes'
-import { createJobPosting, updateJobPosting, getDepartment } from '@/api/jobposting/index' // ✅ (NEW) updateJobPosting 추가
 import draggable from 'vuedraggable'
 import { GripVertical, Pencil, Trash2, Plus } from 'lucide-vue-next'
+
+import { createJobPosting, updateJobPosting, getDepartment } from '@/api/jobposting/index'
+import type { JobPostingCreateRequest, JobPostingDetailResponse } from '@/types/jobposting/JobPostingTypes'
 import type { Account } from '@/types/user/Account'
 import AccountAddInterviewerModal from '@/components/recruiter-dashboard/accounts/AccountAddInterviewerModal.vue'
 
-// ===========================
-//  (NEW) Props & Emits 추가
-// ===========================
+/* ============================================================
+ * Props / Emits
+ * ============================================================ */
 const props = defineProps<{
-    mode: 'create' | 'edit'
-    initialData?: JobPostingDetailResponse
+  mode: 'create' | 'edit'
+  initialData?: JobPostingDetailResponse
 }>()
-
 const emit = defineEmits(['completed'])
 
-// ===========================
-// Types
-// ===========================
-interface StageEdit {
-    id: number
-    name: string
-    color: string // Enum(ColorCode)
-    edit: boolean
-}
-
-interface Department {
-    id: number
-    name: string
-}
-
-// ===========================
-// Form State
-// ===========================
+/* ============================================================
+ * Form / State
+ * ============================================================ */
 const form = reactive<JobPostingCreateRequest>({
-    title: '',
-    employmentType: null,
-    careerType: null,
-    minExperience: undefined,
-    maxExperience: undefined,
-    positionLevel: '',
-    location: '',
-    applyStartDate: '',
-    applyEndDate: '',
-    hireEndDate: '',
-    headcount: 0,
-    summary: '',
-    responsibilities: '',
-    requirements: '',
-    preferred: '',
-    techStack: [] as string[],
-    recruitProcess: [
-        { name: '지원 완료', color: 'BLUE', orderIdx: 1 },
-        { name: '서류 검토', color: 'ORANGE', orderIdx: 2 },
-        { name: '1차 면접', color: 'PINK', orderIdx: 3 },
-        { name: '2차 면접', color: 'PURPLE', orderIdx: 4 },
-        { name: '최종 합격', color: 'RED', orderIdx: 5 },
-    ],
-    coverLetterTitles: [{ title: '', subtitle: '' }],
-    salaryType: null,
-    salaryMin: undefined,
-    salaryMax: undefined,
-    salaryNegotiable: false,
-    workingHours: '',
-    benefits: '',
-    departmentId: null,
-    contactName: '',
-    contactEmail: '',
-    additionalInfo: '',
-    interviewers: [] as number[],
+  title: '',
+  employmentType: null,
+  careerType: null,
+  minExperience: undefined,
+  maxExperience: undefined,
+  positionLevel: '',
+  location: '',
+  applyStartDate: '',
+  applyEndDate: '',
+  hireEndDate: '',
+  headcount: 0,
+  summary: '',
+  responsibilities: '',
+  requirements: '',
+  preferred: '',
+  techStack: [] as string[],
+  recruitProcess: [
+    { name: '지원 완료', color: 'BLUE', orderIdx: 1 },
+    { name: '서류 검토', color: 'ORANGE', orderIdx: 2 },
+    { name: '1차 면접', color: 'PINK', orderIdx: 3 },
+    { name: '2차 면접', color: 'PURPLE', orderIdx: 4 },
+    { name: '최종 합격', color: 'RED', orderIdx: 5 },
+  ],
+  coverLetterTitles: [{ title: '', subtitle: '' }],
+  salaryType: null,
+  salaryMin: undefined,
+  salaryMax: undefined,
+  salaryNegotiable: false,
+  workingHours: '',
+  benefits: '',
+  departmentId: null,
+  contactName: '',
+  contactEmail: '',
+  additionalInfo: '',
+  interviewers: [] as number[],
 })
 
 const router = useRouter()
-const department = ref<Department[]>([])
+const department = ref<{ id: number; name: string }[]>([])
 const errors = reactive<Record<string, string>>({})
 const isSubmitting = ref(false)
-const errorMessage = ref('')
 const isLoading = ref(true)
+const errorMessage = ref('')
 
-// 채용프로세스의 시작과 끝 고정(색상만 변경 가능)
-const fixedStart = reactive({ name: '지원 완료', color: 'BLUE', orderIdx: '' })
-const fixedEnd = reactive({ name: '최종 합격', color: 'RED', orderIdx: '' })
-
-// ===========================
-// Tech Stack Management 
-// ===========================
+/* ============================================================
+ * 01. 기술 스택 관리
+ * ============================================================ */
 const techInput = ref('')
 const addTech = () => {
-    const trimmed = techInput.value.trim()
-    if (trimmed) {
-        form.techStack.push(trimmed)
-        techInput.value = ''
-        errors.techStack = ''
-    }
+  const trimmed = techInput.value.trim()
+  if (trimmed) {
+    form.techStack.push(trimmed)
+    techInput.value = ''
+    errors.techStack = ''
+  }
 }
 const removeTech = (i: number) => form.techStack.splice(i, 1)
 
-// ===========================
-// Recruitment Process 
-// ===========================
-const baseColors = ['BLUE', 'ORANGE', 'PINK', 'PURPLE', 'RED']
-const maxStages = ref(10)
+/* ============================================================
+ * 02. 채용 프로세스 관리 (드래그 / 추가 / 삭제)
+ * ============================================================ */
+interface StageEdit {
+  id: number
+  name: string
+  color: string
+  edit: boolean
+}
 
+const fixedStart = reactive({ name: '지원 완료', color: 'BLUE', orderIdx: '' })
+const fixedEnd = reactive({ name: '최종 합격', color: 'RED', orderIdx: '' })
 const stages = ref<StageEdit[]>([
-    { id: 1, name: '서류 검토', color: 'BLUE', edit: false },
-    { id: 2, name: '1차 면접', color: 'ORANGE', edit: false },
-    { id: 3, name: '2차 면접', color: 'PURPLE', edit: false },
+  { id: 1, name: '서류 검토', color: 'BLUE', edit: false },
+  { id: 2, name: '1차 면접', color: 'ORANGE', edit: false },
+  { id: 3, name: '2차 면접', color: 'PURPLE', edit: false },
 ])
 
 const syncRecruitProcess = () => {
-    const middle = stages.value.map((s, idx) => ({
-        id: idx + 1,
-        name: s.name,
-        color: s.color,
-        orderIdx: idx + 2,
-    }))
-    form.recruitProcess = [
-        { name: fixedStart.name, color: fixedStart.color, orderIdx: 1 },
-        ...middle,
-        { name: fixedEnd.name, color: fixedEnd.color, orderIdx: middle.length + 2 },
-    ]
+  const middle = stages.value.map((s, idx) => ({
+    id: idx + 1,
+    name: s.name,
+    color: s.color,
+    orderIdx: idx + 2,
+  }))
+  form.recruitProcess = [
+    { name: fixedStart.name, color: fixedStart.color, orderIdx: 1 },
+    ...middle,
+    { name: fixedEnd.name, color: fixedEnd.color, orderIdx: middle.length + 2 },
+  ]
 }
 watch(stages, syncRecruitProcess, { deep: true })
 
 const addStage = () => {
-    const newId = Math.max(0, ...stages.value.map(s => s.id)) + 1
-    stages.value.push({
-        id: newId,
-        name: `새 단계 ${newId}`,
-        color: 'PURPLE',
-        edit: false,
-    })
-    syncRecruitProcess()
+  const newId = Math.max(0, ...stages.value.map(s => s.id)) + 1
+  stages.value.push({ id: newId, name: `새 단계 ${newId}`, color: 'PURPLE', edit: false })
+  syncRecruitProcess()
 }
-const editStage = (s: StageEdit) => {
-    s.edit = !s.edit
-    if (!s.edit) syncRecruitProcess()
-}
+const editStage = (s: StageEdit) => (s.edit = !s.edit)
 const deleteStage = (id: number) => {
-    stages.value = stages.value.filter(s => s.id !== id)
-    stages.value = stages.value.map((s, idx) => ({ ...s, id: idx + 1 }))
-    syncRecruitProcess()
+  stages.value = stages.value.filter(s => s.id !== id).map((s, idx) => ({ ...s, id: idx + 1 }))
+  syncRecruitProcess()
 }
 const onDragEnd = () => {
-    stages.value = stages.value.map((s, idx) => ({ ...s, id: idx + 1 }))
-    syncRecruitProcess()
+  stages.value = stages.value.map((s, idx) => ({ ...s, id: idx + 1 }))
+  syncRecruitProcess()
 }
 
-// ===========================
-// 질문지 문항 관련 메소드 
-// ===========================
+/* ============================================================
+ * 03. 자기소개서 문항 관리
+ * ============================================================ */
 const addQuestion = () => form.coverLetterTitles.push({ title: '', subtitle: '' })
 const removeQuestion = (index: number) => form.coverLetterTitles.splice(index, 1)
 const isPreviewOpen = ref(false)
 
-// ===========================
-// Navigation & Actions 
-// ===========================
-const exit = () => {
-    if (confirm('작성 중인 내용이 저장되지 않습니다. 정말 나가시겠습니까?')) {
-        window.history.length > 1 ? router.back() : router.push({ name: 'recruiter-jobs' })
-    }
-}
-const saveDraft = () => console.log('임시 저장:', form)
-
-// ===========================
-//  (CHANGED) 수정/등록 공통 submitForm
-// ===========================
-const toDateTime = (d?: string | null, end = false): string | null =>
-    !d || d.trim() === '' ? null : `${d} ${end ? '23:59:59' : '00:00:00'}`
-
-const submitForm = async () => {
-    isSubmitting.value = true
-    try {
-        const payload: JobPostingCreateRequest = {
-            ...form,
-            headcount: Number(form.headcount) || 0,
-            salaryMin: Number(form.salaryMin) || 0,
-            salaryMax: Number(form.salaryMax) || 0,
-            departmentId: Number(form.departmentId) || null,
-            applyStartDate: toDateTime(form.applyStartDate, false) as any,
-            applyEndDate: toDateTime(form.applyEndDate, true) as any,
-            hireEndDate: toDateTime(form.hireEndDate, true) as any,
-        }
-
-        Object.keys(errors).forEach(k => (errors[k] = ''))
-
-        // ✅ (CHANGED) 모드에 따라 API 분기
-        if (props.mode === 'create') {
-            const res = await createJobPosting(payload)
-            if (res.success) {
-                alert('채용공고 등록이 완료되었습니다!')
-                emit('completed')
-            } else Object.assign(errors, res.results || {})
-        } else {
-            const res = await updateJobPosting(props.initialData!.id, payload)
-            if (res.success) {
-                alert('채용공고 수정이 완료되었습니다!')
-                emit('completed')
-            } else Object.assign(errors, res.results || {})
-        }
-    } catch (err) {
-        console.error('요청 오류:', err)
-        alert('서버 오류가 발생했습니다.')
-    } finally {
-        isSubmitting.value = false
-    }
-}
-
-// ===========================
-// Auto Clear Error 🧱 (UNCHANGED)
-// ===========================
-watch(
-    () => ({ ...form }),
-    (newVal) => {
-        Object.keys(errors).forEach(key => {
-            const val = (newVal as any)[key]
-            const isEmptyArray = Array.isArray(val) && val.length === 0
-            if (errors[key] && val !== '' && val !== null && !isEmptyArray) {
-                errors[key] = ''
-            }
-        })
+/* ============================================================
+ * 04. 주소 검색 (카카오 API)
+ * ============================================================ */
+function openAddressSearch() {
+  new (window as any).daum.Postcode({
+    oncomplete: (data: any) => {
+      const addr = data.roadAddress ? data.roadAddress : data.jibunAddress
+      form.location = addr
     },
-    { deep: true }
+  }).open()
+}
+
+/* ============================================================
+ * 05. 모집 일정 (날짜 + 시간 결합)
+ * ============================================================ */
+const applyStartDateOnly = ref('')
+const applyStartTimeOnly = ref('')
+const applyEndDateOnly = ref('')
+const applyEndTimeOnly = ref('')
+const hireEndDateOnly = ref('')
+const hireEndTimeOnly = ref('')
+
+watch(
+  [
+    applyStartDateOnly,
+    applyStartTimeOnly,
+    applyEndDateOnly,
+    applyEndTimeOnly,
+    hireEndDateOnly,
+    hireEndTimeOnly,
+  ],
+  () => {
+    // 날짜와 시간을 "2025-11-13 22:48:00" 형식으로 변환
+    const formatDateTime = (date: string, time: string) => {
+      if (!date || !time) return ''
+      return `${date} ${time}:00` //  'T' 대신 공백, 초는 00 고정
+    }
+
+    form.applyStartDate = formatDateTime(applyStartDateOnly.value, applyStartTimeOnly.value)
+    form.applyEndDate = formatDateTime(applyEndDateOnly.value, applyEndTimeOnly.value)
+    form.hireEndDate = formatDateTime(hireEndDateOnly.value, hireEndTimeOnly.value)
+  },
+  { deep: true }
 )
 
-// ===========================
-// Computed 🧱 (UNCHANGED)
-// ===========================
+
+/* ============================================================
+ * 06. 면접관 관리
+ * ============================================================ */
+const addInterviewers = ref<Account[]>([])
+const extractInitial = (name: string) => name.charAt(0).toUpperCase()
+const isOpenInterviewerAddModal = ref(false)
+const openInterviewerAddModal = () => (isOpenInterviewerAddModal.value = true)
+const closeInterviewerAddModal = () => (isOpenInterviewerAddModal.value = false)
+
+const addInterviewersToForm = (accounts: Account[]) => {
+  addInterviewers.value = accounts
+  const newIds = accounts.map(acc => acc.id)
+  form.interviewers = Array.from(new Set([...form.interviewers, ...newIds]))
+}
+const deleteInterviewer = (accountId: number) => {
+  form.interviewers = form.interviewers.filter(id => id !== accountId)
+  addInterviewers.value = addInterviewers.value.filter(acc => acc.id !== accountId)
+}
+
+/* ============================================================
+ * 07. 네비게이션 / 제출 로직
+ * ============================================================ */
+const exit = () => {
+  if (confirm('작성 중인 내용이 저장되지 않습니다. 정말 나가시겠습니까?')) {
+    window.history.length > 1 ? router.back() : router.push({ name: 'recruiter-jobs' })
+  }
+}
+
+const submitForm = async () => {
+  isSubmitting.value = true
+  try {
+    const payload: JobPostingCreateRequest = {
+      ...form,
+      headcount: Number(form.headcount) || 0,
+      salaryMin: Number(form.salaryMin) || 0,
+      salaryMax: Number(form.salaryMax) || 0,
+      departmentId: Number(form.departmentId) || null,
+      applyStartDate: form.applyStartDate,
+      applyEndDate: form.applyEndDate,
+      hireEndDate: form.hireEndDate,
+    }
+
+    Object.keys(errors).forEach(k => (errors[k] = ''))
+
+    const res =
+      props.mode === 'create'
+        ? await createJobPosting(payload)
+        : await updateJobPosting(props.initialData!.id, payload)
+
+    if (res.success) {
+      alert(props.mode === 'create' ? '채용공고 등록이 완료되었습니다!' : '채용공고 수정이 완료되었습니다!')
+      emit('completed')
+    } else {
+      Object.assign(errors, res.results || {})
+    }
+  } catch (err) {
+    console.error('요청 오류:', err)
+    alert('서버 오류가 발생했습니다.')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+/* ============================================================
+ * 08. 에러 자동 초기화
+ * ============================================================ */
+watch(
+  () => ({ ...form }),
+  (newVal) => {
+    Object.keys(errors).forEach(key => {
+      const val = (newVal as any)[key]
+      const isEmptyArray = Array.isArray(val) && val.length === 0
+      if (errors[key] && val !== '' && val !== null && !isEmptyArray) errors[key] = ''
+    })
+  },
+  { deep: true }
+)
+
+/* ============================================================
+ * 09. computed / 수정 모드 초기화
+ * ============================================================ */
 const isExperienced = computed(() => form.careerType === '경력')
 const isExperienceInvalid = computed(() => form.careerType === '경력' && (!form.minExperience || !form.maxExperience))
 const isSalaryInvalid = computed(() => form.salaryType === '고정급여' && (!form.salaryMin || !form.salaryMax))
 
-// ===========================
-// ✅ (NEW) 수정 모드일 경우 데이터 주입
-// ===========================
 onMounted(async () => {
-    try {
-        const res = await getDepartment()
-        if (res.success) department.value = res.results
+  try {
+    const res = await getDepartment()
+    if (res.success) department.value = res.results
 
-        if (props.mode === 'edit' && props.initialData) {
-            // 1️⃣ form 변환
-            const transformed = {
-                ...props.initialData,
-                recruitProcess: props.initialData.recruitProcess.map(proc => ({
-                    id: proc.id,
-                    name: proc.name,
-                    color: proc.colorCode?.name || 'BLUE',
-                    orderIdx: proc.orderIdx,
-                })),
-                coverLetterTitles: props.initialData.coverLetterTitles.map(q => ({
-                    id: q.id,
-                    title: q.title,
-                    subtitle: q.subtitle,
-                })),
-            }
+    if (props.mode === 'edit' && props.initialData) {
+      const transformed = {
+        ...props.initialData,
+        recruitProcess: props.initialData.recruitProcess.map(proc => ({
+          id: proc.id,
+          name: proc.name,
+          color: proc.colorCode?.name || 'BLUE',
+          orderIdx: proc.orderIdx,
+        })),
+        coverLetterTitles: props.initialData.coverLetterTitles.map(q => ({
+          id: q.id,
+          title: q.title,
+          subtitle: q.subtitle,
+        })),
+      }
 
-            // 2️⃣ form 데이터 반영
-            Object.assign(form, transformed)
+      Object.assign(form, transformed)
 
-            // 3️⃣ stages 반영 (여기 추가!)
-            stages.value = transformed.recruitProcess
-                .filter(p => p.name !== '지원 완료' && p.name !== '최종 합격')
-                .map((p, idx) => ({
-                    id: idx + 1,
-                    name: p.name,
-                    color: p.color,
-                    edit: false,
-                }))
+      stages.value = transformed.recruitProcess
+        .filter(p => p.name !== '지원 완료' && p.name !== '최종 합격')
+        .map((p, idx) => ({ id: idx + 1, name: p.name, color: p.color, edit: false }))
 
-            // 4️⃣ fixed 색상도 반영 (선택적으로)
-            const start = transformed.recruitProcess.find(p => p.name === '지원 완료')
-            const end = transformed.recruitProcess.find(p => p.name === '최종 합격')
-            if (start) fixedStart.color = start.color
-            if (end) fixedEnd.color = end.color
+      const start = transformed.recruitProcess.find(p => p.name === '지원 완료')
+      const end = transformed.recruitProcess.find(p => p.name === '최종 합격')
+      if (start) fixedStart.color = start.color
+      if (end) fixedEnd.color = end.color
 
-            // 5️⃣ form.recruitProcess 최신화
-            syncRecruitProcess()
-        }
-    } catch (err: any) {
-        console.error(err)
-        errorMessage.value = '서버오류 발생'
-    } finally {
-        isLoading.value = false
+      syncRecruitProcess()
     }
+  } catch (err: any) {
+    console.error(err)
+    errorMessage.value = '서버오류 발생'
+  } finally {
+    isLoading.value = false
+  }
 })
-
-/**
- * ============================================
- * 면접관 추가
- * ===========================================
- */
-const addInterviewers = ref<Account[]>([])
-
-const extractInitial = (name: string) => {
-    return name.charAt(0).toUpperCase()
-}
-
-const isOpenInterviewerAddModal = ref(false)
-const openInterviewerAddModal = () => {
-    isOpenInterviewerAddModal.value = true
-}
-
-const closeInterviewerAddModal = () => {
-    isOpenInterviewerAddModal.value = false
-}
-
-const addInterviewersToForm = (accounts: Account[]) => {
-
-    addInterviewers.value = accounts
-    const newIds = accounts.map(acc => acc.id)
-    const existingIds = form.interviewers
-    // 중복 제거 후 추가
-    form.interviewers = Array.from(new Set([...existingIds, ...newIds]))
-
-}
-
-const deleteInterviewer = (accountId: number) => {
-    form.interviewers = form.interviewers.filter(id => id !== accountId)
-    addInterviewers.value = addInterviewers.value.filter(acc => acc.id !== accountId)
-}
-
 </script>
+
 
 
 
@@ -478,54 +461,81 @@ const deleteInterviewer = (accountId: number) => {
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 근무 지역 <span class="text-red-500">*</span>
                             </label>
-                            <input v-model="form.location" type="text" placeholder="예: 서울시 강남구 테헤란로 123" :class="[
-                                'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent',
-                                errors.location ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
-                            ]" />
-                            <p v-if="errors.location" class="text-sm text-red-500 mt-1">{{ errors.location }}</p>
+
+                            <div class="flex gap-2">
+                                <!-- 주소 입력 필드 -->
+                                <input v-model="form.location" type="text" placeholder="주소 검색을 통해 선택해주세요" readonly
+                                    :class="[
+                                        'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent bg-gray-50',
+                                        errors.location ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
+                                    ]" />
+
+                                <!-- 주소 검색 버튼 -->
+                                <button type="button" @click="openAddressSearch"
+                                    class="px-3 py-1.5 text-sm bg-slate-600 text-white rounded-md hover:bg-slate-700 whitespace-nowrap">
+                                    주소 검색
+                                </button>
+                            </div>
+
+                            <p v-if="errors.location" class="text-sm text-red-500 mt-1">
+                                {{ errors.location }}
+                            </p>
                         </div>
 
-                        <!-- 날짜 & 모집 인원 -->
-                        <div class="grid grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    접수 시작일 <span class="text-red-500">*</span>
-                                </label>
-                                <input v-model="form.applyStartDate" type="date" :class="[
-                                    'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent',
-                                    errors.applyStartDate ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
-                                ]" />
-                                <p v-if="errors.applyStartDate" class="text-sm text-red-500 mt-1">{{
+                        <!-- 모집 일정 & 인원 -->
+                        <div class="space-y-8">
+                            <label class="block text-base font-semibold text-gray-800">
+                                모집 일정 및 인원
+                            </label>
+
+                            <!-- 접수 시작일 -->
+                            <div class="flex flex-col space-y-2">
+                                <label class="text-sm text-gray-600">접수 시작일 <span class="text-red-500">*</span></label>
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <input type="date" v-model="applyStartDateOnly"
+                                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600 focus:border-transparent" />
+                                    <input type="time" v-model="applyStartTimeOnly"
+                                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600 focus:border-transparent" />
+                                </div>
+                                <p v-if="errors.applyStartDate" class="text-xs text-red-500 mt-1">{{
                                     errors.applyStartDate }}</p>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    접수 종료일 <span class="text-red-500">*</span>
-                                </label>
-                                <input v-model="form.applyEndDate" type="date" :class="[
-                                    'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent',
-                                    errors.applyEndDate ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
-                                ]" />
-                                <p v-if="errors.applyEndDate" class="text-sm text-red-500 mt-1">{{ errors.applyEndDate
-                                    }}</p>
+
+                            <!-- 접수 마감일 -->
+                            <div class="flex flex-col space-y-2">
+                                <label class="text-sm text-gray-600">접수 마감일 <span class="text-red-500">*</span></label>
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <input type="date" v-model="applyEndDateOnly"
+                                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600 focus:border-transparent" />
+                                    <input type="time" v-model="applyEndTimeOnly"
+                                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600 focus:border-transparent" />
+                                </div>
+                                <p v-if="errors.applyEndDate" class="text-xs text-red-500 mt-1">{{ errors.applyEndDate
+                                }}</p>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    마감일 <span class="text-red-500">*</span>
-                                </label>
-                                <input v-model="form.hireEndDate" type="date" :class="[
-                                    'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent',
-                                    errors.hireEndDate ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
-                                ]" />
-                                <p v-if="errors.hireEndDate" class="text-sm text-red-500 mt-1">{{ errors.hireEndDate }}
+
+                            <!-- 채용 마감일 -->
+                            <div class="flex flex-col space-y-2">
+                                <label class="text-sm text-gray-600">채용 마감일 <span class="text-red-500">*</span></label>
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <input type="date" v-model="hireEndDateOnly"
+                                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600 focus:border-transparent" />
+                                    <input type="time" v-model="hireEndTimeOnly"
+                                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600 focus:border-transparent" />
+                                </div>
+                                <p v-if="errors.hireEndDate" class="text-xs text-red-500 mt-1">{{ errors.hireEndDate }}
                                 </p>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">모집 인원</label>
-                                <input v-model="form.headcount" type="number" placeholder="예: 2"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600" />
+
+                            <!-- 모집 인원 -->
+                            <div class="flex flex-col space-y-2">
+                                <label class="text-sm text-gray-600">모집 인원</label>
+                                <input v-model="form.headcount" type="number" placeholder="예: 3" min="0"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600 focus:border-transparent" />
                             </div>
                         </div>
+
+
                     </div>
                 </section>
 
