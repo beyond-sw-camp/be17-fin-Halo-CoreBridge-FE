@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { JobPostingListResponse } from '@/types/jobposting/JobPostingTypes'
-import { getJobs } from '@/api/jobposting/index'
+import { searchJobPostings } from '@/api/jobposting/index'
 import {
     FileText,
     CheckCircle,
@@ -23,8 +23,6 @@ const router = useRouter()
 // State
 // -----------------------------
 const searchQuery = ref('')
-const statusFilter = ref('')
-const departmentFilter = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 10
 
@@ -67,13 +65,15 @@ const loadJobs = async () => {
     try {
         isLoading.value = true
         errorMessage.value = ''
+        const response = await searchJobPostings(searchQuery.value, currentPage.value - 1)
 
-        const response = await getJobs()
         if (response.success) {
-            jobs.value = response.results
+            const results = response.results
+            jobs.value = response.results.jobPostings
+            totalJobs.value = results.totalElements
+            totalPages.value = results.totalPages
 
-            //  통계 계산
-            stats.value.total = jobs.value.length
+            stats.value.total = totalJobs.value
             stats.value.active = jobs.value.filter((j) => j.status === '채용중').length
             stats.value.totalApplicants = jobs.value.reduce(
                 (sum, j) => sum + (j.applicantCount || 0),
@@ -85,62 +85,26 @@ const loadJobs = async () => {
                 )
                 return total + (finalStage?.count || 0)
             }, 0)
-        } else {
-            throw new Error(response.message)
-        }
+        } else throw new Error(response.message)
     } catch (err: any) {
-        console.error('채용공고 목록 조회 실패:', err)
-        errorMessage.value = err.message || '데이터를 불러오지 못했습니다.'
+        console.error('검색 실패:', err)
+        errorMessage.value = err.message || '검색 결과를 불러오지 못했습니다.'
     } finally {
         isLoading.value = false
     }
 }
 
+
+
 onMounted(() => {
     loadJobs()
 })
 
-// -----------------------------
-// Computed
-// -----------------------------
-const filteredJobs = computed(() => {
-    let result = jobs.value
-
-    //  검색 필터
-    if (searchQuery.value) {
-        const query = searchQuery.value.toLowerCase()
-        result = result.filter(
-            (job) =>
-                job.title.toLowerCase().includes(query) ||
-                job.departmentName.toLowerCase().includes(query)
-        )
-    }
-
-    //  상태 필터
-    if (statusFilter.value) {
-        result = result.filter((job) => job.status === statusFilter.value)
-    }
-
-    //  부서 필터
-    if (departmentFilter.value) {
-        result = result.filter((job) =>
-            job.departmentName
-                .toLowerCase()
-                .includes(departmentFilter.value.toLowerCase())
-        )
-    }
-
-    return result
-})
 
 // 페이지네이션 계산
-const totalJobs = computed(() => filteredJobs.value.length)
-const totalPages = computed(() => Math.ceil(totalJobs.value / itemsPerPage))
-const paginatedJobs = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage
-    const end = start + itemsPerPage
-    return filteredJobs.value.slice(start, end)
-})
+const totalJobs = ref(0)
+const totalPages = ref(1)
+
 
 // 페이지 표시 범위
 const paginationStart = computed(() =>
@@ -154,14 +118,23 @@ const paginationEnd = computed(() => {
 // -----------------------------
 // Methods
 // -----------------------------
-const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages.value) currentPage.value = page
+const goToPage = async (page: number) => {
+    if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page
+        await loadJobs()
+    }
 }
-const previousPage = () => {
-    if (currentPage.value > 1) currentPage.value--
+const previousPage = async () => {
+    if (currentPage.value > 1) {
+        currentPage.value--
+        await loadJobs()
+    }
 }
-const nextPage = () => {
-    if (currentPage.value < totalPages.value) currentPage.value++
+const nextPage = async () => {
+    if (currentPage.value < totalPages.value) {
+        currentPage.value++
+        await loadJobs()
+    }
 }
 
 const getProgressColor = (progress: number) => {
@@ -175,19 +148,23 @@ const openJobForm = () => router.push({ name: 'jobPostingCreate' })
 const viewJobDetail = (id: number) =>
     router.push({ name: 'recruiter-job-detail', params: { id } })
 
-const editJob = (id: number) => alert(`공고 ID ${id} 수정 페이지로 이동`)
-const shareJob = (id: number) => alert(`공고 ID ${id} 공유 기능 (추후 연결 예정)`)
+const editJob = (id: number) =>
+    router.push({
+    path: `/job-posting/${id}/edit`,
+    query: { mode: 'edit' },
+  })
+// const shareJob = (id: number) => alert(`공고 ID ${id} 공유 기능 (추후 연결 예정)`)
 const viewApplicants = (id: number) =>
-    alert(`공고 ID ${id}의 지원자 목록 보기`)
+    router.push({
+    path: `/admin/jobs/${id}/applicants`,
+    query: { mode: 'edit' },
+  })
 
 // 필터 변경 시 페이지 초기화
-const handleSearch = () => (currentPage.value = 1)
-const handleFilterChange = () => (currentPage.value = 1)
-
-// 필터 감시해서 자동 리셋
-watch([searchQuery, statusFilter, departmentFilter], () => {
+const handleSearch = async () => {
     currentPage.value = 1
-})
+    await loadJobs()
+}
 </script>
 
 <template>
@@ -247,23 +224,21 @@ watch([searchQuery, statusFilter, departmentFilter], () => {
                 class="bg-white rounded-xl border border-gray-200 p-6 mb-6 flex flex-row shadow-sm hover:shadow-md transition-shadow duration-200">
                 <div class="flex-1 mr-4">
                     <div class="relative">
-                        <input v-model="searchQuery" type="text" placeholder="공고명, 부서, 키워드 검색..."
+                        <input v-model="searchQuery" type="text" placeholder="공고명 검색..."
                             class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
-                            @input="handleSearch" />
+                            @keyup.enter="handleSearch" />
                         <Search class="w-5 h-5 text-gray-400 absolute left-3 top-3.5" />
                     </div>
                 </div>
 
                 <div class="flex items-center space-x-4">
-                    <select v-model="statusFilter" @change="handleFilterChange"
-                        class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent">
-                        <option value="">전체 상태</option>
-                        <option value="채용중">채용중</option>
-                        <option value="예정">예정</option>
-                        <option value="마감">마감</option>
-                    </select>
+                    <button @click="handleSearch"
+                        class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700">
+                        검색
+                    </button>
                 </div>
             </div>
+
 
             <!-- Table -->
             <div class="bg-white rounded-lg shadow p-6">
@@ -276,7 +251,7 @@ watch([searchQuery, statusFilter, departmentFilter], () => {
                 <div v-else-if="errorMessage" class="text-center py-10 text-red-500">
                     ⚠️ {{ errorMessage }}
                 </div>
-                <div v-else-if="paginatedJobs.length === 0" class="text-center py-10 text-gray-500">
+                <div v-else-if="jobs.length === 0" class="text-center py-10 text-gray-500">
                     표시할 공고가 없습니다.
                 </div>
 
@@ -296,7 +271,7 @@ watch([searchQuery, statusFilter, departmentFilter], () => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="job in paginatedJobs" :key="job.id"
+                            <tr v-for="job in jobs" :key="job.id"
                                 class="border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer"
                                 @click="viewJobDetail(job.id)">
                                 <td class="py-3 px-4">
@@ -356,10 +331,10 @@ watch([searchQuery, statusFilter, departmentFilter], () => {
                                             class="p-1.5 text-slate-600 hover:bg-slate-100 rounded">
                                             <Edit class="w-4 h-4" />
                                         </button>
-                                        <button @click.stop="shareJob(job.id)"
+                                        <!-- <button @click.stop="shareJob(job.id)"
                                             class="p-1.5 text-blue-600 hover:bg-blue-100 rounded">
                                             <Share2 class="w-4 h-4" />
-                                        </button>
+                                        </button> -->
                                         <button @click.stop="viewApplicants(job.id)"
                                             class="p-1.5 text-green-600 hover:bg-green-100 rounded">
                                             <Users class="w-4 h-4" />
