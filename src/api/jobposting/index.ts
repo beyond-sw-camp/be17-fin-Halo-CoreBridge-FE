@@ -258,3 +258,25 @@ export const deleteJobPosting = async (id: number): Promise<ApiResponse> => {
 
   return data
 }
+
+export const searchJobPostings = async (keyword: string, page = 0): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined
+  }
+
+  const url = `/api/job-postings/search`
+
+  await api
+    .get(url, { params: { keyword, page } })
+    .then((res) => {
+      data = res.data
+    })
+    .catch((error) => {
+      data = error.response.data as ApiResponse
+    })
+
+  return data
+}
