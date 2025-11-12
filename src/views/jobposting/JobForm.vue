@@ -325,6 +325,21 @@ const deleteInterviewer = (accountId: number) => {
     addInterviewers.value = addInterviewers.value.filter(acc => acc.id !== accountId)
 }
 
+
+/**
+ * ============================================
+ *  주소 검색 기능 (카카오 우편번호 API)
+ * ============================================
+ */
+function openAddressSearch() {
+    new (window as any).daum.Postcode({
+        oncomplete: (data: any) => {
+            // 도로명주소(roadAddress) 또는 지번주소(jibunAddress)
+            const addr = data.roadAddress ? data.roadAddress : data.jibunAddress
+            form.location = addr
+        },
+    }).open()
+}
 </script>
 
 
@@ -386,7 +401,7 @@ const deleteInterviewer = (accountId: number) => {
                                     </option>
                                 </select>
                                 <p v-if="errors.departmentId" class="text-sm text-red-500 mt-1">{{ errors.departmentId
-                                    }}</p>
+                                }}</p>
                             </div>
 
                             <!-- 고용 형태 -->
@@ -478,11 +493,25 @@ const deleteInterviewer = (accountId: number) => {
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 근무 지역 <span class="text-red-500">*</span>
                             </label>
-                            <input v-model="form.location" type="text" placeholder="예: 서울시 강남구 테헤란로 123" :class="[
-                                'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent',
-                                errors.location ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
-                            ]" />
-                            <p v-if="errors.location" class="text-sm text-red-500 mt-1">{{ errors.location }}</p>
+
+                            <div class="flex gap-2">
+                                <!-- 주소 입력 필드 -->
+                                <input v-model="form.location" type="text" placeholder="주소 검색을 통해 선택해주세요" readonly
+                                    :class="[
+                                        'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent bg-gray-50',
+                                        errors.location ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
+                                    ]" />
+
+                                <!-- 주소 검색 버튼 -->
+                                <button type="button" @click="openAddressSearch"
+                                    class="px-3 py-1.5 text-sm bg-slate-600 text-white rounded-md hover:bg-slate-700 whitespace-nowrap">
+                                    주소 검색
+                                </button>
+                            </div>
+
+                            <p v-if="errors.location" class="text-sm text-red-500 mt-1">
+                                {{ errors.location }}
+                            </p>
                         </div>
 
                         <!-- 날짜 & 모집 인원 -->
@@ -507,7 +536,7 @@ const deleteInterviewer = (accountId: number) => {
                                     errors.applyEndDate ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                 ]" />
                                 <p v-if="errors.applyEndDate" class="text-sm text-red-500 mt-1">{{ errors.applyEndDate
-                                    }}</p>
+                                }}</p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -770,7 +799,7 @@ const deleteInterviewer = (accountId: number) => {
                                                 class="border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-700 focus:ring-2 focus:ring-slate-300 focus:outline-none min-w-[90px]"
                                                 @change="syncRecruitProcess">
                                                 <option v-for="color in baseColors" :key="color" :value="color">{{ color
-                                                    }}</option>
+                                                }}</option>
                                             </select>
 
                                             <!-- 수정 버튼 -->
@@ -913,7 +942,7 @@ const deleteInterviewer = (accountId: number) => {
                     <div class="flex justify-center mt-4">
                         <p v-if="errors.coverLetterTitles" class="text-sm text-red-500 mt-1">{{
                             errors.coverLetterTitles
-                            }}</p>
+                        }}</p>
                     </div>
                     <div class="mt-4"></div>
                     <div class="flex justify-center mt-6">
@@ -960,7 +989,7 @@ const deleteInterviewer = (accountId: number) => {
                                         <div
                                             class="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl flex items-center justify-center">
                                             <span class="text-white font-semibold">{{ extractInitial(account.name)
-                                                }}</span>
+                                            }}</span>
                                         </div>
                                         <div>
                                             <h3 class="font-semibold text-slate-800 mb-1">
@@ -1000,7 +1029,7 @@ const deleteInterviewer = (accountId: number) => {
                                     errors.contactName ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                 ]" />
                                 <p v-if="errors.contactName" class="text-sm text-red-500 mt-1">{{ errors.contactName
-                                    }}
+                                }}
                                 </p>
                             </div>
                             <div>
@@ -1013,7 +1042,7 @@ const deleteInterviewer = (accountId: number) => {
                                 ]" />
                                 <p v-if="errors.contactEmail" class="text-sm text-red-500 mt-1">{{
                                     errors.contactEmail
-                                    }}</p>
+                                }}</p>
                             </div>
                         </div>
 
@@ -1028,7 +1057,7 @@ const deleteInterviewer = (accountId: number) => {
 ]"></textarea>
                             <p v-if="errors.additionalInfo" class="text-sm text-red-500 mt-1">{{
                                 errors.additionalInfo
-                                }}</p>
+                            }}</p>
                         </div>
                     </div>
                 </section>
