@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const onCompleted = () => {
-  router.push('/recruiter/jobs')
+  router.push('/admin/jobs')
 }
 </script>
 
