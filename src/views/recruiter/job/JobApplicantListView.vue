@@ -111,56 +111,88 @@ const stats = computed(() => {
     return { total, processes }
 })
 
+
+// Tailwind 색상 → HEX 매핑 (이전 함수 재사용)
+function getColorHex(code: string): string {
+  const map: Record<string, string> = {
+    'blue-500': '#60a5fa',     // blue-400
+    'orange-500': '#fb923c',   // orange-400
+    'purple-500': '#a78bfa',   // purple-400
+    'green-500': '#4ade80',    // green-400
+    'pink-500': '#f472b6',     // pink-400
+    'yellow-500': '#facc15',   // yellow-400
+    'red-500': '#f87171',      // red-400
+    'teal-500': '#2dd4bf',     // teal-400
+    'gray-500': '#9ca3af',     // gray-400
+    'slate-500': '#94a3b8',    // slate-400
+  }
+  return map[code] || '#cbd5e1' // fallback: slate-300
+}
+
+
 // --------------------------------------
 // ApexCharts (그래프)
 // --------------------------------------
 const barSeries = computed(() => [
-    { name: '지원자 수', data: stats.value.processes.map((p) => p.count) }
+  {
+    name: '지원자 수',
+    data: stats.value.processes.map((p) => p.count),
+  },
 ])
 
 const barOptions = computed(() => ({
-    chart: { toolbar: { show: false } },
-    xaxis: {
-        categories: stats.value.processes.map((p) => p.name),
-        labels: { style: { colors: '#6b7280', fontSize: '12px' } }
+  chart: { toolbar: { show: false } },
+  xaxis: {
+    categories: stats.value.processes.map((p) => p.name),
+    labels: { style: { colors: '#6b7280', fontSize: '12px' } },
+  },
+  yaxis: {
+    labels: { style: { colors: '#6b7280' } },
+    title: { text: '인원 수', style: { color: '#6b7280' } },
+  },
+  plotOptions: {
+    bar: {
+      borderRadius: 6,
+      distributed: true,
+      columnWidth: '55%',
     },
-    yaxis: {
-        labels: { style: { colors: '#6b7280' } },
-        title: { text: '인원 수', style: { color: '#6b7280' } }
-    },
-    plotOptions: {
-        bar: {
-            borderRadius: 6,
-            distributed: true,
-            columnWidth: '55%'
-        }
-    },
-    grid: { borderColor: '#f1f5f9' },
-    dataLabels: { enabled: false },
-    colors: ['#3b82f6', '#f97316', '#a855f7', '#22c55e', '#ec4899']
+  },
+  grid: { borderColor: '#f1f5f9' },
+  dataLabels: { enabled: false },
+  colors: stats.value.processes.map((p) => getColorHex(p.colorCode.code)), // ✅ 백엔드 색상 반영
 }))
 
-const donutSeries = computed(() => stats.value.processes.map((p) => p.count))
+const donutSeries = computed(() =>
+  stats.value.processes.map((p) => p.count)
+)
+
 const donutOptions = computed(() => ({
-    labels: stats.value.processes.map((p) => p.name),
-    colors: ['#3b82f6', '#f97316', '#a855f7', '#22c55e', '#ec4899'],
-    legend: { position: 'bottom' },
-    plotOptions: {
-        pie: {
-            donut: {
-                size: '70%',
-                labels: {
-                    show: true,
-                    total: {
-                        show: true,
-                        label: '전체',
-                        formatter: () => `${stats.value.total}명`
-                    }
-                }
-            }
-        }
+  labels: stats.value.processes.map((p) => p.name),
+  colors: stats.value.processes.map((p) => getColorHex(p.colorCode.code)), // ✅ 동일하게 백엔드 색상 사용
+  legend: { position: 'bottom' },
+  plotOptions: {
+    pie: {
+      donut: {
+        size: '70%',
+        labels: {
+          show: true,
+          total: {
+            show: true,
+            label: '전체',
+            formatter: () => `${stats.value.total}명`,
+          },
+        },
+      },
     },
-    dataLabels: { enabled: true }
+  },
+  dataLabels: {
+    enabled: true,
+    style: {
+      fontSize: '12px',
+      fontWeight: 500,
+      colors: ['#475569'],
+    },
+  },
 }))
 
 // --------------------------------------
