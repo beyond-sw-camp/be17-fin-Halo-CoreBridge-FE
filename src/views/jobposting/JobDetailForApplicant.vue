@@ -166,9 +166,24 @@ const getStatusClass = (status?: string): string => {
 }
 
 const exit = () => router.push('/jobs')
+
+// 접수기간 이외에 지원하기 비활성화
 const handleApply = () => {
-  router.push(`/jobposts/${jobId}/applies`)
-}
+  if (!detailInfo.value) return;
+
+  const now = new Date();
+  const start = new Date(detailInfo.value.applyStartDate);
+  const end = new Date(detailInfo.value.applyEndDate);
+
+  // 지원 기간이 아닐 때
+  if (now < start || now > end) {
+    alert('접수 기간이 마감된 채용공고입니다.');
+    return;
+  }
+
+  // 지원 기간일 때 → 지원 페이지 이동
+  router.push(`/jobposts/${jobId}/applies`);
+};
 </script>
 
 <template>
@@ -323,7 +338,7 @@ const handleApply = () => {
               <div class="flex justify-between">
                 <span class="text-gray-600">접수 기간</span>
                 <span class="font-medium">{{ formatDateRange(detailInfo?.applyStartDate, detailInfo?.applyEndDate)
-                  }}</span>
+                }}</span>
               </div>
             </div>
           </section>
