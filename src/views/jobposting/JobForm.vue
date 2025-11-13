@@ -3,8 +3,9 @@ import { reactive, ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import draggable from 'vuedraggable'
 import { GripVertical, Pencil, Trash2, Plus } from 'lucide-vue-next'
-
+import TechStackSelectButton from '@/components/techstack/TechStackSelectButton.vue'
 import { createJobPosting, updateJobPosting, getDepartment } from '@/api/jobposting/index'
+import { getTechStack } from '@/api/teck-stack'
 import type { JobPostingCreateRequest, JobPostingDetailResponse } from '@/types/jobposting/JobPostingTypes'
 import type { Account } from '@/types/user/Account'
 import AccountAddInterviewerModal from '@/components/recruiter-dashboard/accounts/AccountAddInterviewerModal.vue'
@@ -13,8 +14,8 @@ import AccountAddInterviewerModal from '@/components/recruiter-dashboard/account
  * Props / Emits
  * ============================================================ */
 const props = defineProps<{
-  mode: 'create' | 'edit'
-  initialData?: JobPostingDetailResponse
+    mode: 'create' | 'edit'
+    initialData?: JobPostingDetailResponse
 }>()
 const emit = defineEmits(['completed'])
 
@@ -22,41 +23,41 @@ const emit = defineEmits(['completed'])
  * Form / State
  * ============================================================ */
 const form = reactive<JobPostingCreateRequest>({
-  title: '',
-  employmentType: null,
-  careerType: null,
-  minExperience: undefined,
-  maxExperience: undefined,
-  positionLevel: '',
-  location: '',
-  applyStartDate: '',
-  applyEndDate: '',
-  hireEndDate: '',
-  headcount: 0,
-  summary: '',
-  responsibilities: '',
-  requirements: '',
-  preferred: '',
-  techStack: [] as string[],
-  recruitProcess: [
-    { name: '지원 완료', color: 'BLUE', orderIdx: 1 },
-    { name: '서류 검토', color: 'ORANGE', orderIdx: 2 },
-    { name: '1차 면접', color: 'PINK', orderIdx: 3 },
-    { name: '2차 면접', color: 'PURPLE', orderIdx: 4 },
-    { name: '최종 합격', color: 'RED', orderIdx: 5 },
-  ],
-  coverLetterTitles: [{ title: '', subtitle: '' }],
-  salaryType: null,
-  salaryMin: undefined,
-  salaryMax: undefined,
-  salaryNegotiable: false,
-  workingHours: '',
-  benefits: '',
-  departmentId: null,
-  contactName: '',
-  contactEmail: '',
-  additionalInfo: '',
-  interviewers: [] as number[],
+    title: '',
+    employmentType: null,
+    careerType: null,
+    minExperience: undefined,
+    maxExperience: undefined,
+    positionLevel: '',
+    location: '',
+    applyStartDate: '',
+    applyEndDate: '',
+    hireEndDate: '',
+    headcount: 0,
+    summary: '',
+    responsibilities: '',
+    requirements: '',
+    preferred: '',
+    techStack: [] as string[],
+    recruitProcess: [
+        { name: '지원 완료', color: 'BLUE', orderIdx: 1 },
+        { name: '서류 검토', color: 'ORANGE', orderIdx: 2 },
+        { name: '1차 면접', color: 'PINK', orderIdx: 3 },
+        { name: '2차 면접', color: 'PURPLE', orderIdx: 4 },
+        { name: '최종 합격', color: 'RED', orderIdx: 5 },
+    ],
+    coverLetterTitles: [{ title: '', subtitle: '' }],
+    salaryType: null,
+    salaryMin: undefined,
+    salaryMax: undefined,
+    salaryNegotiable: false,
+    workingHours: '',
+    benefits: '',
+    departmentId: null,
+    contactName: '',
+    contactEmail: '',
+    additionalInfo: '',
+    interviewers: [] as number[],
 })
 
 const router = useRouter()
@@ -69,65 +70,63 @@ const errorMessage = ref('')
 /* ============================================================
  * 01. 기술 스택 관리
  * ============================================================ */
-const techInput = ref('')
-const addTech = () => {
-  const trimmed = techInput.value.trim()
-  if (trimmed) {
-    form.techStack.push(trimmed)
-    techInput.value = ''
-    errors.techStack = ''
-  }
+
+const techOptions = ref<{ code: string; label: string }[]>([])
+
+// 기술스택 제거 함수 (부모 → chip에서 삭제)
+const removeTech = (code: string) => {
+    form.techStack = form.techStack.filter(v => v !== code)
 }
-const removeTech = (i: number) => form.techStack.splice(i, 1)
+
 
 /* ============================================================
  * 02. 채용 프로세스 관리 (드래그 / 추가 / 삭제)
  * ============================================================ */
 interface StageEdit {
-  id: number
-  name: string
-  color: string
-  edit: boolean
+    id: number
+    name: string
+    color: string
+    edit: boolean
 }
 
 const fixedStart = reactive({ name: '지원 완료', color: 'BLUE', orderIdx: '' })
 const fixedEnd = reactive({ name: '최종 합격', color: 'RED', orderIdx: '' })
 const stages = ref<StageEdit[]>([
-  { id: 1, name: '서류 검토', color: 'BLUE', edit: false },
-  { id: 2, name: '1차 면접', color: 'ORANGE', edit: false },
-  { id: 3, name: '2차 면접', color: 'PURPLE', edit: false },
+    { id: 1, name: '서류 검토', color: 'BLUE', edit: false },
+    { id: 2, name: '1차 면접', color: 'ORANGE', edit: false },
+    { id: 3, name: '2차 면접', color: 'PURPLE', edit: false },
 ])
 
 const baseColors = ['BLUE', 'ORANGE', 'PINK', 'PURPLE', 'RED']
 
 const syncRecruitProcess = () => {
-  const middle = stages.value.map((s, idx) => ({
-    id: idx + 1,
-    name: s.name,
-    color: s.color,
-    orderIdx: idx + 2,
-  }))
-  form.recruitProcess = [
-    { name: fixedStart.name, color: fixedStart.color, orderIdx: 1 },
-    ...middle,
-    { name: fixedEnd.name, color: fixedEnd.color, orderIdx: middle.length + 2 },
-  ]
+    const middle = stages.value.map((s, idx) => ({
+        id: idx + 1,
+        name: s.name,
+        color: s.color,
+        orderIdx: idx + 2,
+    }))
+    form.recruitProcess = [
+        { name: fixedStart.name, color: fixedStart.color, orderIdx: 1 },
+        ...middle,
+        { name: fixedEnd.name, color: fixedEnd.color, orderIdx: middle.length + 2 },
+    ]
 }
 watch(stages, syncRecruitProcess, { deep: true })
 
 const addStage = () => {
-  const newId = Math.max(0, ...stages.value.map(s => s.id)) + 1
-  stages.value.push({ id: newId, name: `새 단계 ${newId}`, color: 'PURPLE', edit: false })
-  syncRecruitProcess()
+    const newId = Math.max(0, ...stages.value.map(s => s.id)) + 1
+    stages.value.push({ id: newId, name: `새 단계 ${newId}`, color: 'PURPLE', edit: false })
+    syncRecruitProcess()
 }
 const editStage = (s: StageEdit) => (s.edit = !s.edit)
 const deleteStage = (id: number) => {
-  stages.value = stages.value.filter(s => s.id !== id).map((s, idx) => ({ ...s, id: idx + 1 }))
-  syncRecruitProcess()
+    stages.value = stages.value.filter(s => s.id !== id).map((s, idx) => ({ ...s, id: idx + 1 }))
+    syncRecruitProcess()
 }
 const onDragEnd = () => {
-  stages.value = stages.value.map((s, idx) => ({ ...s, id: idx + 1 }))
-  syncRecruitProcess()
+    stages.value = stages.value.map((s, idx) => ({ ...s, id: idx + 1 }))
+    syncRecruitProcess()
 }
 
 /* ============================================================
@@ -141,12 +140,12 @@ const isPreviewOpen = ref(false)
  * 04. 주소 검색 (카카오 API)
  * ============================================================ */
 function openAddressSearch() {
-  new (window as any).daum.Postcode({
-    oncomplete: (data: any) => {
-      const addr = data.roadAddress ? data.roadAddress : data.jibunAddress
-      form.location = addr
-    },
-  }).open()
+    new (window as any).daum.Postcode({
+        oncomplete: (data: any) => {
+            const addr = data.roadAddress ? data.roadAddress : data.jibunAddress
+            form.location = addr
+        },
+    }).open()
 }
 
 /* ============================================================
@@ -160,26 +159,26 @@ const hireEndDateOnly = ref('')
 const hireEndTimeOnly = ref('')
 
 watch(
-  [
-    applyStartDateOnly,
-    applyStartTimeOnly,
-    applyEndDateOnly,
-    applyEndTimeOnly,
-    hireEndDateOnly,
-    hireEndTimeOnly,
-  ],
-  () => {
-    // 날짜와 시간을 "2025-11-13 22:48:00" 형식으로 변환
-    const formatDateTime = (date: string, time: string) => {
-      if (!date || !time) return ''
-      return `${date} ${time}:00` //  'T' 대신 공백, 초는 00 고정
-    }
+    [
+        applyStartDateOnly,
+        applyStartTimeOnly,
+        applyEndDateOnly,
+        applyEndTimeOnly,
+        hireEndDateOnly,
+        hireEndTimeOnly,
+    ],
+    () => {
+        // 날짜와 시간을 "2025-11-13 22:48:00" 형식으로 변환
+        const formatDateTime = (date: string, time: string) => {
+            if (!date || !time) return ''
+            return `${date} ${time}:00` //  'T' 대신 공백, 초는 00 고정
+        }
 
-    form.applyStartDate = formatDateTime(applyStartDateOnly.value, applyStartTimeOnly.value)
-    form.applyEndDate = formatDateTime(applyEndDateOnly.value, applyEndTimeOnly.value)
-    form.hireEndDate = formatDateTime(hireEndDateOnly.value, hireEndTimeOnly.value)
-  },
-  { deep: true }
+        form.applyStartDate = formatDateTime(applyStartDateOnly.value, applyStartTimeOnly.value)
+        form.applyEndDate = formatDateTime(applyEndDateOnly.value, applyEndTimeOnly.value)
+        form.hireEndDate = formatDateTime(hireEndDateOnly.value, hireEndTimeOnly.value)
+    },
+    { deep: true }
 )
 
 
@@ -193,72 +192,72 @@ const openInterviewerAddModal = () => (isOpenInterviewerAddModal.value = true)
 const closeInterviewerAddModal = () => (isOpenInterviewerAddModal.value = false)
 
 const addInterviewersToForm = (accounts: Account[]) => {
-  addInterviewers.value = accounts
-  const newIds = accounts.map(acc => acc.id)
-  form.interviewers = Array.from(new Set([...form.interviewers, ...newIds]))
+    addInterviewers.value = accounts
+    const newIds = accounts.map(acc => acc.id)
+    form.interviewers = Array.from(new Set([...form.interviewers, ...newIds]))
 }
 const deleteInterviewer = (accountId: number) => {
-  form.interviewers = form.interviewers.filter(id => id !== accountId)
-  addInterviewers.value = addInterviewers.value.filter(acc => acc.id !== accountId)
+    form.interviewers = form.interviewers.filter(id => id !== accountId)
+    addInterviewers.value = addInterviewers.value.filter(acc => acc.id !== accountId)
 }
 
 /* ============================================================
  * 07. 네비게이션 / 제출 로직
  * ============================================================ */
 const exit = () => {
-  if (confirm('작성 중인 내용이 저장되지 않습니다. 정말 나가시겠습니까?')) {
-    window.history.length > 1 ? router.back() : router.push({ name: 'recruiter-jobs' })
-  }
+    if (confirm('작성 중인 내용이 저장되지 않습니다. 정말 나가시겠습니까?')) {
+        window.history.length > 1 ? router.back() : router.push({ name: 'recruiter-jobs' })
+    }
 }
 
 const submitForm = async () => {
-  isSubmitting.value = true
-  try {
-    const payload: JobPostingCreateRequest = {
-      ...form,
-      headcount: Number(form.headcount) || 0,
-      salaryMin: Number(form.salaryMin) || 0,
-      salaryMax: Number(form.salaryMax) || 0,
-      departmentId: Number(form.departmentId) || null,
-      applyStartDate: form.applyStartDate,
-      applyEndDate: form.applyEndDate,
-      hireEndDate: form.hireEndDate,
+    isSubmitting.value = true
+    try {
+        const payload: JobPostingCreateRequest = {
+            ...form,
+            headcount: Number(form.headcount) || 0,
+            salaryMin: Number(form.salaryMin) || 0,
+            salaryMax: Number(form.salaryMax) || 0,
+            departmentId: Number(form.departmentId) || null,
+            applyStartDate: form.applyStartDate,
+            applyEndDate: form.applyEndDate,
+            hireEndDate: form.hireEndDate,
+        }
+
+        Object.keys(errors).forEach(k => (errors[k] = ''))
+
+        const res =
+            props.mode === 'create'
+                ? await createJobPosting(payload)
+                : await updateJobPosting(props.initialData!.id, payload)
+
+        if (res.success) {
+            alert(props.mode === 'create' ? '채용공고 등록이 완료되었습니다!' : '채용공고 수정이 완료되었습니다!')
+            emit('completed')
+        } else {
+            Object.assign(errors, res.results || {})
+        }
+    } catch (err) {
+        console.error('요청 오류:', err)
+        alert('서버 오류가 발생했습니다.')
+    } finally {
+        isSubmitting.value = false
     }
-
-    Object.keys(errors).forEach(k => (errors[k] = ''))
-
-    const res =
-      props.mode === 'create'
-        ? await createJobPosting(payload)
-        : await updateJobPosting(props.initialData!.id, payload)
-
-    if (res.success) {
-      alert(props.mode === 'create' ? '채용공고 등록이 완료되었습니다!' : '채용공고 수정이 완료되었습니다!')
-      emit('completed')
-    } else {
-      Object.assign(errors, res.results || {})
-    }
-  } catch (err) {
-    console.error('요청 오류:', err)
-    alert('서버 오류가 발생했습니다.')
-  } finally {
-    isSubmitting.value = false
-  }
 }
 
 /* ============================================================
  * 08. 에러 자동 초기화
  * ============================================================ */
 watch(
-  () => ({ ...form }),
-  (newVal) => {
-    Object.keys(errors).forEach(key => {
-      const val = (newVal as any)[key]
-      const isEmptyArray = Array.isArray(val) && val.length === 0
-      if (errors[key] && val !== '' && val !== null && !isEmptyArray) errors[key] = ''
-    })
-  },
-  { deep: true }
+    () => ({ ...form }),
+    (newVal) => {
+        Object.keys(errors).forEach(key => {
+            const val = (newVal as any)[key]
+            const isEmptyArray = Array.isArray(val) && val.length === 0
+            if (errors[key] && val !== '' && val !== null && !isEmptyArray) errors[key] = ''
+        })
+    },
+    { deep: true }
 )
 
 /* ============================================================
@@ -268,47 +267,77 @@ const isExperienced = computed(() => form.careerType === '경력')
 const isExperienceInvalid = computed(() => form.careerType === '경력' && (!form.minExperience || !form.maxExperience))
 const isSalaryInvalid = computed(() => form.salaryType === '고정급여' && (!form.salaryMin || !form.salaryMax))
 
-onMounted(async () => {
-  try {
+/* ============================================================
+ * 10. api 호출하기
+ * ============================================================ */
+const loadDepartment = async () => {
     const res = await getDepartment()
-    if (res.success) department.value = res.results
-
-    if (props.mode === 'edit' && props.initialData) {
-      const transformed = {
-        ...props.initialData,
-        recruitProcess: props.initialData.recruitProcess.map(proc => ({
-          id: proc.id,
-          name: proc.name,
-          color: proc.colorCode?.name || 'BLUE',
-          orderIdx: proc.orderIdx,
-        })),
-        coverLetterTitles: props.initialData.coverLetterTitles.map(q => ({
-          id: q.id,
-          title: q.title,
-          subtitle: q.subtitle,
-        })),
-      }
-
-      Object.assign(form, transformed)
-
-      stages.value = transformed.recruitProcess
-        .filter(p => p.name !== '지원 완료' && p.name !== '최종 합격')
-        .map((p, idx) => ({ id: idx + 1, name: p.name, color: p.color, edit: false }))
-
-      const start = transformed.recruitProcess.find(p => p.name === '지원 완료')
-      const end = transformed.recruitProcess.find(p => p.name === '최종 합격')
-      if (start) fixedStart.color = start.color
-      if (end) fixedEnd.color = end.color
-
-      syncRecruitProcess()
+    if (res.success) {
+        department.value = res.results
     }
-  } catch (err: any) {
-    console.error(err)
-    errorMessage.value = '서버오류 발생'
-  } finally {
-    isLoading.value = false
-  }
+}
+
+const loadTechStacks = async () => {
+    const res = await getTechStack()
+    if (res.success) {
+        techOptions.value = res.results  // [{code, label}]
+    }
+}
+
+const loadEditDataIfNeeded = async () => {
+    if (props.mode !== 'edit' || !props.initialData) return
+
+    const transformed = {
+        ...props.initialData,
+
+        recruitProcess: props.initialData.recruitProcess.map(proc => ({
+            id: proc.id,
+            name: proc.name,
+            color: proc.colorCode?.name || 'BLUE',
+            orderIdx: proc.orderIdx,
+        })),
+
+        coverLetterTitles: props.initialData.coverLetterTitles.map(q => ({
+            id: q.id,
+            title: q.title,
+            subtitle: q.subtitle,
+        })),
+    }
+
+    Object.assign(form, transformed)
+
+    // 채용 단계 UI 세팅
+    stages.value = transformed.recruitProcess
+        .filter(p => p.name !== '지원 완료' && p.name !== '최종 합격')
+        .map((p, idx) => ({
+            id: idx + 1,
+            name: p.name,
+            color: p.color,
+            edit: false,
+        }))
+
+    const start = transformed.recruitProcess.find(p => p.name === '지원 완료')
+    const end = transformed.recruitProcess.find(p => p.name === '최종 합격')
+
+    if (start) fixedStart.color = start.color
+    if (end) fixedEnd.color = end.color
+
+    syncRecruitProcess()
+}
+
+onMounted(async () => {
+    try {
+        await loadDepartment()
+        await loadTechStacks()
+        await loadEditDataIfNeeded()
+    } catch (err) {
+        console.error(err)
+        errorMessage.value = '서버 오류 발생'
+    } finally {
+        isLoading.value = false
+    }
 })
+
 </script>
 
 
@@ -371,7 +400,7 @@ onMounted(async () => {
                                     </option>
                                 </select>
                                 <p v-if="errors.departmentId" class="text-sm text-red-500 mt-1">{{ errors.departmentId
-                                    }}</p>
+                                }}</p>
                             </div>
 
                             <!-- 고용 형태 -->
@@ -513,7 +542,7 @@ onMounted(async () => {
                                         class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-600 focus:border-transparent" />
                                 </div>
                                 <p v-if="errors.applyEndDate" class="text-xs text-red-500 mt-1">{{ errors.applyEndDate
-                                }}</p>
+                                    }}</p>
                             </div>
 
                             <!-- 채용 마감일 -->
@@ -608,32 +637,7 @@ onMounted(async () => {
                             <p v-if="errors.preferred" class="text-sm text-red-500 mt-1">{{ errors.preferred }}</p>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                기술 스택 <span class="text-red-500">*</span>
-                            </label>
-                            <div class="flex gap-2 mb-3">
-                                <input v-model="techInput" type="text" placeholder="기술 스택 추가 후 Enter"
-                                    @keydown.enter.prevent="addTech" :class="[
-                                        'w-full px-3 py-1.5 text-sm border rounded-lg focus:ring-2 focus:border-transparent resize-none',
-                                        'placeholder:text-left placeholder:whitespace-pre-line placeholder:text-gray-400',
-                                        errors.techStack ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
-                                    ]" />
-                                <button type="button"
-                                    class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 whitespace-nowrap"
-                                    @click="addTech">
-                                    추가
-                                </button>
-                            </div>
-                            <div class="flex flex-wrap gap-2">
-                                <span v-for="(tech, i) in form.techStack" :key="i"
-                                    class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center gap-2">
-                                    {{ tech }}
-                                    <button type="button" @click="removeTech(i)" class="hover:text-blue-900">✕</button>
-                                </span>
-                            </div>
-                            <p v-if="errors.techStack" class="text-sm text-red-500 mt-1">{{ errors.techStack }}</p>
-                        </div>
+
                     </div>
                 </section>
 
@@ -731,6 +735,64 @@ onMounted(async () => {
                     </div>
                 </section>
 
+                <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
+                    <h2 class="text-xl font-bold text-slate-700 mb-6">기술 스택 설정</h2>
+
+                    <p class="text-sm text-gray-500 mb-4">
+                        해당 채용 공고에 필요한 기술스택을 등록해주세요
+                    </p>
+
+                    <div class="flex flex-col items-center gap-4">
+
+                        <!-- 버튼만 표시 -->
+                        <div class="w-full flex justify-center">
+                            <TechStackSelectButton v-model="form.techStack" :options="techOptions" />
+                        </div>
+
+                        <!-- 선택된 기술스택 카드 목록 -->
+                        <div class="mt-4 flex flex-col space-y-3 w-full">
+
+                            <!-- 아무것도 없을 때 -->
+                            <p v-if="form.techStack.length === 0"
+                                class="text-center text-slate-500 text-sm py-6 border border-gray-200 rounded-xl">
+                                등록된 기술스택이 없습니다.
+                            </p>
+
+                            <!-- 선택된 기술스택 카드 -->
+                            <div v-for="code in form.techStack" :key="code"
+                                class="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm hover:shadow-md transition">
+
+                                <!-- 왼쪽 부분 -->
+                                <div class="flex items-center space-x-4">
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
+                                        <span class="text-white font-bold text-sm">
+                                            {{techOptions.find(t => t.code === code)?.label.charAt(0)}}
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        <p class="font-semibold text-slate-800">
+                                            {{techOptions.find(t => t.code === code)?.label}}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- 삭제 버튼 -->
+                                <button @click="removeTech(code)" class="text-slate-500 hover:text-red-500 transition">
+                                    <Trash2 :size="20" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 오류 메시지 -->
+                        <p v-if="errors.techStack" class="text-sm text-red-500 mt-1">
+                            {{ errors.techStack }}
+                        </p>
+                    </div>
+                </section>
+
+
                 <!-- 채용 프로세스 설정 -->
                 <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h2 class="text-xl font-bold text-slate-700 mb-6">채용 프로세스 설정</h2>
@@ -782,7 +844,7 @@ onMounted(async () => {
                                                 class="border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-700 focus:ring-2 focus:ring-slate-300 focus:outline-none min-w-[90px]"
                                                 @change="syncRecruitProcess">
                                                 <option v-for="color in baseColors" :key="color" :value="color">{{ color
-                                                    }}</option>
+                                                }}</option>
                                             </select>
 
                                             <!-- 수정 버튼 -->
@@ -842,7 +904,7 @@ onMounted(async () => {
                     <!-- 이력서 문항 미리보기 버튼 -->
                     <div class="flex justify-end gap-3 mt-6">
                         <button type="button" @click="addQuestion"
-                            class="flex items-center justify-center gap-2 px-5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition-all text-sm font-medium">
+                            class="flex items-center justify-center gap-2 px-5 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -925,19 +987,7 @@ onMounted(async () => {
                     <div class="flex justify-center mt-4">
                         <p v-if="errors.coverLetterTitles" class="text-sm text-red-500 mt-1">{{
                             errors.coverLetterTitles
-                            }}</p>
-                    </div>
-                    <div class="mt-4"></div>
-                    <div class="flex justify-center mt-6">
-                        <button type="button" @click="addQuestion"
-                            class="flex items-center justify-center gap-2 px-5 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4" />
-                            </svg>
-                            문항 추가
-                        </button>
+                        }}</p>
                     </div>
                 </section>
 
@@ -972,7 +1022,7 @@ onMounted(async () => {
                                         <div
                                             class="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl flex items-center justify-center">
                                             <span class="text-white font-semibold">{{ extractInitial(account.name)
-                                                }}</span>
+                                            }}</span>
                                         </div>
                                         <div>
                                             <h3 class="font-semibold text-slate-800 mb-1">
@@ -1012,7 +1062,7 @@ onMounted(async () => {
                                     errors.contactName ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:ring-slate-600'
                                 ]" />
                                 <p v-if="errors.contactName" class="text-sm text-red-500 mt-1">{{ errors.contactName
-                                    }}
+                                }}
                                 </p>
                             </div>
                             <div>
@@ -1025,7 +1075,7 @@ onMounted(async () => {
                                 ]" />
                                 <p v-if="errors.contactEmail" class="text-sm text-red-500 mt-1">{{
                                     errors.contactEmail
-                                    }}</p>
+                                }}</p>
                             </div>
                         </div>
 
@@ -1040,7 +1090,7 @@ onMounted(async () => {
 ]"></textarea>
                             <p v-if="errors.additionalInfo" class="text-sm text-red-500 mt-1">{{
                                 errors.additionalInfo
-                                }}</p>
+                            }}</p>
                         </div>
                     </div>
                 </section>
