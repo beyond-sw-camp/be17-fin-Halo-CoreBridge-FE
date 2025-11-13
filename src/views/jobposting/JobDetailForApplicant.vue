@@ -166,6 +166,8 @@ const getStatusClass = (status?: string): string => {
 }
 
 const exit = () => router.push('/jobs')
+
+// 접수기간 이외에 지원하기 비활성화
 const handleApply = () => {
   if (!detailInfo.value) return;
 
