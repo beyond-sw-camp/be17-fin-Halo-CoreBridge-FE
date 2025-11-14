@@ -180,6 +180,17 @@ export interface JobPostingPublic {
   views: number
 }
 
-export interface JobPostingPublicResponse {
-  jobs: JobPostingPublic[]
+export interface PublicJobSearchRequest {
+  keyword?: string
+  careerType?: string
+  techStacks?: string[]
+  page: number
+  size: number
 }
+
+export interface PublicJobSearchResponse {
+  jobs: JobPostingPublic[]
+  totalElements: number
+  last: false
+}
+
