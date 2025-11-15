@@ -1,7 +1,7 @@
 import api from '@/plugins/axiosInterceptor'
 import type {
   JobPostingCreateRequest,
-  JobPostingPublicResponse
+  JobPostingPublicResponse,
 } from '@/types/jobposting/JobPostingTypes'
 
 // 부서 불러오기
@@ -10,7 +10,7 @@ export const getDepartment = async (): Promise<ApiResponse> => {
     success: false,
     code: 0,
     message: '',
-    results: undefined
+    results: undefined,
   }
 
   const url = `/api/department`
@@ -149,13 +149,12 @@ export const getEditResponse = async (id: number): Promise<ApiResponse> => {
   return data
 }
 
-
 export const updateJobPosting = async (id: number, payload: any): Promise<ApiResponse> => {
   let data: ApiResponse = {
     success: false,
     code: 0,
     message: '',
-    results: undefined
+    results: undefined,
   }
 
   const url = `/api/job-postings/${id}`
@@ -180,8 +179,8 @@ export const getJobsPublic = async (): Promise<ApiResponse<JobPostingPublicRespo
     code: 0,
     message: '',
     results: {
-      jobs: []
-    }
+      jobs: [],
+    },
   }
 
   const url = `/api/jobs`
@@ -206,7 +205,7 @@ export const getCoverLetterTitles = async (jobPostingId: number): Promise<ApiRes
     success: false,
     code: 0,
     message: '',
-    results: undefined
+    results: undefined,
   }
 
   const url = `/api/jobposts/${jobPostingId}/applies/cover-letter-titles`
@@ -219,16 +218,16 @@ export const getCoverLetterTitles = async (jobPostingId: number): Promise<ApiRes
         success: true,
         code: 200,
         message: 'success',
-        results: res.data // 🔥 백엔드에서 List를 직접 반환하므로 res.data를 그대로 사용
+        results: res.data, // 🔥 백엔드에서 List를 직접 반환하므로 res.data를 그대로 사용
       }
     })
     .catch((error) => {
       console.log('자기소개서 질문 조회 실패:', error)
-      data = error.response?.data as ApiResponse || {
+      data = (error.response?.data as ApiResponse) || {
         success: false,
         code: error.response?.status || 500,
         message: error.message,
-        results: undefined
+        results: undefined,
       }
     })
 
@@ -264,13 +263,19 @@ export const searchJobPostings = async (keyword: string, page = 0): Promise<ApiR
     success: false,
     code: 0,
     message: '',
-    results: undefined
+    results: undefined,
   }
 
   const url = `/api/job-postings/search`
 
   await api
-    .get(url, { params: { keyword, page } })
+    .get(url, {
+      params: {
+        keyword: keyword ? keyword : undefined,
+        page: page,
+        search_type: 'es',
+      },
+    })
     .then((res) => {
       data = res.data
     })
