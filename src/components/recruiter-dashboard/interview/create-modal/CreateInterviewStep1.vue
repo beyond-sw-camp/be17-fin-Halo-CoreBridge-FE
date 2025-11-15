@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
+import type { InterviewCreateForm, InterviewCreateFormErrors, Interviewer, InterviewModalData } from '@/types/interview/interview';
 import {
   User,
   Clipboard,
@@ -8,155 +9,192 @@ import {
   Users,
   FileText
 } from 'lucide-vue-next'
-
-interface Applicant {
-  id: number
-  name: string
-  position: string
-  experience: string
-}
-
-interface Room {
-  id: number
-  name: string
-  location: string
-  status: 'available' | 'in-use'
-}
-
-interface Interviewer {
-  id: number
-  name: string
-  position: string
-  initial: string
-  status: 'available' | 'busy'
-  weekCount: number
-}
+import interviewAPI from '@/api/interview';
+import { useRoute } from 'vue-router';
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'next', data: any): void
 }>()
 
-const formData = ref({
-  applicantId: null as number | null,
-  position: '',
-  interviewType: '1차 면접',
-  interviewMode: '오프라인 면접',
-  title: '',
-  date: '2025-10-25',
-  time: '14:00',
-  duration: '60분',
-  roomId: null as number | null,
-  roomLocation: '',
-  selectedInterviewers: [] as number[],
-  memo: ''
+const props = defineProps<{
+  openModal: Boolean
+  interviewModalData: InterviewModalData
+}>()
+
+const formData = ref<InterviewCreateForm>({
+  startDate: '',
+  startTime: '',
+  duration: '',
+  description: '',
+  location: '',
+  interviewType: '',
+  resumeId: props.interviewModalData.resumeId,
+  recruiterProcessId: props.interviewModalData.stageId
 })
 
-const applicants = ref<Applicant[]>([
-  { id: 1, name: '김지원', position: '프론트엔드 개발자', experience: '3년' },
-  { id: 2, name: '최민수', position: '백엔드 개발자', experience: '5년' },
-  { id: 3, name: '한예린', position: 'UX/UI 디자이너', experience: '2년' },
-  { id: 4, name: '오성민', position: '마케팅 매니저', experience: '4년' }
-])
+const initialErrors = reactive<InterviewCreateFormErrors>({
+  startDate: '',
+  startTime: '',
+  duration: '',
+  description: '',
+  location: '',
+  interviewType: '',
+  resumeId: '', // 빈 문자열로 초기화
+  recruiterProcessId: '', // 빈 문자열로 초기화
+  global: ''
+})
 
-const rooms = ref<Room[]>([
-  { id: 1, name: '회의실 A', location: '본관 3층 301호', status: 'available' },
-  { id: 2, name: '회의실 C', location: '본관 4층 401호', status: 'available' },
-  { id: 3, name: '화상 면접실 1', location: 'Zoom 화상 회의', status: 'available' },
-  { id: 4, name: '임원실', location: '본관 5층 임원실', status: 'available' }
-])
+const errors: InterviewCreateFormErrors = reactive({ ...initialErrors })
 
-const interviewers = ref<Interviewer[]>([
-  { id: 1, name: '박면접', position: '개발팀 팀장', initial: '박', status: 'available', weekCount: 8 },
-  { id: 2, name: '이평가', position: '시니어 개발자', initial: '이', status: 'available', weekCount: 6 },
-  { id: 3, name: '김디자인', position: '리드 디자이너', initial: '김', status: 'available', weekCount: 5 }
-])
+// 이메일 인증 관련
 
-const currentStep = ref(1)
+const validateForm = () => {
 
-const onApplicantChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement
-  const applicantId = Number(target.value)
-  const applicant = applicants.value.find(a => a.id === applicantId)
-  if (applicant) {
-    formData.value.position = applicant.position
+  Object.assign(errors, initialErrors) // 에러 초기화
+
+  let valid: boolean = true
+
+  if (!formData.value.startDate) {
+    errors.startDate = '면접 날짜를 선택해주세요.'
+    valid = false
+  }
+
+  if (!formData.value.startTime) {
+    errors.startTime = '시작 시간을 선택해주세요.'
+    valid = false
+  }
+
+  if (!formData.value.duration) {
+    errors.duration = '소요 시간을 선택해주세요.'
+    valid = false
+  }
+
+  if (!formData.value.location.trim()) {
+    errors.location = '면접 장소를 입력해주세요.'
+    valid = false
+  }
+
+  if (!formData.value.interviewType.trim()) {
+    errors.interviewType = '면접 방식을 선택해주세요.'
+    valid = false
+  }
+
+  // resumeId와 recruiterProcessId는 props에서 오므로, undefined 여부만 확인
+  if (formData.value.resumeId === undefined) {
+    errors.resumeId = '지원자 정보가 누락되었습니다.'
+    valid = false
+  }
+
+  if (formData.value.recruiterProcessId === undefined) {
+    errors.recruiterProcessId = '면접 단계 정보가 누락되었습니다.'
+    valid = false
+  }
+
+  return valid
+}
+
+const route = useRoute()
+
+const interviewDataForCreate = props.interviewModalData
+
+/**
+ * ===========================
+ * 공고 데이터 불러오기
+ * ===========================
+ */
+
+const loadInterviewers = async () => {
+  // jobPostingId 대신 stageId 사용
+  const stageId: number | undefined = props.interviewModalData.stageId
+  if (stageId === undefined) {
+    alert('면접 단계 정보가 없어 면접관을 불러올 수 없습니다.')
+    return
+  }
+
+  const response = await interviewAPI.requestInterviewersForInterviewCreate(Number(route.params.id))
+
+  if (response.success && response.results) {
+    interviewers.value = response.results.interviewers
+  } else {
+    alert('면접관 정보를 불러오는데 실패하였습니다.')
   }
 }
 
-const onRoomChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement
-  const roomId = Number(target.value)
-  const room = rooms.value.find(r => r.id === roomId)
-  if (room) {
-    formData.value.roomLocation = room.location
+// 컴포넌트 마운트 시 공고 목록 불러오기
+onMounted(async () => {
+
+  if (props.openModal) {
+    await loadInterviewers()
   }
+
+})
+
+// 모달 다시 열릴 때도 재조회
+watch(() => props.openModal, async (newVal) => {
+  initFormData()
+
+  if (newVal) {
+    await loadInterviewers()
+  }
+
+})
+
+const initFormData = () => {
+  formData.value = {
+    startDate: '',
+    startTime: '',
+    duration: '',
+    description: '',
+    location: '',
+    interviewType: '',
+    resumeId: undefined,
+    recruiterProcessId: undefined
+  }
+}
+
+/**
+ * =============================
+ * 면접관 데이터 불러오기
+ * =============================
+ */
+const interviewers = ref<Interviewer[]>()
+
+const getInitial = (name: string) => {
+  return name.charAt(0).toUpperCase()
+}
+
+const handleSubmit = async () => {
+
+  if (validateForm()) {
+    const response = await interviewAPI.requestAddInterview(formData.value)
+    if (response.success) {
+      alert("면접 등록 완료")
+      emit('close')
+      return
+    }
+
+    alert(response.message)
+  }
+
 }
 
 </script>
 
 <template>
-
-  <div class="px-8 py-4 bg-slate-50 border-b border-slate-200">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center space-x-2 flex-1">
-        <div class="flex items-center space-x-2 flex-1">
-          <div class="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
-            <span class="text-white text-sm font-bold">1</span>
-          </div>
-          <span class="text-sm font-medium text-slate-800">기본 정보</span>
-        </div>
-        <div class="flex-1 h-1 bg-slate-200"></div>
-      </div>
-      <div class="flex items-center space-x-2 flex-1">
-        <div class="flex items-center space-x-2 flex-1">
-          <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-            <span class="text-slate-500 text-sm font-bold">2</span>
-          </div>
-          <span class="text-sm font-medium text-slate-500">면접관 배정</span>
-        </div>
-        <div class="flex-1 h-1 bg-slate-200"></div>
-      </div>
-      <div class="flex items-center space-x-2">
-        <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-          <span class="text-slate-500 text-sm font-bold">3</span>
-        </div>
-        <span class="text-sm font-medium text-slate-500">확인</span>
-      </div>
-    </div>
-  </div>
   <!-- Form Content -->
   <div class="px-8 py-6 overflow-y-auto flex-1">
-    <!-- Step Indicator -->
-    <form class="space-y-6" @submit.prevent="handleNext">
+    <form class="space-y-6" @submit.prevent="handleSubmit">
 
-
-      <!-- 지원자 정보 -->
+      <!-- 지원자 선택 및 정보 -->
       <div class="bg-slate-50 rounded-xl p-6 border border-slate-200">
         <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center">
           <User :size="16" class="mr-2" />
-          지원자 정보
+          지원자
         </h3>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">지원자 선택 *</label>
-            <select
-              v-model="formData.applicantId"
-              @change="onApplicantChange"
-              class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600 bg-white"
-              required>
-              <option :value="null">지원자를 선택하세요</option>
-              <option v-for="applicant in applicants" :key="applicant.id" :value="applicant.id">
-                {{ applicant.name }} - {{ applicant.position }}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">포지션</label>
-            <input
-              v-model="formData.position"
-              type="text"
-              readonly
-              class="w-full px-4 py-3 border border-slate-300 rounded-xl bg-slate-100 text-slate-600" />
+        <div class="space-y-4">
+          <div class="bg-white">
+            <input v-model="interviewDataForCreate.userName" type="text"
+              class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none " readonly />
           </div>
         </div>
       </div>
@@ -171,34 +209,20 @@ const onRoomChange = (event: Event) => {
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-2">면접 유형 *</label>
-              <select
-                v-model="formData.interviewType"
-                class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600 bg-white">
-                <option>1차 면접</option>
-                <option>2차 면접</option>
-                <option>최종 면접</option>
-                <option>실무 면접</option>
-                <option>인성 면접</option>
-              </select>
+              <input v-model="interviewDataForCreate.stageName" type="text"
+                class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none " readonly />
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-2">면접 방식 *</label>
-              <select
-                v-model="formData.interviewMode"
-                class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600 bg-white">
-                <option>오프라인 면접</option>
-                <option>화상 면접</option>
+              <select v-model="formData.interviewType"
+                :class="{ 'border-red-500 focus:ring-red-500': errors.interviewType }"
+                class="hover:cursor-pointer w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600 bg-white">
+                <option value="" disabled>면접 방식</option>
+                <option value="OFFLINE">오프라인 면접</option>
+                <option value="ONLINE">화상 면접</option>
               </select>
+              <p v-if="errors.interviewType" class="text-red-500 text-xs mt-1">{{ errors.interviewType }}</p>
             </div>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">면접 제목 *</label>
-            <input
-              v-model="formData.title"
-              type="text"
-              placeholder="예) 프론트엔드 개발자 1차 기술 면접"
-              class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600"
-              required />
           </div>
         </div>
       </div>
@@ -213,30 +237,31 @@ const onRoomChange = (event: Event) => {
           <div class="grid grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-2">면접 날짜 *</label>
-              <input
-                v-model="formData.date"
-                type="date"
-                class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600"
+              <input v-model="formData.startDate" type="date"
+                :class="{ 'border-red-500 focus:ring-red-500': errors.startDate }"
+                class="hover:cursor-pointer w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600"
                 required />
+              <p v-if="errors.startDate" class="text-red-500 text-xs mt-1">{{ errors.startDate }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-2">시작 시간 *</label>
-              <input
-                v-model="formData.time"
-                type="time"
-                class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600"
+              <input v-model="formData.startTime" type="time"
+                :class="{ 'border-red-500 focus:ring-red-500': errors.startTime }"
+                class="hover:cursor-pointer w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600"
                 required />
+              <p v-if="errors.startTime" class="text-red-500 text-xs mt-1">{{ errors.startTime }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-2">소요 시간 *</label>
-              <select
-                v-model="formData.duration"
-                class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600 bg-white">
-                <option>30분</option>
-                <option>60분</option>
-                <option>90분</option>
-                <option>120분</option>
+              <select v-model="formData.duration" :class="{ 'border-red-500 focus:ring-red-500': errors.duration }"
+                class="hover:cursor-pointer w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600 bg-white">
+                <option value="" disabled>소요 시간</option>
+                <option value="30">30분</option>
+                <option value="60">60분</option>
+                <option value="90">90분</option>
+                <option value="120">120분</option>
               </select>
+              <p v-if="errors.duration" class="text-red-500 text-xs mt-1">{{ errors.duration }}</p>
             </div>
           </div>
         </div>
@@ -248,62 +273,32 @@ const onRoomChange = (event: Event) => {
           <MapPin :size="16" class="mr-2" />
           장소 정보
         </h3>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">면접 장소 *</label>
-            <select
-              v-model="formData.roomId"
-              @change="onRoomChange"
-              class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600 bg-white"
-              required>
-              <option :value="null">장소를 선택하세요</option>
-              <option v-for="room in rooms" :key="room.id" :value="room.id">
-                {{ room.name }} ({{ room.status === 'available' ? '사용 가능' : '사용중' }})
-              </option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">위치</label>
-            <input
-              v-model="formData.roomLocation"
-              type="text"
-              readonly
-              class="w-full px-4 py-3 border border-slate-300 rounded-xl bg-slate-100 text-slate-600" />
-          </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">면접 장소 *</label>
+          <input v-model="formData.location" type="text"
+            :class="{ 'border-red-500 focus:ring-red-500': errors.location }"
+            class="w-full px-4 py-3 border border-slate-300 rounded-xl bg-white focus:outline-none " />
+          <p v-if="errors.location" class="text-red-500 text-xs mt-1">{{ errors.location }}</p>
         </div>
       </div>
 
-      <!-- 면접관 선택 -->
+      <!-- 면접관 -->
       <div class="bg-slate-50 rounded-xl p-6 border border-slate-200">
         <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center">
           <Users :size="16" class="mr-2" />
-          면접관 선택
+          해당 공고에 배정된 면접관
         </h3>
-        <div class="space-y-3">
-          <div
-            v-for="interviewer in interviewers"
-            :key="interviewer.id"
-            class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-slate-300 transition-all cursor-pointer">
-            <div class="flex items-center space-x-3">
-              <input
-                v-model="formData.selectedInterviewers"
-                type="checkbox"
-                :value="interviewer.id"
-                class="w-5 h-5 text-slate-600 border-slate-300 rounded focus:ring-slate-500" />
-              <div class="flex items-center space-x-3">
-                <div
-                  class="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl flex items-center justify-center">
-                  <span class="text-white font-bold">{{ interviewer.initial }}</span>
-                </div>
-                <div>
-                  <p class="text-sm font-bold text-slate-800">{{ interviewer.name }}</p>
-                  <p class="text-xs text-slate-500">{{ interviewer.position }} ·
-                    {{ interviewer.weekCount }}건 예정</p>
-                </div>
-              </div>
+        <div class="space-y-3 overflow-y-auto max-h-60">
+          <div v-for="interviewer, index in interviewers" :key="index"
+            class="flex items-center gap-4 p-3 bg-white border border-slate-300 rounded-xl hover:border-slate-300 transition-all shadow-md">
+            <div
+              class="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl flex items-center justify-center">
+              <span class="text-white font-bold">{{ getInitial(interviewer.name) }}</span>
             </div>
-            <span
-              class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-lg">대기중</span>
+            <div>
+              <p class="text-sm font-bold text-slate-800">{{ interviewer.name }}</p>
+              <p class="text-xs text-slate-500">admin01@core-bridge.co.kr</p>
+            </div>
           </div>
         </div>
       </div>
@@ -316,15 +311,23 @@ const onRoomChange = (event: Event) => {
         </h3>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">메모 (선택)</label>
-          <textarea
-            v-model="formData.memo"
-            rows="4"
-            placeholder="면접과 관련된 메모나 특이사항을 입력하세요..."
-            class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600 resize-none"></textarea>
+          <textarea v-model="formData.description" rows="4" placeholder="면접과 관련된 메모나 특이사항을 입력하세요..."
+            :class="{ 'border-red-500 focus:ring-red-500': errors.description }"
+            class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-600 resize-none">
+          </textarea>
+          <p v-if="errors.description" class="text-red-500 text-xs mt-1">{{ errors.description }}</p>
         </div>
       </div>
     </form>
   </div>
+  <footer class="px-8 py-6 border-t border-slate-300 bg-slate-50 rounded-b-2xl">
+    <div class="flex justify-end gap-2">
+      <button @click="handleSubmit" type="button"
+        class="hover:cursor-pointer px-8 py-3 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white rounded-xl font-medium shadow-lg transition-all">
+        면접 등록
+      </button>
+    </div>
+  </footer>
 </template>
 
 <style scoped></style>
