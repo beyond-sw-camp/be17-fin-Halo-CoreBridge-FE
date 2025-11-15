@@ -13,6 +13,7 @@ import {
     Edit,
     Share2,
 } from 'lucide-vue-next'
+import PaginationComp from '@/components/common/PaginationComp.vue'
 
 // -----------------------------
 // Router
@@ -23,7 +24,7 @@ const router = useRouter()
 // State
 // -----------------------------
 const searchQuery = ref('')
-const currentPage = ref(1)
+const currentPage = ref(0)
 const itemsPerPage = 10
 
 const jobs = ref<JobPostingListResponse[]>([])
@@ -61,17 +62,19 @@ const getStatusClass = (status: string) => {
 // -----------------------------
 // API 호출
 // -----------------------------
-const loadJobs = async () => {
+const loadJobs = async (newPage: number) => {
     try {
         isLoading.value = true
         errorMessage.value = ''
-        const response = await searchJobPostings(searchQuery.value, currentPage.value - 1)
+        const nextPage = newPage - 1
+        const response = await searchJobPostings(searchQuery.value, nextPage)
 
         if (response.success) {
             const results = response.results
             jobs.value = response.results.jobPostings
             totalJobs.value = results.totalElements
             totalPages.value = results.totalPages
+            currentPage.value = results.currentPage
 
             stats.value.total = totalJobs.value
             stats.value.active = jobs.value.filter((j) => j.status === '채용중').length
@@ -97,7 +100,7 @@ const loadJobs = async () => {
 
 
 onMounted(() => {
-    loadJobs()
+    loadJobs(1)
 })
 
 
@@ -105,37 +108,6 @@ onMounted(() => {
 const totalJobs = ref(0)
 const totalPages = ref(1)
 
-
-// 페이지 표시 범위
-const paginationStart = computed(() =>
-    totalJobs.value === 0 ? 0 : (currentPage.value - 1) * itemsPerPage + 1
-)
-const paginationEnd = computed(() => {
-    const end = currentPage.value * itemsPerPage
-    return end > totalJobs.value ? totalJobs.value : end
-})
-
-// -----------------------------
-// Methods
-// -----------------------------
-const goToPage = async (page: number) => {
-    if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page
-        await loadJobs()
-    }
-}
-const previousPage = async () => {
-    if (currentPage.value > 1) {
-        currentPage.value--
-        await loadJobs()
-    }
-}
-const nextPage = async () => {
-    if (currentPage.value < totalPages.value) {
-        currentPage.value++
-        await loadJobs()
-    }
-}
 
 const getProgressColor = (progress: number) => {
     if (progress >= 75) return 'bg-green-500'
@@ -150,20 +122,20 @@ const viewJobDetail = (id: number) =>
 
 const editJob = (id: number) =>
     router.push({
-    path: `/job-posting/${id}/edit`,
-    query: { mode: 'edit' },
-  })
+        path: `/job-posting/${id}/edit`,
+        query: { mode: 'edit' },
+    })
 // const shareJob = (id: number) => alert(`공고 ID ${id} 공유 기능 (추후 연결 예정)`)
 const viewApplicants = (id: number) =>
     router.push({
-    path: `/admin/jobs/${id}/applicants`,
-    query: { mode: 'edit' },
-  })
+        path: `/admin/jobs/${id}/applicants`,
+        query: { mode: 'edit' },
+    })
 
 // 필터 변경 시 페이지 초기화
 const handleSearch = async () => {
     currentPage.value = 1
-    await loadJobs()
+    await loadJobs(1)
 }
 </script>
 
@@ -241,7 +213,7 @@ const handleSearch = async () => {
 
 
             <!-- Table -->
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white rounded-lg shadow p-6 mb-5">
                 <h3 class="text-xl font-bold text-slate-600 mb-4">진행중인 채용 공고</h3>
 
                 <!-- 로딩 / 에러 / 빈 데이터 처리 -->
@@ -348,29 +320,8 @@ const handleSearch = async () => {
             </div>
 
             <!-- Pagination -->
-            <div class="mt-6 flex items-center justify-between">
-                <div class="text-sm text-gray-600">
-                    총 {{ totalJobs }}개 중 {{ paginationStart }}–{{ paginationEnd }} 표시
-                </div>
-                <div class="flex gap-2">
-                    <button @click="previousPage" :disabled="currentPage === 1"
-                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                        이전
-                    </button>
-                    <button v-for="page in totalPages" :key="page" @click="goToPage(page)" :class="[
-                        'px-4 py-2 rounded-lg text-sm font-medium',
-                        currentPage === page
-                            ? 'bg-slate-600 text-white'
-                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50',
-                    ]">
-                        {{ page }}
-                    </button>
-                    <button @click="nextPage" :disabled="currentPage === totalPages"
-                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                        다음
-                    </button>
-                </div>
-            </div>
+            <PaginationComp v-if="totalPages > 1" :total-pages="totalPages" :current-page="currentPage + 1"
+                :group-size="10" @update:current-page="loadJobs" />
         </main>
     </div>
 </template>
