@@ -159,6 +159,11 @@ const router = createRouter({
       component: () => import('@/views/jobposting/JobDetailForApplicant.vue'),
     },
     {
+      path: '/jobs/mypage',
+      name: 'mypage',
+      component: () => import('@/views/applicantmypage/mypage.vue'),
+    },
+    {
       path: '/jobposts/:jobpostId/applies',
       name: 'resumelayout',
       component: () => import('@/views/layout/ResumeTopLayout.vue'),
