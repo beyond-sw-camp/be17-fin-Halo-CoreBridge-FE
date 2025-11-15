@@ -4,6 +4,9 @@ import { useRouter, useRoute } from 'vue-router'
 import draggable from 'vuedraggable'
 import { Calendar, Search, Filter } from 'lucide-vue-next'
 import managementApi from '@/api/management/index'
+import ApplicantDropDown from '@/components/recruiter-dashboard/applicant/ApplicantDropDown.vue'
+import CreateInterviewModal from '@/components/recruiter-dashboard/interview/create-modal/CreateInterviewModal.vue'
+import type { InterviewModalData } from '@/types/interview/interview'
 
 // -------------------------
 // Types
@@ -106,7 +109,7 @@ const loadData = async (): Promise<void> => {
           headerClass: colors.header,
           dotClass: colors.dot,
           applicants: stage.applicants.map((a) => ({
-            id: a.id, 
+            id: a.id,
             name: a.name,
             experience: a.experience,
             stageId: stage.code,
@@ -182,10 +185,39 @@ const getStatusColor = (stageCode: string): string => {
 // Lifecycle
 // -------------------------
 onMounted(loadData)
+
+/**
+ * ============================
+ * 면접 등록 드롭다운
+ * ===========================
+ */
+
+
+const interviewModalData = ref<InterviewModalData>({
+  resumeId: undefined,
+  stageId: undefined,
+  stageName: undefined,
+  userName: undefined
+})
+const isOpenModal = ref(false)
+const openCreateModal = (resumeId: number, stageId: string, stageName: string, userName: string) => {
+
+  interviewModalData.value!.resumeId = resumeId
+  interviewModalData.value!.stageId = Number(stageId)
+  interviewModalData.value!.stageName = stageName
+  interviewModalData.value!.userName = userName
+
+  isOpenModal.value = true
+}
+
+const closeModal = () => {
+  isOpenModal.value = false
+}
 </script>
 
 <template>
   <div class="bg-gray-50 min-h-screen">
+    <CreateInterviewModal @close="closeModal" :open-modal="isOpenModal" :interview-modal-data="interviewModalData" />
     <main>
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <!-- Search & Filter -->
@@ -237,9 +269,15 @@ onMounted(loadData)
                         <div class="text-xs text-gray-500">{{ element.experience }}년 경력</div>
                       </div>
                     </div>
-                    <div :class="['flex items-center gap-2', getStatusColor(element.stageId)]">
-                      <Calendar class="w-4 h-4" />
-                      {{ element.statusText }}
+                    <div>
+                      <div @click.stop class="flex flex-col items-end">
+                        <ApplicantDropDown
+                          @interview-menu-click="openCreateModal(element.id, stage.id, stage.name, element.name)" />
+                      </div>
+                      <div :class="['flex items-center gap-2', getStatusColor(element.stageId)]">
+                        <Calendar class="w-4 h-4" />
+                        {{ element.statusText }}
+                      </div>
                     </div>
                   </div>
                 </div>

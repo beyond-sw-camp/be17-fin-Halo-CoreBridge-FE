@@ -140,15 +140,6 @@ const getStatusLabel = (status: string) => {
   return labels[status as keyof typeof labels]
 }
 
-const isOpenModal = ref(false)
-const openCreateModal = () => {
-  isOpenModal.value = true
-}
-
-const closeModal = () => {
-  isOpenModal.value = false
-}
-
 const isDetailModalOpen = ref(false)
 const interviewId = ref(0)
 const openDetailModal = (id: number) => {
@@ -163,7 +154,6 @@ const closeDetailModal = () => {
 </script>
 <template>
   <InterviewDetailModal @close="closeDetailModal" :open-modal="isDetailModalOpen" :interviewId="interviewId" />
-  <CreateInterviewModal @close="closeModal" :open-modal="isOpenModal" />
   <div class="min-h-screen ">
     <!-- Header -->
     <header class="mb-3">
@@ -172,12 +162,6 @@ const closeDetailModal = () => {
           <h1 class="text-3xl font-bold text-slate-600 mb-2">면접 목록</h1>
           <p class="text-sm text-slate-500 mt-1">전체 면접 일정을 관리하세요</p>
         </div>
-        <button
-          @click="openCreateModal"
-          class="hover:cursor-pointer px-6 py-2.5 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white rounded-xl font-medium flex items-center space-x-2 shadow-sm transition-all">
-          <Plus :size="16" />
-          <span>새 면접 등록</span>
-        </button>
       </div>
     </header>
 
@@ -226,8 +210,7 @@ const closeDetailModal = () => {
 
       <!-- Interview Cards -->
       <div class="space-y-3">
-        <div
-          v-for="interview in interviews" :key="interview.id"
+        <div v-for="interview in interviews" :key="interview.id"
           class="bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-all hover:cursor-pointer overflow-hidden"
           :class="{ 'opacity-75': interview.status === 'completed' || interview.status === 'cancelled', 'opacity-60': interview.status === 'cancelled' }">
           <div class="flex items-center justify-between" @click="openDetailModal(interview.id)">

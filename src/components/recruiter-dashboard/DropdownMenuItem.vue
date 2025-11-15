@@ -8,7 +8,10 @@ import {
   Calendar,
   Globe,
   Smartphone,
-  LogOut, SquarePen, Trash2
+  LogOut,
+  SquarePen,
+  Trash2,
+  MessagesSquare
 } from 'lucide-vue-next'
 
 interface Props {
@@ -44,7 +47,8 @@ const iconComponent = computed(() => {
     mobile: Smartphone,
     logout: LogOut,
     squarePen: SquarePen,
-    trash2: Trash2
+    trash2: Trash2,
+    messagesSquare: MessagesSquare
   }
 
   return icons[props.icon] || UserRound
@@ -52,8 +56,7 @@ const iconComponent = computed(() => {
 </script>
 <template>
   <button @click="$emit('click')"
-          class="hover:cursor-pointer w-full px-4 py-3 text-left transition flex items-center space-x-3"
-          :class="buttonClass">
+    class="hover:cursor-pointer w-full px-4 py-3 text-left transition flex items-center space-x-3" :class="buttonClass">
     <component :is="iconComponent" class="w-5 h-5 flex-shrink-0 text-gray-600" />
     <span class="truncate">{{ label }}</span>
   </button>
