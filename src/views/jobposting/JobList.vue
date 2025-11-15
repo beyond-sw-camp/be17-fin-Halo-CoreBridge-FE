@@ -46,9 +46,9 @@ const size = 12
 // 📌 Payload builder
 // =============================
 const buildPayload = () => ({
-  keyword: keyword.value || undefined,
-  careerType: careerType.value || undefined,
-  techStacks: techStacks.value.length ? techStacks.value : undefined,
+  keyword: keyword.value || null,
+  careerType: careerType.value || null,
+  techStack: singleTech.value || null,  // 단일 기술스택
   page: page.value,
   size
 })
@@ -83,13 +83,6 @@ const loadJobs = async () => {
 // 📌 검색 버튼 클릭
 // =============================
 const onSearch = () => {
-  // 단일 선택을 배열 형태로 변환
-  techStacks.value = []
-  if (singleTech.value) {
-    techStacks.value.push(singleTech.value)
-  }
-
-  // 페이지 초기화 후 검색
   page.value = 0
   hasMore.value = true
   loadJobs()
@@ -193,9 +186,9 @@ onMounted(() => {
           <select v-model="careerType" class="w-full h-14 px-4 rounded-lg bg-gray-100 border border-gray-200
                text-slate-700 focus:bg-white focus:ring-2 focus:ring-slate-400 transition">
             <option :value="null">전체</option>
-            <option value="신입">신입</option>
-            <option value="경력">경력</option>
-            <option value="경력무관">무관</option>
+            <option value="NEW">신입</option>
+            <option value="EXPERIENCED">경력</option>
+            <option value="ANY">무관</option>
           </select>
         </div>
 
