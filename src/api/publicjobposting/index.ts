@@ -13,7 +13,15 @@ export const searchPublicJobs = async (payload: PublicJobSearchRequest): Promise
   const url = '/api/jobs/search'
 
   await api
-    .post(url, payload)
+    .get(url, {
+      params: {
+        page: payload.page,
+        size: payload.size,
+        keyword: payload.keyword || null,
+        careerType: payload.careerType || null,
+        techStack: payload.techStack || null,
+      },
+    })
     .then((res) => {
       console.log(res)
       data = res.data
