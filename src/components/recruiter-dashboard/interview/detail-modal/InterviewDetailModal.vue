@@ -1,29 +1,9 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { X, Calendar, FileText, MapPin, Users, List } from 'lucide-vue-next'
 import InterviewCancelModal from '@/components/recruiter-dashboard/interview/cancel-modal/InterviewCancelModal.vue'
-
-interface Applicant {
-  name: string
-  position: string
-  experience: string
-  initial: string
-}
-
-interface Interview {
-  id: number
-  date: string
-  time: string
-  applicant: Applicant
-  type: string
-  duration: string
-  location: string
-  locationDetail?: string
-  interviewers: Array<{ name: string, initial: string }>
-  status: 'ongoing' | 'scheduled' | 'completed' | 'cancelled'
-  notes?: string
-  fullDate?: string
-}
+import type { Interview } from '@/types/interview/interview'
+import interviewAPI from '@/api/interview/index'
 
 interface Props {
   openModal: boolean
@@ -38,56 +18,49 @@ const emit = defineEmits<{
   cancel: [interview: Interview]
 }>()
 
-const interview = reactive(
-  {
-    id: 1,
-    date: '2025-10-22',
-    time: '09:00',
-    applicant: {
-      name: '김지원',
-      position: '프론트엔드 개발자',
-      experience: '3년',
-      initial: '김'
-    },
-    type: '1차 면접',
-    duration: '60분',
-    location: '회의실 A',
-    locationDetail: '본사 3층 회의실',
-    interviewers: [
-      {
-        name: '박명수',
-        initial: '박'
-      },
-      {
-        name: '유재석',
-        initial: '유'
-      }
-    ],
-    notes: 'React, Vue.js 실무 경험 확인',
-    status: 'ongoing'
+const interview = ref<Interview>({
+  id: 0,
+  name: '',
+  startDateTime: '',
+  duration: '',
+  process: '',
+  location: '',
+  description: '',
+  interviewers: [],
+  interviewStatus: {
+    code: '',
+    label: ''
+  },
+  interviewType: {
+    code: '',
+    label: ''
   }
-)
+})
+
+const getInitial = (name: string) => {
+  return name.charAt(0).toUpperCase()
+}
 
 const getStatusColor = computed(() => {
-  if (!interview) return ''
+  if (!interview.value) return ''
   const colors: Record<string, string> = {
-    ongoing: 'bg-green-500 text-white',
-    scheduled: 'bg-blue-100 text-blue-700',
-    completed: 'bg-slate-100 text-slate-700',
-    cancelled: 'bg-red-100 text-red-700'
+    ONGOING: 'bg-green-500 text-white',
+    SCHEDULED: 'bg-blue-100 text-blue-700',
+    COMPLETED: 'bg-slate-100 text-slate-700',
+    CANCELLED: 'bg-red-100 text-red-700'
   }
-  return colors[interview.status]
+  return colors[interview.value.interviewStatus.code]
 })
 
 const getStatusLabel = computed(() => {
-  if (!interview) return ''
+  if (!interview.value) return ''
   const labels: Record<string, string> = {
-    ongoing: '진행중',
-    scheduled: '예정',
-    completed: '완료',
-    cancelled: '취소'
+    ONGOING: '진행중',
+    SCHEDULED: '예정',
+    COMPLETED: '완료',
+    CANCELLED: '취소'
   }
-  return labels[interview.status]
+  return labels[interview.value.interviewStatus.code]
 })
 
 const handleClose = () => {
@@ -100,10 +73,6 @@ const handleEdit = () => {
 const handleCancel = () => {
 }
 
-const handleViewResume = () => {
-  // 이력서 보기 로직
-}
-
 const isOpenCancelModal = ref(false)
 const openCancelModal = () => {
   isOpenCancelModal.value = true
@@ -112,32 +81,55 @@ const openCancelModal = () => {
 const closeCancelModal = () => {
   isOpenCancelModal.value = false
 }
+
+onMounted(async () => {
+
+  if (props.openModal) {
+    await loadInterview()
+  }
+
+})
+
+// 모달 다시 열릴 때도 재조회
+watch(() => props.openModal, async (newVal) => {
+
+  if (newVal) {
+    await loadInterview()
+  }
+
+})
+
+const loadInterview = async () => {
+
+  const response = await interviewAPI.requestInterivew(props.interviewId)
+  if (response.success) {
+    interview.value = response.results
+  } else {
+    alert(response.message)
+  }
+}
 </script>
 
 <template>
   <Teleport to="body">
-    <Transition
-      enter-active-class="transition-opacity duration-200"
-      leave-active-class="transition-opacity duration-200"
-      enter-from-class="opacity-0"
-      leave-to-class="opacity-0"
-    >
-      <div v-if="openModal" class="fixed inset-0 bg-white/50 bg-opacity-50 flex items-center justify-center z-50" @click.self="handleClose">
+    <Transition enter-active-class="transition-opacity duration-200"
+      leave-active-class="transition-opacity duration-200" enter-from-class="opacity-0" leave-to-class="opacity-0">
+      <div v-if="openModal" class="fixed inset-0 bg-white/50 bg-opacity-50 flex items-center justify-center z-50"
+        @click.self="handleClose">
         <!-- Modal -->
-        <Transition
-          enter-active-class="transition-all duration-200"
-          leave-active-class="transition-all duration-200"
-          enter-from-class="opacity-0 scale-95"
-          leave-to-class="opacity-0 scale-95"
-        >
-          <div v-if="openModal" class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <Transition enter-active-class="transition-all duration-200" leave-active-class="transition-all duration-200"
+          enter-from-class="opacity-0 scale-95" leave-to-class="opacity-0 scale-95">
+          <div v-if="openModal"
+            class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <!-- Header -->
-            <div class="sticky top-0 bg-white border-b border-slate-200 px-8 py-6 flex items-center justify-between rounded-t-2xl z-10">
+            <div
+              class="sticky top-0 bg-white border-b border-slate-200 px-8 py-6 flex items-center justify-between rounded-t-2xl z-10">
               <div>
                 <h2 class="text-2xl font-bold text-slate-800">면접 상세 정보</h2>
                 <p class="text-sm text-slate-500 mt-1">면접 일정 및 참여자 정보를 확인하세요</p>
               </div>
-              <button @click="handleClose" class="p-2 hover:bg-slate-100 rounded-xl transition-all hover:cursor-pointer">
+              <button @click="handleClose"
+                class="p-2 hover:bg-slate-100 rounded-xl transition-all hover:cursor-pointer">
                 <X :size="24" class="text-slate-600" />
               </button>
             </div>
@@ -155,22 +147,20 @@ const closeCancelModal = () => {
               <div class="bg-gradient-to-br from-slate-600 to-slate-800 rounded-2xl p-6 text-white mb-8">
                 <div class="flex items-center space-x-4">
                   <div class="flex-1">
-                    <h3 class="text-2xl font-bold mb-2">{{ interview.applicant.name }}</h3>
-                    <p class="text-slate-200">{{ interview.applicant.position }} · {{ interview.applicant.experience }}</p>
+                    <h3 class="text-2xl font-bold mb-2">{{ interview.name }}</h3>
                   </div>
                 </div>
               </div>
 
               <!-- Interview Details Grid -->
-              <div class="grid grid-cols-2 gap-6 mb-8">
+              <div class="grid grid-cols-3 gap-6 mb-5">
                 <!-- Date & Time -->
                 <div class="bg-slate-50 rounded-xl p-5">
                   <div class="flex items-center space-x-2 mb-3">
                     <Calendar :size="20" class="text-slate-600" />
                     <h4 class="font-semibold text-slate-800">일정</h4>
                   </div>
-                  <p class="text-slate-600 font-medium">{{ interview.date || '2025년 10월 22일 (수)' }}</p>
-                  <p class="text-slate-500 text-sm mt-1">{{ interview.time }} - {{ interview.duration }}</p>
+                  <p class="text-slate-600 font-medium">{{ interview.startDateTime || '2025년 10월 22일 (수)' }}</p>
                 </div>
 
                 <!-- Type -->
@@ -179,8 +169,8 @@ const closeCancelModal = () => {
                     <FileText :size="20" class="text-slate-600" />
                     <h4 class="font-semibold text-slate-800">면접 유형</h4>
                   </div>
-                  <p class="text-slate-600 font-medium">{{ interview.type }}</p>
-                  <p class="text-slate-500 text-sm mt-1">{{ interview.duration }} 소요 예정</p>
+                  <p class="text-slate-600 font-medium">{{ interview.interviewType.label }}</p>
+                  <p class="text-slate-500 text-sm mt-1">{{ interview.duration }}분 소요 예정</p>
                 </div>
 
                 <!-- Location -->
@@ -190,56 +180,47 @@ const closeCancelModal = () => {
                     <h4 class="font-semibold text-slate-800">장소</h4>
                   </div>
                   <p class="text-slate-600 font-medium">{{ interview.location }}</p>
-                  <p class="text-slate-500 text-sm mt-1">{{ interview.locationDetail || '본사 3층' }}</p>
                 </div>
+              </div>
 
-                <!-- Interviewers -->
-                <div class="bg-slate-50 rounded-xl p-5">
-                  <div class="flex items-center space-x-2 mb-3">
-                    <Users :size="20" class="text-slate-600" />
-                    <h4 class="font-semibold text-slate-800">면접관</h4>
-                  </div>
-                  <div class="flex items-center space-x-2">
-                    <div class="flex -space-x-2">
-                      <div
-                        v-for="(interviewer, idx) in interview.interviewers.slice(0, 3)"
-                        :key="idx"
-                        class="w-8 h-8 bg-slate-600 rounded-lg flex items-center justify-center text-white text-xs font-medium border-2 border-white"
-                      >
-                        {{ interviewer.initial }}
-                      </div>
+              <!-- Interviewers -->
+              <div class="bg-slate-50 rounded-xl p-5 mb-5 overflow-y-auto max-h-48">
+                <div class="flex items-center space-x-2 mb-3">
+                  <Users :size="20" class="text-slate-600" />
+                  <h4 class="font-semibold text-slate-800">면접관</h4>
+                </div>
+                <div class="flex items-center space-x-2" v-for="(interviewer, idx) in interview.interviewers"
+                  :key="idx">
+                  <div class="flex gap-2 items-center">
+                    <div
+                      class="w-8 h-8 bg-slate-600 rounded-lg flex items-center justify-center text-white text-xs font-medium border-2 border-white">
+                      {{ getInitial(interviewer.name) }}
                     </div>
                     <span class="text-slate-600 font-medium text-sm">
-                      {{ interview.interviewers.map(i => i.name).join(', ') }}
+                      {{ interviewer.name }}
                     </span>
                   </div>
+
                 </div>
               </div>
 
               <!-- Interview Notes -->
-              <div v-if="interview.notes" class="bg-slate-50 rounded-xl p-6 mb-8">
+              <div class="bg-slate-50 rounded-xl p-6 mb-8">
                 <div class="flex items-center space-x-2 mb-4">
                   <List :size="20" class="text-slate-600" />
                   <h4 class="font-semibold text-slate-800">면접 메모</h4>
                 </div>
-                <p class="text-slate-600 leading-relaxed whitespace-pre-line">{{ interview.notes }}</p>
+                <p class="text-slate-600 leading-relaxed whitespace-pre-line">{{ interview.description }}</p>
               </div>
 
               <!-- Action Buttons -->
-              <div class="flex space-x-3">
-                <button
-                  @click="handleEdit"
-                  class="flex-1 px-6 py-3 bg-gradient-to-r hover:cursor-pointer from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white rounded-xl font-medium transition-all"
-                >
-                  면접 수정
-                </button>
-                <button
-                  @click="openCancelModal"
-                  class="px-6 py-3 border border-slate-200 hover:cursor-pointer hover:bg-slate-50 text-slate-700 rounded-xl font-medium transition-all"
-                >
+              <div class="flex space-x-3" v-if="interview.interviewStatus.code === 'SCHEDULED'">
+                <button @click="openCancelModal"
+                  class="flex-1 px-6 py-3 border bg-slate-50 border-slate-300 hover:cursor-pointer hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-all">
                   취소하기
                 </button>
-                <InterviewCancelModal :open-modal="isOpenCancelModal" :interview="interview" @close="closeCancelModal" />
+                <InterviewCancelModal :open-modal="isOpenCancelModal" @close="closeCancelModal"
+                  :interview="interview" />
               </div>
             </div>
           </div>
