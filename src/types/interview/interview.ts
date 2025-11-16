@@ -73,3 +73,8 @@ export interface InterviewParam {
   page: number
   search: string | undefined
 }
+
+export interface InterviewCancelForm {
+  interveiwId: number
+  cancelReason: string
+}

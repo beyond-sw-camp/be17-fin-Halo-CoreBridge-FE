@@ -114,7 +114,7 @@ const loadInterview = async () => {
   <Teleport to="body">
     <Transition enter-active-class="transition-opacity duration-200"
       leave-active-class="transition-opacity duration-200" enter-from-class="opacity-0" leave-to-class="opacity-0">
-      <div v-if="openModal" class="fixed inset-0 bg-white/50 bg-opacity-50 flex items-center justify-center z-50"
+      <div v-if="openModal" class="fixed inset-0 bg-white/50 bg-opacity-50 flex items-center justify-center z-40"
         @click.self="handleClose">
         <!-- Modal -->
         <Transition enter-active-class="transition-all duration-200" leave-active-class="transition-all duration-200"
@@ -216,7 +216,7 @@ const loadInterview = async () => {
               <!-- Action Buttons -->
               <div class="flex space-x-3" v-if="interview.interviewStatus.code === 'SCHEDULED'">
                 <button @click="openCancelModal"
-                  class="flex-1 px-6 py-3 border bg-slate-50 border-slate-300 hover:cursor-pointer hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-all">
+                  class="flex-1 hover:cursor-pointer px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition-all">
                   취소하기
                 </button>
                 <InterviewCancelModal :open-modal="isOpenCancelModal" @close="closeCancelModal"

@@ -1,11 +1,13 @@
 import api from '@/plugins/axiosInterceptor'
 import type {
   Interview,
+  InterviewCancelForm,
   InterviewCreateForm,
   Interviewers,
   InterviewListResponse,
   InterviewParam,
 } from '@/types/interview/interview'
+import { useLoadingStore } from '@/store/useLoadingStore'
 
 const requestInterviewersForInterviewCreate = async (
   req: number,
@@ -129,9 +131,38 @@ const requestInterivew = async (req: number): Promise<ApiResponse<Interview>> =>
   return data
 }
 
+const useLoading = useLoadingStore()
+const requestInterviewCancel = async (req: InterviewCancelForm): Promise<ApiResponse> => {
+  useLoading.startLoading()
+
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined,
+  }
+
+  const url: string = '/api/recruiter/interviews/' + req.interveiwId + '/cancel'
+
+  await api
+    .post(url, {
+      cancelReason: req.cancelReason,
+    })
+    .then((res) => {
+      data = res.data as ApiResponse
+    })
+    .catch((error) => {
+      data = error.response.data as ApiResponse
+    })
+
+  useLoading.stopLoading()
+  return data
+}
+
 export default {
   requestInterviewersForInterviewCreate,
   requestAddInterview,
   requestGetInterivews,
   requestInterivew,
+  requestInterviewCancel,
 }
