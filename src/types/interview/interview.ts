@@ -36,3 +36,40 @@ export interface InterviewCreateFormErrors {
   recruiterProcessId: string
   global: string
 }
+
+export interface Interview {
+  id: number
+  name: string
+  startDateTime: string
+  duration: string
+  process: string
+  interviewType: interviewType
+  location: string
+  interviewStatus: interviewStatus
+  description: string
+  interviewers: Interviewer[]
+}
+
+export interface interviewType {
+  code: string
+  label: string
+}
+
+export interface interviewStatus {
+  code: string
+  label: string
+}
+
+export interface InterviewListResponse {
+  interviews: Interview[]
+  totalElements: number
+  totalPages: number
+  currentPage: number
+}
+
+export interface InterviewParam {
+  status: string | undefined
+  type: string | undefined
+  page: number
+  search: string | undefined
+}
