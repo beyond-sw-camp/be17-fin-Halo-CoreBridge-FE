@@ -2,27 +2,7 @@
 import { ref } from 'vue'
 import { AlertCircle, AlertTriangle } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
-
-interface Applicant {
-  name: string
-  position: string
-  experience: string
-  initial: string
-}
-
-interface Interview {
-  id: number
-  date: string
-  time: string
-  applicant: Applicant
-  type: string
-  duration: string
-  location: string
-  locationDetail?: string
-  status: 'ongoing' | 'scheduled' | 'completed' | 'cancelled'
-  notes?: string
-  fullDate?: string
-}
+import type { Interview } from '@/types/interview/interview'
 
 interface Props {
   openModal: boolean
@@ -60,20 +40,13 @@ const successDelete = ref(false)
 
 <template>
   <Teleport to="body">
-    <Transition
-      enter-active-class="transition-opacity duration-200"
-      leave-active-class="transition-opacity duration-200"
-      enter-from-class="opacity-0"
-      leave-to-class="opacity-0"
-    >
-      <div v-if="openModal" class="fixed inset-0 bg-white/50 bg-opacity-50 flex items-center justify-center z-50" @click.self="handleClose">
+    <Transition enter-active-class="transition-opacity duration-200"
+      leave-active-class="transition-opacity duration-200" enter-from-class="opacity-0" leave-to-class="opacity-0">
+      <div v-if="openModal" class="fixed inset-0 bg-white/50 bg-opacity-50 flex items-center justify-center z-50"
+        @click.self="handleClose">
         <!-- Modal -->
-        <Transition
-          enter-active-class="transition-all duration-200"
-          leave-active-class="transition-all duration-200"
-          enter-from-class="opacity-0 scale-95"
-          leave-to-class="opacity-0 scale-95"
-        >
+        <Transition enter-active-class="transition-all duration-200" leave-active-class="transition-all duration-200"
+          enter-from-class="opacity-0 scale-95" leave-to-class="opacity-0 scale-95">
           <div v-if="openModal" class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
             <!-- Content -->
             <div class="p-8" v-if="!successDelete">
@@ -94,22 +67,21 @@ const successDelete = ref(false)
               <div class="bg-slate-50 rounded-xl p-5 mb-6">
                 <div class="flex items-center space-x-4 mb-4">
                   <div>
-                    <h4 class="font-semibold text-slate-800">{{ interview.applicant.name }}</h4>
-                    <p class="text-sm text-slate-500">
-                      {{ interview.applicant.position }} · {{ interview.applicant.experience }}
-                    </p>
+                    <h4 class="font-semibold text-slate-800">{{ interview.name }}</h4>
                   </div>
                 </div>
                 <div class="space-y-2 text-sm">
                   <div class="flex items-center justify-between">
                     <span class="text-slate-500">일정</span>
-                    <span class="font-medium text-slate-800">{{ interview.date }} {{ interview.time }}</span>
+                    <span class="font-medium text-slate-800">{{ interview.startDateTime }}</span>
                   </div>
                   <div class="flex items-center justify-between">
                     <span class="text-slate-500">면접 유형</span>
-                    <span class="font-medium text-slate-800">{{ interview.type }} · {{ interview.duration }}</span>
+                    <span class="font-medium text-slate-800">
+                      {{ interview.interviewType.label }} · {{ interview.duration }}분
+                    </span>
                   </div>
-                  <div class="flex items-center justify-between">
+                  <div class="flex items-center justify-between" v-if="interview.interviewType.code !== 'ONLINE'">
                     <span class="text-slate-500">장소</span>
                     <span class="font-medium text-slate-800">{{ interview.location }}</span>
                   </div>
@@ -119,26 +91,18 @@ const successDelete = ref(false)
               <!-- Cancellation Reason -->
               <div class="mb-6">
                 <label class="block text-sm font-semibold text-slate-700 mb-2">취소 사유 (선택)</label>
-                <textarea
-                  v-model="cancelReason"
-                  rows="3"
-                  placeholder="취소 사유를 입력하면 지원자에게 전달됩니다"
-                  class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 transition-all resize-none"
-                ></textarea>
+                <textarea v-model="cancelReason" rows="3" placeholder="취소 사유를 입력하면 지원자에게 전달됩니다"
+                  class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 transition-all resize-none"></textarea>
               </div>
 
               <!-- Action Buttons -->
               <div class="flex space-x-3">
-                <button
-                  @click="handleConfirm"
-                  class="hover:cursor-pointer flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-all"
-                >
+                <button @click="handleConfirm"
+                  class="hover:cursor-pointer flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-all">
                   면접 취소
                 </button>
-                <button
-                  @click="handleClose"
-                  class="hover:cursor-pointer px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-medium transition-all"
-                >
+                <button @click="handleClose"
+                  class="hover:cursor-pointer px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-medium transition-all">
                   돌아가기
                 </button>
               </div>
@@ -148,7 +112,7 @@ const successDelete = ref(false)
                 <div class="flex space-x-3">
                   <AlertTriangle :size="20" class="text-amber-600 flex-shrink-0 mt-0.5" />
                   <p class="text-sm text-amber-800">
-                    면접 취소 시 지원자의 지원서 상태가 '불합격'으로 변경되며, 이메일 알림이 자동으로 발송됩니다.
+                    면접 취소 시 이메일 알림이 자동으로 발송됩니다.
                   </p>
                 </div>
               </div>
