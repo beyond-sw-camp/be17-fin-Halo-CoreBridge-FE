@@ -31,6 +31,10 @@ const isActive = (navPath: string) => {
   return navPath === sidebar.currentPath
 }
 
+const isInterviewer = () => {
+  return userStore.userInfo.role === '면접관'
+}
+
 onMounted(() => {
   if (route.path === '/admin') {
     sidebar.setPath(route.path)
@@ -63,7 +67,8 @@ onMounted(() => {
       </div>
     </div>
 
-    <nav class="flex-1 py-6 px-3 gap-3 flex flex-col border-r border-slate-200 shadow-sm overflow-y-auto">
+    <nav class="flex-1 px-3  gap-3 flex flex-col border-r border-slate-200 shadow-sm overflow-y-auto"
+      :class="[isInterviewer() ? '' : 'py-6']">
       <div v-for="item in currentNavs" :key="item.path" class="space-y-1">
         <button @click="clickTap(item.path)"
           class="w-full flex items-center px-3 py-3 rounded-lg transition-all duration-200" :class="[

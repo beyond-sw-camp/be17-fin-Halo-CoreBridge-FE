@@ -98,6 +98,10 @@ const router = createRouter({
           path: 'interviews',
           name: 'recruiter-interview-layout',
           component: () => import('@/views/layout/InterviewLayout.vue'),
+          meta: {
+            requiresAuth: true,
+            role: [ROLES.RECRUITER, ROLES.ADMIN, ROLES.INTERVIEWER],
+          },
           children: [
             {
               path: '',
@@ -203,7 +207,10 @@ router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   const requiresToken = to.matched.some((record) => record.meta.requiresToken)
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
-  const roles = to.matched.find((r) => r.meta.role)?.meta.role
+  // const roles = to.matched.find((r) => r.meta.role)?.meta.role
+
+  const matchedWithRole = [...to.matched].reverse().find((r) => r.meta.role)
+  const roles = matchedWithRole?.meta.role
 
   const userRole = userStore.userInfo.role
   const isLogin = userStore.isLogin
@@ -239,9 +246,8 @@ router.beforeEach((to, from, next) => {
     }
 
     if (userRole === ROLES.INTERVIEWER) {
-      return next('/interviewer')
+      return next('/admin/interviews')
     }
-
     // 지원자 or 비로그인
     return next('/jobs')
   }

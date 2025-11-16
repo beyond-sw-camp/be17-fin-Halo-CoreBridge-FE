@@ -18,7 +18,7 @@ export const navs: SidebarNavItem[] = [
     path: '/admin/interviews',
     label: '면접 관리',
     icon: MessagesSquare,
-    role: ['관리자', '채용 담당자'],
+    role: ['관리자', '채용 담당자', '면접관'],
   },
   {
     path: '/admin/schedules',
