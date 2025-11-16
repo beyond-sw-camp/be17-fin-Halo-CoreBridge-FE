@@ -2,7 +2,8 @@
 import { ref } from 'vue'
 import { AlertCircle, AlertTriangle } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
-import type { Interview } from '@/types/interview/interview'
+import type { Interview, InterviewCancelForm } from '@/types/interview/interview'
+import interviewAPI from '@/api/interview'
 
 interface Props {
   openModal: boolean
@@ -23,18 +24,27 @@ const handleClose = () => {
   emit('close')
 }
 
-const handleConfirm = () => {
+const handleConfirm = async () => {
+
   if (props.interview) {
 
-    successDelete.value = true
-    emit('confirm', props.interview.id, cancelReason.value)
+    const req: InterviewCancelForm = {
+      interveiwId: props.interview.id,
+      cancelReason: cancelReason.value
+    }
 
-    alert('면접 취소 완료')
+    const response = await interviewAPI.requestInterviewCancel(req)
+    if (response.success) {
+      alert(response.message)
+    } else {
+      alert(response.message)
+    }
+
     handleClose()
+    window.location.reload()
   }
 }
 
-const successDelete = ref(false)
 
 </script>
 
@@ -42,14 +52,14 @@ const successDelete = ref(false)
   <Teleport to="body">
     <Transition enter-active-class="transition-opacity duration-200"
       leave-active-class="transition-opacity duration-200" enter-from-class="opacity-0" leave-to-class="opacity-0">
-      <div v-if="openModal" class="fixed inset-0 bg-white/50 bg-opacity-50 flex items-center justify-center z-50"
+      <div v-if="openModal" class="fixed inset-0 bg-white/50 bg-opacity-50 flex items-center justify-center z-40"
         @click.self="handleClose">
         <!-- Modal -->
         <Transition enter-active-class="transition-all duration-200" leave-active-class="transition-all duration-200"
           enter-from-class="opacity-0 scale-95" leave-to-class="opacity-0 scale-95">
           <div v-if="openModal" class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
             <!-- Content -->
-            <div class="p-8" v-if="!successDelete">
+            <div class="p-8">
               <!-- Warning Icon -->
               <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertCircle :size="32" class="text-red-600" />
