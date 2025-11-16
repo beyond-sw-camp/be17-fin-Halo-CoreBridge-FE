@@ -1,5 +1,10 @@
 import api from '@/plugins/axiosInterceptor'
-import type { InterviewCreateForm, Interviewers } from '@/types/interview/interview'
+import type {
+  InterviewCreateForm,
+  Interviewers,
+  InterviewListResponse,
+  InterviewParam,
+} from '@/types/interview/interview'
 
 const requestInterviewersForInterviewCreate = async (
   req: number,
@@ -53,7 +58,39 @@ const requestAddInterview = async (req: InterviewCreateForm): Promise<ApiRespons
   return data
 }
 
+const requestGetInterivews = async (
+  req: InterviewParam,
+): Promise<ApiResponse<InterviewListResponse>> => {
+  let data: ApiResponse<InterviewListResponse> = {
+    success: false,
+    code: 0,
+    message: '',
+    results: {
+      interviews: [],
+      totalElements: 0,
+      totalPages: 0,
+      currentPage: 0,
+    },
+  }
+
+  const url: string = '/api/recruiter/interviews'
+
+  await api
+    .get(url, {
+      params: req,
+    })
+    .then((res) => {
+      data = res.data as ApiResponse<InterviewListResponse>
+    })
+    .catch((error) => {
+      data = error.response.data as ApiResponse<InterviewListResponse>
+    })
+
+  return data
+}
+
 export default {
   requestInterviewersForInterviewCreate,
   requestAddInterview,
+  requestGetInterivews,
 }

@@ -103,7 +103,7 @@ const requestInterviewerAccounts = async (
     },
   }
 
-  const url: string = '/api/recruiter/interviews'
+  const url: string = '/api/interviewers/jobPosting'
 
   await api
     .get(url, {
