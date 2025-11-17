@@ -76,9 +76,6 @@ onBeforeUnmount(() => {
   document.removeEventListener("click", handleClickOutside)
 })
 
-onMounted(() => {
-  console.log("role:", userStore.userInfo.role)
-})
 </script>
 
 <template>
