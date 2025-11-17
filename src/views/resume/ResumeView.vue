@@ -279,7 +279,7 @@ const submitApplication = async () => {
     }
 
     // DTOs를 JSON Blob으로 변환
-    const resumeDto = {
+    let resumeDto = {
       description: "자기소개서 내용은 별도 API로 처리됩니다.", // 더 이상 사용하지 않음
       jobPostingId: jobPostingId,
       careers: careers.value.filter(c => c.companyName && c.position).map(c => ({
@@ -302,17 +302,12 @@ const submitApplication = async () => {
         endDate: o.endDate ? `${o.endDate}T00:00:00` : '', // LocalDateTime 형식으로 변환
         note: o.note || ''
       })),
-      resumeSkills: resumeSkills.value.filter(s => s.name)
+      resumeSkills: resumeSkills.value.filter(s => s.name),
+      descriptions : [] 
     };
 
     // 🔥 FormData 객체 생성
     const formData = new FormData();
-
-    // 🔥 DTO를 Blob으로 변환하여 추가
-    const dtoBlob = new Blob([JSON.stringify(resumeDto)], {
-      type: 'application/json'
-    });
-    formData.append('resume', dtoBlob);
 
     // 파일 첨부 (있는 경우)
     if (resumeFile.value) {
@@ -324,6 +319,25 @@ const submitApplication = async () => {
 
     if (props.mode === 'create') {
       // 🔥 FIXED: POST /api/jobposts/{jobpostId}/applies (multipart/form-data)
+
+
+// 자기소개서 내용 저장/수정
+    if (Object.keys(coverLetterDescriptions.value).length > 0) {
+
+      resumeDto.descriptions = Object.values(coverLetterDescriptions.value).map(desc => ({
+        ...desc
+      }))
+      
+
+    }
+
+
+    // 🔥 DTO를 Blob으로 변환하여 추가
+    const dtoBlob = new Blob([JSON.stringify(resumeDto)], {
+      type: 'application/json'
+    });
+    formData.append('resume', dtoBlob);
+
       response = await fetch(`/api/jobposts/${jobPostingId}/applies`, {
         method: 'POST',
         credentials: 'include', // 쿠키 포함 (인증용)
@@ -358,7 +372,7 @@ const submitApplication = async () => {
       resumeId = props.resumeData.id; // 수정 모드에서는 기존 resumeId 사용
     }
 
-    // 자기소개서 내용 저장/수정
+    // // 자기소개서 내용 저장/수정
     if (Object.keys(coverLetterDescriptions.value).length > 0) {
       await createCoverLetterDescriptions(jobPostingId, resumeId, Object.values(coverLetterDescriptions.value).map(desc => ({
         ...desc,
