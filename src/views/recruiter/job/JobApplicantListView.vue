@@ -1,42 +1,38 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Users, Clock, Search, Filter } from 'lucide-vue-next'
 import ApplicantListCard from '@/components/applicant/ApplicantListCard.vue'
-import { getApplicantsList } from '@/api/resume'
+import { getApplicantsList, searchApplicants } from '@/api/resume'
 import RecruitProcessApi from '@/api/recruit-process'
 import { useRoute, useRouter } from 'vue-router'
 import VueApexCharts from 'vue3-apexcharts'
 
-// --------------------------------------
 // 타입 정의
-// --------------------------------------
 interface Applicant {
-    id: number
-    name: string
-    email: string
-    careerType: string
-    skills: string[]
-    degree: string
-    certificateCount: number
-    applyDate: string
-    stageName: string
+  id: number
+  name: string
+  email: string
+  careerType: string
+  skills: string[]
+  degree: string
+  certificateCount: number
+  applyDate: string
+  stageName: string
 }
 
 interface RecruitProcess {
-    id: number
+  id: number
+  name: string
+  colorCode: {
     name: string
-    colorCode: {
-        name: string
-        label: string
-        code: string
-    }
-    orderIdx: number
-    count?: number
+    label: string
+    code: string
+  }
+  orderIdx: number
+  count?: number
 }
 
-// --------------------------------------
 // 상태 변수
-// --------------------------------------
 const route = useRoute()
 const router = useRouter()
 const jobId = Number(route.params.id)
@@ -46,93 +42,162 @@ const recruitProcesses = ref<RecruitProcess[]>([])
 const isLoading = ref(true)
 const errorMessage = ref('')
 
-// --------------------------------------
-// 데이터 로드
-// --------------------------------------
-onMounted(async () => {
-    try {
-        const [applicantRes, processRes] = await Promise.all([
-            getApplicantsList(jobId),
-            RecruitProcessApi.requestRecruitProcesses({ recruit: jobId })
-        ])
-
-        if (applicantRes.success && applicantRes.results)
-            applicants.value = applicantRes.results
-
-        if (processRes.success && processRes.results)
-            recruitProcesses.value = processRes.results.recruitProcesses
-    } catch (e) {
-        console.error(e)
-        errorMessage.value = '데이터를 불러오는 중 오류가 발생했습니다.'
-    } finally {
-        isLoading.value = false
-    }
-})
-
-// --------------------------------------
 // 검색 및 필터링
-// --------------------------------------
 const searchQuery = ref('')
 const statusFilter = ref('all')
+const skillFilter = ref<string[]>([])
+const degreeFilter = ref('')
 
+// ✅ Elasticsearch 검색 활성화 여부
+const useElasticsearch = ref(true)
+
+// 데이터 로드
+onMounted(async () => {
+  await loadData()
+})
+
+// ✅ 검색 파라미터 변경 감지
+watch([searchQuery, statusFilter, skillFilter, degreeFilter], async () => {
+  if (useElasticsearch.value) {
+    await performSearch()
+  }
+}, { debounce: 300 }) // 300ms 디바운스
+
+// ✅ 초기 데이터 로드
+const loadData = async () => {
+  try {
+    isLoading.value = true
+    const [applicantRes, processRes] = await Promise.all([
+      getApplicantsList(jobId),
+      RecruitProcessApi.requestRecruitProcesses({ recruit: jobId })
+    ])
+
+    if (applicantRes.success && applicantRes.results)
+      applicants.value = applicantRes.results
+
+    if (processRes.success && processRes.results)
+      recruitProcesses.value = processRes.results.recruitProcesses
+  } catch (e) {
+    console.error(e)
+    errorMessage.value = '데이터를 불러오는 중 오류가 발생했습니다.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// ✅ Elasticsearch 검색 수행
+const performSearch = async () => {
+  try {
+    isLoading.value = true
+
+    const searchParams: any = {
+      page: 0,
+      size: 100,
+      sortBy: 'appliedAt',
+      sortDirection: 'desc'
+    }
+
+    // 키워드 검색
+    if (searchQuery.value.trim()) {
+      searchParams.keyword = searchQuery.value.trim()
+    }
+
+    // 학위 필터
+    if (degreeFilter.value) {
+      searchParams.degree = degreeFilter.value
+    }
+
+    // 기술 스택 필터
+    if (skillFilter.value.length > 0) {
+      searchParams.skills = skillFilter.value
+    }
+
+    const response = await searchApplicants(jobId, searchParams)
+
+    if (response.success && response.results) {
+      // Elasticsearch 결과를 기존 형식에 맞게 변환
+      applicants.value = response.results.content.map((item: any) => ({
+        id: item.id,
+        name: item.userName,
+        email: item.userEmail,
+        careerType: item.careers?.[0]?.position || '경력 정보 없음',
+        skills: item.skills || [],
+        degree: item.educations?.[0]?.degree || '학력 정보 없음',
+        certificateCount: item.certificateCount || 0,
+        applyDate: item.appliedAt,
+        stageName: item.stageName || '서류 전형'
+      }))
+    }
+  } catch (e) {
+    console.error('검색 중 오류:', e)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 로컬 필터링 (Elasticsearch 사용 안 할 때)
 const filteredApplicants = computed(() => {
+  if (useElasticsearch.value) {
+    // Elasticsearch 사용 시 statusFilter만 로컬에서 적용
+    const status = statusFilter.value
+    return applicants.value.filter((a) => {
+      const matchesStatus = status === 'all' || a.stageName === status
+      return matchesStatus
+    })
+  } else {
+    // 기존 로컬 필터링
     const search = searchQuery.value.toLowerCase()
     const status = statusFilter.value
 
     return applicants.value.filter((a) => {
-        const matchesSearch =
-            a.name.toLowerCase().includes(search) ||
-            a.email.toLowerCase().includes(search)
-        const matchesStatus = status === 'all' || a.stageName === status
-        return matchesSearch && matchesStatus
+      const matchesSearch =
+        a.name.toLowerCase().includes(search) ||
+        a.email.toLowerCase().includes(search)
+      const matchesStatus = status === 'all' || a.stageName === status
+      return matchesSearch && matchesStatus
     })
+  }
 })
 
 // 필터 옵션
 const statusOptions = computed(() => [
-    { value: 'all', label: '전체' },
-    ...recruitProcesses.value.map((p) => ({
-        value: p.name,
-        label: p.name
-    }))
+  { value: 'all', label: '전체' },
+  ...recruitProcesses.value.map((p) => ({
+    value: p.name,
+    label: p.name
+  }))
 ])
 
-// --------------------------------------
 // 통계 계산
-// --------------------------------------
 const stats = computed(() => {
-    const total = applicants.value.length
+  const total = applicants.value.length
 
-    const processes = recruitProcesses.value.map((p) => {
-        const count = applicants.value.filter((a) => a.stageName === p.name).length
-        return { ...p, count }
-    })
+  const processes = recruitProcesses.value.map((p) => {
+    const count = applicants.value.filter((a) => a.stageName === p.name).length
+    return { ...p, count }
+  })
 
-    return { total, processes }
+  return { total, processes }
 })
 
-
-// Tailwind 색상 → HEX 매핑 (이전 함수 재사용)
+// Tailwind 색상 → HEX 매핑
 function getColorHex(code: string): string {
   const map: Record<string, string> = {
-    'blue-500': '#60a5fa',     // blue-400
-    'orange-500': '#fb923c',   // orange-400
-    'purple-500': '#a78bfa',   // purple-400
-    'green-500': '#4ade80',    // green-400
-    'pink-500': '#f472b6',     // pink-400
-    'yellow-500': '#facc15',   // yellow-400
-    'red-500': '#f87171',      // red-400
-    'teal-500': '#2dd4bf',     // teal-400
-    'gray-500': '#9ca3af',     // gray-400
-    'slate-500': '#94a3b8',    // slate-400
+    'blue-500': '#60a5fa',
+    'orange-500': '#fb923c',
+    'purple-500': '#a78bfa',
+    'green-500': '#4ade80',
+    'pink-500': '#f472b6',
+    'yellow-500': '#facc15',
+    'red-500': '#f87171',
+    'teal-500': '#2dd4bf',
+    'gray-500': '#9ca3af',
+    'slate-500': '#94a3b8',
   }
-  return map[code] || '#cbd5e1' // fallback: slate-300
+  return map[code] || '#cbd5e1'
 }
 
-
-// --------------------------------------
-// ApexCharts (그래프)
-// --------------------------------------
+// ApexCharts
 const barSeries = computed(() => [
   {
     name: '지원자 수',
@@ -159,7 +224,7 @@ const barOptions = computed(() => ({
   },
   grid: { borderColor: '#f1f5f9' },
   dataLabels: { enabled: false },
-  colors: stats.value.processes.map((p) => getColorHex(p.colorCode.code)), // ✅ 백엔드 색상 반영
+  colors: stats.value.processes.map((p) => getColorHex(p.colorCode.code)),
 }))
 
 const donutSeries = computed(() =>
@@ -168,7 +233,7 @@ const donutSeries = computed(() =>
 
 const donutOptions = computed(() => ({
   labels: stats.value.processes.map((p) => p.name),
-  colors: stats.value.processes.map((p) => getColorHex(p.colorCode.code)), // ✅ 동일하게 백엔드 색상 사용
+  colors: stats.value.processes.map((p) => getColorHex(p.colorCode.code)),
   legend: { position: 'bottom' },
   plotOptions: {
     pie: {
@@ -195,102 +260,98 @@ const donutOptions = computed(() => ({
   },
 }))
 
-// --------------------------------------
-// 이벤트
-// --------------------------------------
 const viewApplicantDetail = (id: number): void => {
-    router.push(`/jobposts/${jobId}/applies/${id}`)
+  router.push(`/jobposts/${jobId}/applies/${id}`)
 }
 </script>
 
 <template>
-    <div class="bg-gray-50 min-h-screen">
-        <main v-if="!isLoading" class="space-y-10">
-            <!-- ✅ 통계 카드 -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <!-- 전체 지원자 -->
-                <div
-                    class="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-5 flex flex-col items-start transition hover:shadow-md hover:scale-[1.02]">
-                    <div class="flex items-center justify-center w-10 h-10 rounded-full mb-3 bg-blue-100">
-                        <Users :size="20" class="text-blue-500" />
-                    </div>
-                    <p class="text-sm font-medium text-gray-500">전체 지원자</p>
-                    <p class="text-2xl font-bold text-slate-800 mt-1">{{ stats.total }}</p>
-                    <div class="w-full h-1 mt-3 rounded-full bg-gray-100">
-                        <div class="h-1 rounded-full bg-blue-500 w-full"></div>
-                    </div>
-                </div>
+  <div class="bg-gray-50 min-h-screen">
+    <main v-if="!isLoading" class="space-y-10">
+      <!-- 통계 카드 (동일) -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <!-- 전체 지원자 -->
+        <div
+          class="bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-5 flex flex-col items-start transition hover:shadow-md hover:scale-[1.02]">
+          <div class="flex items-center justify-center w-10 h-10 rounded-full mb-3 bg-blue-100">
+            <Users :size="20" class="text-blue-500" />
+          </div>
+          <p class="text-sm font-medium text-gray-500">전체 지원자</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1">{{ stats.total }}</p>
+          <div class="w-full h-1 mt-3 rounded-full bg-gray-100">
+            <div class="h-1 rounded-full bg-blue-500 w-full"></div>
+          </div>
+        </div>
 
-                <!-- 각 프로세스 -->
-                <div v-for="stage in stats.processes" :key="stage.id"
-                    class="relative bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-5 flex flex-col items-start transition hover:shadow-md hover:scale-[1.02]">
-                    <div class="flex items-center justify-center w-10 h-10 rounded-full mb-3"
-                        :class="`bg-${stage.colorCode.code.replace('-500', '-100')}`">
-                        <Clock :size="20" :class="`text-${stage.colorCode.code}`" />
-                    </div>
-                    <p class="text-sm font-medium text-gray-500">{{ stage.name }}</p>
-                    <p class="text-2xl font-bold text-slate-800 mt-1">{{ stage.count }}</p>
-                    <div class="w-full h-1 mt-3 rounded-full bg-gray-100">
-                        <div class="h-1 rounded-full transition-all duration-500" :class="`bg-${stage.colorCode.code}`"
-                            :style="`width: ${(stage.count / stats.total) * 100}%`" />
-                    </div>
-                    <span class="absolute top-3 right-4 text-xs font-semibold text-gray-400">
+        <!-- 각 프로세스 -->
+        <div v-for="stage in stats.processes" :key="stage.id"
+             class="relative bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-5 flex flex-col items-start transition hover:shadow-md hover:scale-[1.02]">
+          <div class="flex items-center justify-center w-10 h-10 rounded-full mb-3"
+               :class="`bg-${stage.colorCode.code.replace('-500', '-100')}`">
+            <Clock :size="20" :class="`text-${stage.colorCode.code}`" />
+          </div>
+          <p class="text-sm font-medium text-gray-500">{{ stage.name }}</p>
+          <p class="text-2xl font-bold text-slate-800 mt-1">{{ stage.count }}</p>
+          <div class="w-full h-1 mt-3 rounded-full bg-gray-100">
+            <div class="h-1 rounded-full transition-all duration-500" :class="`bg-${stage.colorCode.code}`"
+                 :style="`width: ${(stage.count / stats.total) * 100}%`" />
+          </div>
+          <span class="absolute top-3 right-4 text-xs font-semibold text-gray-400">
                         {{ ((stage.count / stats.total) * 100).toFixed(1) }}%
                     </span>
-                </div>
+        </div>
+      </div>
+
+      <!-- 그래프 (동일) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <h2 class="text-lg font-semibold text-slate-700 mb-4">
+            단계별 지원자 수 (Bar Chart)
+          </h2>
+          <VueApexCharts type="bar" height="250" :options="barOptions" :series="barSeries" />
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <h2 class="text-lg font-semibold text-slate-700 mb-4">
+            단계별 비율 (Donut Chart)
+          </h2>
+          <VueApexCharts type="donut" height="250" :options="donutOptions" :series="donutSeries" />
+        </div>
+      </div>
+
+      <!-- ✅ 필터 (검색 기능 강화) -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="flex flex-col md:flex-row gap-4">
+          <div class="flex-1 relative">
+            <Search :size="20" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input v-model="searchQuery" type="text"
+                   placeholder="이름, 회사명, 기술스택으로 검색..."
+                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent" />
+          </div>
+
+          <div class="flex gap-2">
+            <div class="relative">
+              <Filter :size="20"
+                      class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <select v-model="statusFilter"
+                      class="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent appearance-none bg-white cursor-pointer">
+                <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- ✅ 그래프 -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Bar Chart -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-lg font-semibold text-slate-700 mb-4">
-                        단계별 지원자 수 (Bar Chart)
-                    </h2>
-                    <VueApexCharts type="bar" height="250" :options="barOptions" :series="barSeries" />
-                </div>
+      <!-- 지원자 목록 (동일) -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xl font-semibold text-slate-600 mb-4">
+          지원자 목록 ({{ filteredApplicants.length }})
+        </h2>
 
-                <!-- Donut Chart -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-lg font-semibold text-slate-700 mb-4">
-                        단계별 비율 (Donut Chart)
-                    </h2>
-                    <VueApexCharts type="donut" height="250" :options="donutOptions" :series="donutSeries" />
-                </div>
-            </div>
-
-            <!-- ✅ 필터 -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <div class="flex flex-col md:flex-row gap-4">
-                    <div class="flex-1 relative">
-                        <Search :size="20" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        <input v-model="searchQuery" type="text" placeholder="이름, 이메일로 검색..."
-                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent" />
-                    </div>
-
-                    <div class="flex gap-2">
-                        <div class="relative">
-                            <Filter :size="20"
-                                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                            <select v-model="statusFilter"
-                                class="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent appearance-none bg-white cursor-pointer">
-                                <option v-for="option in statusOptions" :key="option.value" :value="option.value">
-                                    {{ option.label }}
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ✅ 지원자 목록 -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 class="text-xl font-semibold text-slate-600 mb-4">
-                    지원자 목록 ({{ filteredApplicants.length }})
-                </h2>
-
-                <div v-if="filteredApplicants.length" class="space-y-4">
-                    <ApplicantListCard v-for="applicant in filteredApplicants" :key="applicant.id" :applicant="{
+        <div v-if="filteredApplicants.length" class="space-y-4">
+          <ApplicantListCard v-for="applicant in filteredApplicants" :key="applicant.id" :applicant="{
                         id: applicant.id,
                         name: applicant.name,
                         email: applicant.email,
@@ -302,24 +363,24 @@ const viewApplicantDetail = (id: number): void => {
                         certificates: applicant.certificateCount,
                         skills: applicant.skills
                     }" @click="viewApplicantDetail(applicant.id)" />
-                </div>
+        </div>
 
-                <div v-else class="text-center py-12">
-                    <p class="text-gray-500">검색 결과가 없습니다.</p>
-                </div>
-            </div>
-        </main>
+        <div v-else class="text-center py-12">
+          <p class="text-gray-500">검색 결과가 없습니다.</p>
+        </div>
+      </div>
+    </main>
 
-        <div v-else class="text-center py-12 text-gray-500">로딩 중...</div>
-    </div>
+    <div v-else class="text-center py-12 text-gray-500">로딩 중...</div>
+  </div>
 </template>
 
 <style scoped>
 :root {
-    --tw-blue-500: #3b82f6;
-    --tw-orange-500: #f97316;
-    --tw-green-500: #22c55e;
-    --tw-purple-500: #a855f7;
-    --tw-pink-500: #ec4899;
+  --tw-blue-500: #3b82f6;
+  --tw-orange-500: #f97316;
+  --tw-green-500: #22c55e;
+  --tw-purple-500: #a855f7;
+  --tw-pink-500: #ec4899;
 }
 </style>
