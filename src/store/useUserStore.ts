@@ -34,7 +34,7 @@ export const useUserStore = defineStore('user', () => {
     }
 
     const isApplicant = () => {
-      return userInfo.value.role === 'ROLE_APPLICANT'
+      return userInfo.value.role === '지원자' || userInfo.value.role === 'ROLE_APPLICANT'
     }
 
     return { userInfo, logout, login, isApplicant, isLogin }

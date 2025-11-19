@@ -282,3 +282,45 @@ export interface CoverLetterTitleResponse {
   title: string
   displayOrder: number
 }
+
+// ============================================
+// Resume Search API (Elasticsearch)
+// ============================================
+
+/**
+ * 이력서 검색 (Elasticsearch)
+ * @param jobpostId - 공고 ID
+ * @param params - 검색 파라미터
+ */
+export const searchApplicants = async (
+  jobpostId: number,
+  params: {
+    keyword?: string
+    degree?: string
+    skills?: string[]
+    companyName?: string
+    certificateName?: string
+    country?: string
+    page?: number
+    size?: number
+    sortBy?: string
+    sortDirection?: string
+  }
+): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined
+  }
+
+  try {
+    const response = await api.post(`/api/jobposts/${jobpostId}/applies/search`, params)
+    data = response.data
+  } catch (error: any) {
+    console.error('Search error:', error)
+    data = error.response?.data || data
+  }
+
+  return data
+}
