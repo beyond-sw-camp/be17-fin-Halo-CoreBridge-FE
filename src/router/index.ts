@@ -200,6 +200,13 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: '/interviewer/interview/:interviewId',
+      name: 'InterviewDetail',
+      component: () =>
+        import('@/components/recruiter-dashboard/interview/interview-room/InterviewDetailView.vue'),
+      props: true,
+    },
   ],
 })
 

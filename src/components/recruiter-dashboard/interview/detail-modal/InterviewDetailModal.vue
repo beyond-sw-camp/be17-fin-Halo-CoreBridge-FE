@@ -4,12 +4,15 @@ import { X, Calendar, FileText, MapPin, Users, List } from 'lucide-vue-next'
 import InterviewCancelModal from '@/components/recruiter-dashboard/interview/cancel-modal/InterviewCancelModal.vue'
 import type { Interview } from '@/types/interview/interview'
 import interviewAPI from '@/api/interview/index'
+import { useUserStore } from '@/store/useUserStore'
+import { RouterLink } from 'vue-router'
 
 interface Props {
   openModal: boolean
   interviewId: number
 }
 
+const useUser = useUserStore()
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
@@ -67,12 +70,6 @@ const handleClose = () => {
   emit('close')
 }
 
-const handleEdit = () => {
-}
-
-const handleCancel = () => {
-}
-
 const isOpenCancelModal = ref(false)
 const openCancelModal = () => {
   isOpenCancelModal.value = true
@@ -108,6 +105,11 @@ const loadInterview = async () => {
     alert(response.message)
   }
 }
+
+const isInterviewer = () => {
+  return useUser.userInfo.role === '면접관'
+}
+
 </script>
 
 <template>
@@ -214,11 +216,15 @@ const loadInterview = async () => {
               </div>
 
               <!-- Action Buttons -->
-              <div class="flex space-x-3" v-if="interview.interviewStatus.code === 'SCHEDULED'">
-                <button @click="openCancelModal"
+              <div class="flex space-x-3" v-if="interview.interviewStatus.code === 'SCHEDULED' || 'ONGOING'">
+                <button @click="openCancelModal" v-if="!isInterviewer()"
                   class="flex-1 hover:cursor-pointer px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition-all">
                   취소하기
                 </button>
+                <RouterLink :to="`/interviewer/interview/${props.interviewId}`" v-else
+                  class="text-center flex-1 hover:cursor-pointer px-6 py-4 bg-slate-500 hover:bg-slate-600 text-white rounded-xl font-medium transition-all">
+                  인터뷰 룸 입장
+                </RouterLink>
                 <InterviewCancelModal :open-modal="isOpenCancelModal" @close="closeCancelModal"
                   :interview="interview" />
               </div>
