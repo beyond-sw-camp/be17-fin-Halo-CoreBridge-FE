@@ -159,10 +159,35 @@ const requestInterviewCancel = async (req: InterviewCancelForm): Promise<ApiResp
   return data
 }
 
+const requestApplicantInJobPostingResumeForInterviewRoom = async (
+  req: number,
+): Promise<ApiResponse> => {
+  let data: ApiResponse = {
+    success: false,
+    code: 0,
+    message: '',
+    results: undefined,
+  }
+
+  const url: string = '/api/interview/chat/' + req + '/applicant'
+
+  await api
+    .get(url)
+    .then((res) => {
+      data = res.data as ApiResponse
+    })
+    .catch((error) => {
+      data = error.response.data as ApiResponse
+    })
+
+  return data
+}
+
 export default {
   requestInterviewersForInterviewCreate,
   requestAddInterview,
   requestGetInterivews,
   requestInterivew,
   requestInterviewCancel,
+  requestApplicantInJobPostingResumeForInterviewRoom,
 }
