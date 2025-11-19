@@ -48,7 +48,7 @@ const statusFilter = ref('all')
 const skillFilter = ref<string[]>([])
 const degreeFilter = ref('')
 
-// ✅ Elasticsearch 검색 활성화 여부
+// ✅ Elasticsearch 검색 활성화
 const useElasticsearch = ref(true)
 
 // 데이터 로드
@@ -56,12 +56,19 @@ onMounted(async () => {
   await loadData()
 })
 
-// ✅ 검색 파라미터 변경 감지
-watch([searchQuery, statusFilter, skillFilter, degreeFilter], async () => {
+// ✅ 검색 파라미터 변경 감지 - debounce 제거, 엔터 입력만 처리
+// watch([searchQuery, statusFilter, skillFilter, degreeFilter], async () => {
+//   if (useElasticsearch.value) {
+//     await performSearch()
+//   }
+// }, { debounce: 300 })
+
+// ✅ 필터만 변경 시 자동 검색
+watch([statusFilter, skillFilter, degreeFilter], async () => {
   if (useElasticsearch.value) {
     await performSearch()
   }
-}, { debounce: 300 }) // 300ms 디바운스
+})
 
 // ✅ 초기 데이터 로드
 const loadData = async () => {
@@ -85,10 +92,17 @@ const loadData = async () => {
   }
 }
 
+// ✅ 엔터 키 핸들러
+const handleSearchEnter = async () => {
+  console.log('⏎ 엔터 키 입력, 검색 실행:', searchQuery.value)
+  await performSearch()
+}
+
 // ✅ Elasticsearch 검색 수행
 const performSearch = async () => {
   try {
     isLoading.value = true
+    console.log('🔍 검색 시작')
 
     const searchParams: any = {
       page: 0,
@@ -97,22 +111,29 @@ const performSearch = async () => {
       sortDirection: 'desc'
     }
 
-    // 키워드 검색
+    // ✅ 키워드 검색 (빈 문자열 제외)
     if (searchQuery.value.trim()) {
       searchParams.keyword = searchQuery.value.trim()
+      console.log('✅ keyword:', searchParams.keyword)
     }
 
     // 학위 필터
     if (degreeFilter.value) {
       searchParams.degree = degreeFilter.value
+      console.log('✅ degree:', searchParams.degree)
     }
 
     // 기술 스택 필터
     if (skillFilter.value.length > 0) {
       searchParams.skills = skillFilter.value
+      console.log('✅ skills:', searchParams.skills)
     }
 
+    console.log('📤 최종 검색 파라미터:', searchParams)
+
     const response = await searchApplicants(jobId, searchParams)
+
+    console.log('📥 검색 응답:', response)
 
     if (response.success && response.results) {
       // Elasticsearch 결과를 기존 형식에 맞게 변환
@@ -123,13 +144,15 @@ const performSearch = async () => {
         careerType: item.careers?.[0]?.position || '경력 정보 없음',
         skills: item.skills || [],
         degree: item.educations?.[0]?.degree || '학력 정보 없음',
-        certificateCount: item.certificateCount || 0,
+        certificateCount: item.certificates?.length || 0,
         applyDate: item.appliedAt,
         stageName: item.stageName || '서류 전형'
       }))
+
+      console.log(`✅ 검색 결과: ${applicants.value.length}건`)
     }
   } catch (e) {
-    console.error('검색 중 오류:', e)
+    console.error('❌ 검색 중 오류:', e)
   } finally {
     isLoading.value = false
   }
@@ -319,14 +342,18 @@ const viewApplicantDetail = (id: number): void => {
         </div>
       </div>
 
-      <!-- ✅ 필터 (검색 기능 강화) -->
+      <!-- ✅ 필터 (엔터 키 이벤트 추가) -->
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex flex-col md:flex-row gap-4">
           <div class="flex-1 relative">
             <Search :size="20" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input v-model="searchQuery" type="text"
-                   placeholder="이름, 회사명, 기술스택으로 검색..."
-                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="이름, 이메일, 기술스택 검색 후 엔터..."
+              @keyup.enter="handleSearchEnter"
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+            />
           </div>
 
           <div class="flex gap-2">
