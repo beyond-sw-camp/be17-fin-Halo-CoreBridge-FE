@@ -206,7 +206,7 @@
 
 ## 시스템 아키텍처
 
-![시스템아키텍쳐.png](https://github.com/user-attachments/assets/148df1da-3ca6-4baa-a6da-0e252b10b758)
+![시스템아키텍쳐.png](https://github.com/user-attachments/assets/14686c90-b4ad-4d09-b765-32694e61de94)
 
 ## ERD
 
