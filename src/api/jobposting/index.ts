@@ -273,7 +273,7 @@ export const searchJobPostings = async (keyword: string, page = 0): Promise<ApiR
       params: {
         keyword: keyword ? keyword : undefined,
         page: page,
-        search_type: 'es',
+        search_type: 'sql',
       },
     })
     .then((res) => {
