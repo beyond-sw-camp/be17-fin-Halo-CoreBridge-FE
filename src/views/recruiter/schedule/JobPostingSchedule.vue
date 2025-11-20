@@ -42,18 +42,18 @@
     </div>
 
     <!-- 파이프라인 -->
-    <div class="bg-white rounded-lg shadow p-3 mb-5">
-      <h3 class="text-center font-bold text-slate-600 mb-2 text-xs tracking-tight">채용 파이프라인</h3>
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5">
-        <div v-for="stage in pipelineStages" :key="stage.name" class="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition">
-          <div class="flex items-center gap-1.5 mb-1">
-            <div :class="['w-3 h-3 rounded-full flex-shrink-0', stage.color]"></div>
-            <span class="text-xs font-medium text-gray-700 whitespace-nowrap">{{ stage.name }}</span>
-          </div>
-          <span class="text-base font-bold text-slate-600">{{ stage.count }}명</span>
-        </div>
-      </div>
-    </div>
+<!--    <div class="bg-white rounded-lg shadow p-3 mb-5">-->
+<!--      <h3 class="text-center font-bold text-slate-600 mb-2 text-xs tracking-tight">채용 파이프라인</h3>-->
+<!--      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5">-->
+<!--        <div v-for="stage in pipelineStages" :key="stage.name" class="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition">-->
+<!--          <div class="flex items-center gap-1.5 mb-1">-->
+<!--            <div :class="['w-3 h-3 rounded-full flex-shrink-0', stage.color]"></div>-->
+<!--            <span class="text-xs font-medium text-gray-700 whitespace-nowrap">{{ stage.name }}</span>-->
+<!--          </div>-->
+<!--          <span class="text-base font-bold text-slate-600">{{ stage.count }}명</span>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
 
     <!-- 필터 및 검색 -->
     <div class="bg-white rounded-xl shadow-lg mb-6 p-6 border border-gray-100">
@@ -293,7 +293,7 @@
                       </span>
                     </div>
                   </div>
-                  
+
                   <!-- 끝나는 공고 -->
                   <template v-for="job in dateObj.jobsEnding.slice(0, 2)" :key="'end-' + job.id">
                     <div
@@ -320,7 +320,7 @@
                     </div>
                   </template>
 
-                  
+
                   <div v-if="(dateObj.jobsStarting.length + dateObj.jobsEnding.length) > 2" class="text-xs text-gray-500 font-semibold pointer-events-none">
                     +{{ (dateObj.jobsStarting.length + dateObj.jobsEnding.length) - 2 }}건
                   </div>
@@ -472,9 +472,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
-import { 
-  Plus, Share2, ChevronLeft, ChevronRight, CalendarDays, Calendar, Clock, 
-  AlertCircle, Users, Check, Briefcase, FileText, Filter, X, Search, 
+import {
+  Plus, Share2, ChevronLeft, ChevronRight, CalendarDays, Calendar, Clock,
+  AlertCircle, Users, Check, Briefcase, FileText, Filter, X, Search,
   ChevronDown, Building, Award, BarChart
 } from 'lucide-vue-next'
 import JobPostingScheduleCreate from './JobPostingSchedule_Create.vue'
@@ -653,7 +653,7 @@ const selectedDateLabel = computed(() => {
   const diffTime = selectedDate.value.getTime() - today.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   let label = `${month}월 ${day}일`
-  
+
   if (diffDays === 0) label += ' (오늘)'
   else if (diffDays === 1) label += ' (내일)'
   else if (diffDays === -1) label += ' (어제)'
@@ -702,8 +702,8 @@ const filteredJobs = computed(() => {
 
 
 const hasActiveFilters = computed(() => {
-  return filters.value.position !== '' || filters.value.status !== '' || 
-         filters.value.department !== '' || filters.value.experience !== '' || 
+  return filters.value.position !== '' || filters.value.status !== '' ||
+         filters.value.department !== '' || filters.value.experience !== '' ||
          filters.value.type !== '' || searchQuery.value !== ''
 })
 
@@ -716,23 +716,23 @@ const calendarDates = computed(() => {
   const startDayOfWeek = firstDay.getDay()
 
   const dates = []
-  
+
   // 이전 달 빈 칸
   for (let i = 0; i < startDayOfWeek; i++) {
     dates.push({ date: null, isToday: false, hasJobs: false, jobsStarting: [], jobsEnding: [] })
   }
-  
+
   // 현재 달 날짜
   const today = new Date()
   for (let date = 1; date <= daysInMonth; date++) {
     const currentDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`
-    
+
     // 해당 날짜에 시작하는 공고
     const jobsStarting = filteredJobs.value.filter(job => job.postedDate === currentDateStr)
-    
+
     // 해당 날짜에 끝나는 공고
     const jobsEnding = filteredJobs.value.filter(job => job.deadline === currentDateStr)
-    
+
     dates.push({
       date,
       isToday: year === today.getFullYear() && month === today.getMonth() && date === today.getDate(),
@@ -741,7 +741,7 @@ const calendarDates = computed(() => {
       jobsEnding
     })
   }
-  
+
   return dates
 })
 
@@ -750,8 +750,8 @@ const selectedDateJobs = computed(() => {
   const month = selectedDate.value.getMonth()
   const date = selectedDate.value.getDate()
   const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`
-  
-  return filteredJobs.value.filter(job => 
+
+  return filteredJobs.value.filter(job =>
     dateStr >= job.postedDate && dateStr <= job.deadline
   )
 })
@@ -788,18 +788,18 @@ const goToToday = () => {
 
 const handleCellClick = (dateObj: any) => {
   if (isDragging.value || !dateObj.date) return
-  
+
   const currentTime = Date.now()
   const timeSinceLastClick = currentTime - lastClickTime.value
-  
+
   const year = currentDate.value.getFullYear()
   const month = currentDate.value.getMonth()
   const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateObj.date).padStart(2, '0')}`
-  
-  const jobsOnDate = filteredJobs.value.filter(job => 
+
+  const jobsOnDate = filteredJobs.value.filter(job =>
     dateStr >= job.postedDate && dateStr <= job.deadline
   )
-  
+
   // 더블클릭 감지 (300ms 이내에 같은 셀 클릭)
   if (timeSinceLastClick < 300 && lastClickedCell.value?.date === dateObj.date) {
     // 더블클릭 - 일정이 하나만 있을 때만 동작
@@ -811,7 +811,7 @@ const handleCellClick = (dateObj: any) => {
       }
       openAddJobModal()
     }
-    
+
     // 더블클릭 처리 후 초기화
     lastClickTime.value = 0
     lastClickedCell.value = null
@@ -830,15 +830,15 @@ const handleJobClick = (date: any, job: any) => {
 
 const startDrag = (index: number, dateObj: any, date: Date) => {
   if (!dateObj.date) return
-  
+
   isDragging.value = true
   dragStartIndex.value = index
   dragEndIndex.value = index
-  
+
   const year = date.getFullYear()
   const month = date.getMonth()
   const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateObj.date).padStart(2, '0')}`
-  
+
   selectedDateRange.value.start = dateStr
   selectedDateRange.value.end = dateStr
 }
@@ -846,17 +846,17 @@ const startDrag = (index: number, dateObj: any, date: Date) => {
 const updateDrag = (index: number, date: Date) => {
   if (isDragging.value && dragStartIndex.value !== null) {
     dragEndIndex.value = index
-    
+
     const year = date.getFullYear()
     const month = date.getMonth()
-    
+
     const startIdx = Math.min(dragStartIndex.value, dragEndIndex.value)
     const endIdx = Math.max(dragStartIndex.value, dragEndIndex.value)
-    
+
     // 시작 날짜와 종료 날짜 찾기
     let startDate = null
     let endDate = null
-    
+
     for (let i = startIdx; i <= endIdx; i++) {
       const dateObj = calendarDates.value[i]
       if (dateObj && dateObj.date) {
@@ -865,7 +865,7 @@ const updateDrag = (index: number, date: Date) => {
         endDate = dateStr
       }
     }
-    
+
     if (startDate && endDate) {
       selectedDateRange.value.start = startDate
       selectedDateRange.value.end = endDate
@@ -887,29 +887,29 @@ const endDrag = () => {
       selectedDateRange.value = { start: null, end: null }
       return
     }
-    
+
     const confirmed = confirm(`${startDate} ~ ${endDate}\n이 기간으로 채용 공고를 등록하시겠습니까?`)
-    
+
     if (confirmed) {
       // 공고 등록 모달 열기
       editingJobData.value = {
         postedDate: startDate,
         deadline: endDate
       }
-      
+
       console.log('🔵 드래그 선택 완료 - 설정된 날짜:', {
         postedDate: startDate,
         deadline: endDate,
         editingJobData: editingJobData.value
       })
-      
+
       showAddJobModal.value = true
     } else {
       // 취소 시 초기화
       selectedDateRange.value = { start: null, end: null }
     }
   }
-  
+
   isDragging.value = false
   dragStartIndex.value = null
   dragEndIndex.value = null
@@ -940,7 +940,7 @@ const closeAddJobModal = () => {
   editingJobData.value = null
   editingJobId.value = null
   selectedDateRange.value = { start: null, end: null }
-  
+
   console.log('🔵 모달 닫기 - 데이터 초기화')
 }
 
@@ -994,26 +994,26 @@ const editSchedule = async (jobId: number) => {
 
 // const handleSaveJob = (jobData: any) => {
 //   console.log('저장할 공고:', jobData)
-  
+
 //   if (jobData.id) {
 //     // 수정
 //     const index = jobs.value.findIndex(j => j.id === jobData.id)
 //     if (index !== -1) {
-//       jobs.value[index] = { 
-//         ...jobs.value[index], 
-//         ...jobData 
+//       jobs.value[index] = {
+//         ...jobs.value[index],
+//         ...jobData
 //       }
 //       alert('공고가 수정되었습니다!')
 //     }
 //   } else {
 //     // 새로 생성
 //     const newId = Math.max(...jobs.value.map(j => j.id), 0) + 1
-    
+
 //     // daysLeft 계산
 //     const today = new Date()
 //     const deadline = new Date(jobData.deadline)
 //     const daysLeft = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    
+
 //     const newJob = {
 //       id: newId,
 //       title: jobData.title,
@@ -1033,11 +1033,11 @@ const editSchedule = async (jobId: number) => {
 //       isUrgent: jobData.isUrgent || daysLeft <= 7,
 //       sharedWith: []
 //     }
-    
+
 //     jobs.value.push(newJob)
 //     alert('공고가 등록되었습니다!')
 //   }
-  
+
 //   editingJobData.value = null
 //   closeAddJobModal()
 // }
@@ -1087,8 +1087,8 @@ const handleEditFromDetail = (jobId: number) => {
   const job = jobs.value.find(j => j.id === jobId)
   if (job) {
     editingJobId.value = jobId
-    editingJobData.value = { 
-      id: job.id, 
+    editingJobData.value = {
+      id: job.id,
       ...job }
     closeDetailModal()
     openAddJobModal({ mode: 'edit' })
