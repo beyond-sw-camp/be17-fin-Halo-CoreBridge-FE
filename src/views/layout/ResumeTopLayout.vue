@@ -75,9 +75,7 @@ onMounted(() => {
       <p v-if="jobPostingTitle" class="text-sm text-slate-500 mt-2">
         📋 지원 공고: <strong>{{ jobPostingTitle }}</strong>
       </p>
-      <p v-else class="text-sm text-slate-500 mt-2">
-        📋 채용공고 ID: <strong>{{ jobpostId }}</strong>
-      </p>
+
     </div>
 
     <!-- Notice Box -->
