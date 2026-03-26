@@ -17,6 +17,9 @@ import type {
 } from '@/types/resume/ResumeTypes';
 import { getCoverLetterTitles } from '@/api/jobposting';
 import { createCoverLetterDescriptions, getCoverLetterDescriptions } from '@/api/resume';
+import api from '@/plugins/axiosInterceptor'
+import axios from 'axios'
+
 
 // Layout에서 제공하는 탭 컨트롤
 const currentTab = inject<Ref<number>>('currentTab');
@@ -91,23 +94,11 @@ const portfolioFile = ref<File | null>(null);
 const fetchUserInfo = async () => {
   try {
     isLoadingUserInfo.value = true;
+    const response = await api.get('/api/users/resume-info')
+    const result = response.data
 
-    const response = await fetch('/api/users/resume-info', {
-      method: 'GET',
-      credentials: 'include', // 쿠키 포함
-    });
-
-    if (!response.ok) {
-      throw new Error('유저 정보 조회 실패');
-    }
-
-    const result = await response.json();
-
-    // BaseResponse 구조: { success, code, message, results }
     if (result.success && result.results) {
       const userInfo = result.results;
-
-      // 유저 정보로 폼 초기화
       nameKo.value = userInfo.name || '';
       email.value = userInfo.email || '';
       phone.value = userInfo.phone || '';
@@ -268,126 +259,91 @@ const handleFileUpload = (event: Event, type: 'resume' | 'portfolio') => {
 // 🔥 FIXED: 백엔드 API에 맞춘 제출 함수
 const submitApplication = async () => {
   try {
-    // 유효성 검사
     if (!validateForm()) {
       return;
     }
 
-    const jobPostingId = Number(route.params.jobpostId); // 라우트 파라미터에서 jobPostingId 가져오기
+    const jobPostingId = Number(route.params.jobpostId);
     if (isNaN(jobPostingId)) {
       throw new Error('유효하지 않은 채용 공고 ID입니다.');
     }
 
-    // DTOs를 JSON Blob으로 변환
     let resumeDto = {
-      description: "자기소개서 내용은 별도 API로 처리됩니다.", // 더 이상 사용하지 않음
+      description: "자기소개서 내용은 별도 API로 처리됩니다.",
       jobPostingId: jobPostingId,
       careers: careers.value.filter(c => c.companyName && c.position).map(c => ({
         ...c,
-        startDate: c.startDate ? `${c.startDate}T00:00:00` : '', // LocalDateTime 형식으로 변환
-        endDate: c.endDate ? `${c.endDate}T00:00:00` : null // null이면 null, 아니면 LocalDateTime 형식으로 변환
+        startDate: c.startDate ? `${c.startDate}T00:00:00` : '',
+        endDate: c.endDate ? `${c.endDate}T00:00:00` : null
       })),
       certificates: certificates.value.filter(c => c.name && c.acquiredDate).map(c => ({
         ...c,
-        acquiredDate: c.acquiredDate ? `${c.acquiredDate}T00:00:00` : '' // LocalDateTime 형식으로 변환
+        acquiredDate: c.acquiredDate ? `${c.acquiredDate}T00:00:00` : ''
       })),
       educations: educations.value.filter(e => e.schoolName && e.major),
       languages: languages.value.filter(l => l.languageName && l.testName).map(l => ({
         ...l,
-        testDate: l.testDate ? `${l.testDate}T00:00:00` : '' // LocalDateTime 형식으로 변환
+        testDate: l.testDate ? `${l.testDate}T00:00:00` : ''
       })),
       overseasExperiences: overseasExperiences.value.filter(o => o.country && o.type).map(o => ({
         ...o,
-        startDate: o.startDate ? `${o.startDate}T00:00:00` : '', // LocalDateTime 형식으로 변환
-        endDate: o.endDate ? `${o.endDate}T00:00:00` : '', // LocalDateTime 형식으로 변환
+        startDate: o.startDate ? `${o.startDate}T00:00:00` : '',
+        endDate: o.endDate ? `${o.endDate}T00:00:00` : '',
         note: o.note || ''
       })),
       resumeSkills: resumeSkills.value.filter(s => s.name),
-      descriptions : [] 
+      descriptions: [] as any[]
     };
 
-    // 🔥 FormData 객체 생성
     const formData = new FormData();
 
-    // 파일 첨부 (있는 경우)
     if (resumeFile.value) {
       formData.append('file', resumeFile.value);
     }
 
-    let response;
     let resumeId: number;
 
     if (props.mode === 'create') {
-      // 🔥 FIXED: POST /api/jobposts/{jobpostId}/applies (multipart/form-data)
+      if (Object.keys(coverLetterDescriptions.value).length > 0) {
+        resumeDto.descriptions = Object.values(coverLetterDescriptions.value).map(desc => ({
+          ...desc
+        }));
+      }
 
+      const dtoBlob = new Blob([JSON.stringify(resumeDto)], {
+        type: 'application/json'
+      });
+      formData.append('resume', dtoBlob);
 
-// 자기소개서 내용 저장/수정
-    if (Object.keys(coverLetterDescriptions.value).length > 0) {
-
-      resumeDto.descriptions = Object.values(coverLetterDescriptions.value).map(desc => ({
-        ...desc
-      }))
-      
-
-    }
-
-
-    // 🔥 DTO를 Blob으로 변환하여 추가
-    const dtoBlob = new Blob([JSON.stringify(resumeDto)], {
-      type: 'application/json'
-    });
-    formData.append('resume', dtoBlob);
-
-      response = await fetch(`/api/jobposts/${jobPostingId}/applies`, {
-        method: 'POST',
-        credentials: 'include', // 쿠키 포함 (인증용)
-        body: formData
-        // Content-Type은 브라우저가 자동으로 설정 (multipart/form-data; boundary=...)
+      const response = await api.post(`/api/jobposts/${jobPostingId}/applies`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '이력서 생성 실패');
-      }
-      resumeId = await response.json();
+      resumeId = response.data;
 
     } else {
-      // 🔥 FIXED: PATCH /api/jobposts/{jobpostId}/applies/{resumeId} (JSON)
       if (!props.resumeData?.id) {
         throw new Error('이력서 ID가 없습니다.');
       }
-      response = await fetch(`/api/jobposts/${jobPostingId}/applies/${props.resumeData.id}`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(resumeDto)
-      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '이력서 수정 실패');
-      }
-      resumeId = props.resumeData.id; // 수정 모드에서는 기존 resumeId 사용
+      const response = await api.patch(`/api/jobposts/${jobPostingId}/applies/${props.resumeData.id}`, resumeDto);
+      resumeId = props.resumeData.id;
     }
 
-    // // 자기소개서 내용 저장/수정
     if (Object.keys(coverLetterDescriptions.value).length > 0) {
       await createCoverLetterDescriptions(jobPostingId, resumeId, Object.values(coverLetterDescriptions.value).map(desc => ({
         ...desc,
-        resumeId: resumeId // resumeId를 각 description에 할당
+        resumeId: resumeId
       })));
     }
 
-    // 포트폴리오 파일이 있다면 별도 업로드
     if (portfolioFile.value) {
       await uploadPortfolio(resumeId);
     }
 
     alert('지원서가 제출되었습니다.');
-    // 성공 후 페이지 이동
-    // window.location.href = '/applications';
 
   } catch (error: any) {
     console.error('제출 실패:', error);
@@ -395,29 +351,43 @@ const submitApplication = async () => {
   }
 };
 
-// 포트폴리오 업로드 함수 (PDF API 사용)
+// 포트폴리오 업로드 함수
 const uploadPortfolio = async (resumeId: number) => {
   if (!portfolioFile.value) return;
 
-  const formData = new FormData();
-  formData.append('file', portfolioFile.value);
-  formData.append('pdf_directory', 'portfolios');
-  formData.append('resumeId', String(resumeId));
-
   try {
-    const response = await fetch('/api/pdf', {
-      method: 'POST',
-      credentials: 'include',
-      body: formData
+    // 1. 백엔드에서 Presigned URL 발급
+    const presignedResponse = await api.get('/api/pdf/presigned-url', {
+      params: {
+        directory: 'portfolios',
+        filename: portfolioFile.value.name
+      }
     });
 
-    if (!response.ok) {
-      throw new Error('포트폴리오 업로드 실패');
-    }
+    const presignedUrl = presignedResponse.data.results;
+
+    // 2. S3에 직접 PUT 업로드
+    await axios.put(presignedUrl, portfolioFile.value, {
+      headers: {
+        'Content-Type': portfolioFile.value.type
+      }
+    });
+
+    // 3. 파일 key 추출 (버킷명 이후 경로)
+    const fileKey = presignedUrl.split('?')[0].split('.amazonaws.com/')[1];
+
+    // 4. 백엔드에 S3 경로 저장
+    await api.post('/api/pdf/s3', {
+      resumeId: resumeId,
+      savedPath: fileKey,
+      originalFilename: portfolioFile.value.name,
+      fileSize: portfolioFile.value.size,
+      contentType: portfolioFile.value.type
+    });
+
   } catch (error) {
     console.error('포트폴리오 업로드 실패:', error);
-    // 포트폴리오 업로드 실패해도 이력서는 제출된 상태
-    alert('포트폴리오 업로드에 실패했습니다. 나중에 다시 시도해주세요.');
+    alert('포트폴리오 업로드에 실패했습니다.');
   }
 };
 
