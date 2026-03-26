@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, provide, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import api from '@/plugins/axiosInterceptor'
+
 
 interface Tab {
   id: number;
@@ -38,16 +40,10 @@ const fetchJobPostingInfo = async () => {
   if (!jobpostId.value) return;
 
   try {
-    const response = await fetch(`/api/job-postings/${jobpostId.value}`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      if (result.isSuccess && result.result) {
-        jobPostingTitle.value = result.result.title || '';
-      }
+    const response = await api.get(`/api/job-postings/${jobpostId.value}`)
+    const result = response.data
+    if (result.isSuccess && result.result) {
+      jobPostingTitle.value = result.result.title || '';
     }
   } catch (error) {
     console.error('채용공고 정보 조회 실패:', error);

@@ -267,10 +267,12 @@ export const getPdfViewUrlV2 = async (resumeId: number): Promise<string> => {
  * 경로: /api/pdf/view/{resumeId} (s 제거)
  */
 export const viewPdfV2 = async (resumeId: number): Promise<Blob> => {
-  const response = await api.get(`/api/pdf/view/${resumeId}`, {
-    responseType: 'blob',
-  })
-  return response.data
+  // 백엔드에서 S3 URL을 받아서 직접 S3에서 Blob을 가져옴
+  const urlResponse = await api.get(`/api/pdf/view/${resumeId}`)
+  const s3Url = urlResponse.data.results
+
+  const response = await fetch(s3Url)
+  return await response.blob()
 }
 
 // ============================================

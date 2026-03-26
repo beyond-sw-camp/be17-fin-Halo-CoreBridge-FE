@@ -3,7 +3,7 @@ import axios from 'axios'
 axios.defaults.withCredentials = true
 
 const api = axios.create({
-  baseURL: '',
+  baseURL: 'https://api.core-bridge.kr',
   timeout: 5000,
 })
 
